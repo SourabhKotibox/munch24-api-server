@@ -1,0 +1,637 @@
+{
+  "version": "1.0.0",
+  "baseUrl": "http://localhost:3000/api",
+  "endpoints": {
+    "appAuth": {
+      "sendOtp": {
+        "method": "POST",
+        "path": "/app/auth/send-otp",
+        "description": "Send OTP to mobile number",
+        "requestBody": {
+          "mobileNumber": "string (10 digits)"
+        },
+        "response": {
+          "success": "boolean",
+          "message": "string"
+        }
+      },
+      "verifyOtp": {
+        "method": "POST",
+        "path": "/app/auth/verify-otp",
+        "description": "Verify OTP and authenticate user",
+        "requestBody": {
+          "mobileNumber": "string (10 digits)",
+          "otp": "string (4 digits)",
+          "verificationId": "string (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "accessToken": "string",
+          "userId": "string",
+          "expiresIn": "number",
+          "preferredLanguage": "string | null"
+        }
+      },
+      "setPreferredLanguage": {
+        "method": "POST",
+        "path": "/app/users/:userId/language",
+        "description": "Set user's preferred language",
+        "requestBody": {
+          "language": "string"
+        },
+        "response": {
+          "success": "boolean",
+          "message": "string",
+          "data": {
+            "userId": "string",
+            "preferredLanguage": "string",
+            "languageSelectionSkipped": "boolean"
+          }
+        }
+      },
+      "skipPreferredLanguage": {
+        "method": "POST",
+        "path": "/app/users/:userId/language/skip",
+        "description": "Skip language selection",
+        "response": {
+          "success": "boolean",
+          "message": "string",
+          "data": {
+            "userId": "string",
+            "preferredLanguage": "null",
+            "languageSelectionSkipped": "boolean"
+          }
+        }
+      }
+    },
+    "adminAuth": {
+      "login": {
+        "method": "POST",
+        "path": "/auth/login",
+        "description": "Admin login",
+        "requestBody": {
+          "email": "string",
+          "password": "string"
+        },
+        "response": {
+          "accessToken": "string",
+          "refreshToken": "string",
+          "expiresIn": "number"
+        }
+      },
+      "getMe": {
+        "method": "GET",
+        "path": "/auth/me",
+        "description": "Get current admin user",
+        "requiresAuth": true,
+        "response": {
+          "user": {
+            "id": "string",
+            "email": "string",
+            "name": "string",
+            "role": "string"
+          }
+        }
+      }
+    },
+    "languages": {
+      "listLanguages": {
+        "method": "GET",
+        "path": "/languages",
+        "description": "Get list of languages",
+        "queryParams": {
+          "includeSkip": "boolean (optional, include skip option)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": [
+            {
+              "id": "string",
+              "name": "string",
+              "code": "string",
+              "image": "string | null",
+              "isActive": "boolean",
+              "order": "number",
+              "createdAt": "string (ISO date)",
+              "updatedAt": "string (ISO date)",
+              "isSkippable": "boolean (only for skip option)"
+            }
+          ]
+        }
+      },
+      "getLanguage": {
+        "method": "GET",
+        "path": "/languages/:id",
+        "description": "Get language by ID",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": {
+            "id": "string",
+            "name": "string",
+            "code": "string",
+            "image": "string | null",
+            "isActive": "boolean",
+            "order": "number",
+            "createdAt": "string (ISO date)",
+            "updatedAt": "string (ISO date)"
+          }
+        }
+      },
+      "createLanguage": {
+        "method": "POST",
+        "path": "/languages",
+        "description": "Create new language",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "fields": {
+          "name": "string (required)",
+          "code": "string (required)",
+          "image": "file (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": {
+            "id": "string",
+            "name": "string",
+            "code": "string",
+            "image": "string | null",
+            "isActive": "boolean",
+            "order": "number"
+          }
+        }
+      },
+      "updateLanguage": {
+        "method": "PUT",
+        "path": "/languages/:id",
+        "description": "Update language",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "fields": {
+          "name": "string",
+          "code": "string",
+          "isActive": "boolean",
+          "order": "number",
+          "image": "file (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": {
+            "id": "string",
+            "name": "string",
+            "code": "string",
+            "image": "string | null",
+            "isActive": "boolean",
+            "order": "number"
+          }
+        }
+      },
+      "deleteLanguage": {
+        "method": "DELETE",
+        "path": "/languages/:id",
+        "description": "Delete language",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "message": "string"
+        }
+      }
+    },
+    "banners": {
+      "listBanners": {
+        "method": "GET",
+        "path": "/banners",
+        "description": "Get list of banners",
+        "queryParams": {
+          "platform": "string (web, mobile, tv, optional)",
+          "admin": "boolean (optional, include inactive banners)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": [
+            {
+              "id": "string",
+              "title": "string",
+              "subtitle": "string | null",
+              "description": "string | null",
+              "imageUrl": "string",
+              "mobileImageUrl": "string | null",
+              "ctaText": "string",
+              "ctaLink": "string | null",
+              "position": "number",
+              "isActive": "boolean",
+              "type": "string (hero, featured, promotional, category)",
+              "targetPlatforms": "string[]",
+              "startDate": "string (ISO date) | null",
+              "endDate": "string (ISO date) | null",
+              "content": {
+                "id": "string",
+                "title": "string",
+                "subtitle": "string | null",
+                "description": "string | null",
+                "thumbnail": "string | null",
+                "bannerImage": "string | null",
+                "genres": "string[]",
+                "languages": "string[]",
+                "views": "number",
+                "likes": "number",
+                "shares": "number",
+                "episodeCount": "number",
+                "status": "string",
+                "createdAt": "string (ISO date)",
+                "updatedAt": "string (ISO date)"
+              }
+            }
+          ]
+        }
+      },
+      "getBannerById": {
+        "method": "GET",
+        "path": "/banners/item/:bannerId",
+        "description": "Get banner by ID",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": {
+            "id": "string",
+            "title": "string",
+            "subtitle": "string | null",
+            "description": "string | null",
+            "imageUrl": "string",
+            "mobileImageUrl": "string | null",
+            "ctaText": "string",
+            "ctaLink": "string | null",
+            "position": "number",
+            "isActive": "boolean",
+            "type": "string",
+            "targetPlatforms": "string[]",
+            "startDate": "string (ISO date) | null",
+            "endDate": "string (ISO date) | null",
+            "content": "object (optional)"
+          }
+        }
+      },
+      "createBannerShow": {
+        "method": "POST",
+        "path": "/banners",
+        "description": "Create banner show with video splitting",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "fields": {
+          "title": "string (required)",
+          "subtitle": "string (optional)",
+          "description": "string (optional)",
+          "genres": "string (optional, comma-separated)",
+          "languages": "string (optional, comma-separated)",
+          "reelDurationMinutes": "number (default: 3)",
+          "totalDurationMinutes": "number (optional)",
+          "freeEpisodeCount": "number (default: 1)",
+          "lockEpisodes": "boolean (default: true)",
+          "position": "number (default: 0)",
+          "ctaText": "string (default: Watch Now)",
+          "ctaLink": "string (optional)",
+          "targetPlatforms": "string (optional, comma-separated)",
+          "startDate": "string (ISO date, optional)",
+          "endDate": "string (ISO date, optional)",
+          "bannerFile": "file (required)",
+          "mobileBannerFile": "file (optional)",
+          "thumbnailFile": "file (optional)",
+          "videoFile": "file (required)"
+        },
+        "response": {
+          "success": "boolean",
+          "message": "string",
+          "data": {
+            "banner": "object",
+            "content": "object",
+            "episodes": "array"
+          }
+        }
+      },
+      "updateBanner": {
+        "method": "PUT",
+        "path": "/banners/item/:bannerId",
+        "description": "Update banner",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "fields": {
+          "title": "string",
+          "subtitle": "string",
+          "description": "string",
+          "position": "number",
+          "isActive": "boolean",
+          "ctaText": "string",
+          "ctaLink": "string",
+          "targetPlatforms": "string",
+          "startDate": "string (ISO date)",
+          "endDate": "string (ISO date)",
+          "bannerFile": "file (optional)",
+          "mobileBannerFile": "file (optional)",
+          "thumbnailFile": "file (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": "object",
+          "message": "string"
+        }
+      },
+      "deleteBanner": {
+        "method": "DELETE",
+        "path": "/banners/item/:bannerId",
+        "description": "Delete banner and associated content/episodes",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "message": "string"
+        }
+      },
+      "getBannerShow": {
+        "method": "GET",
+        "path": "/banners/:contentId",
+        "description": "Get banner show details and episodes",
+        "queryParams": {
+          "page": "number (optional)",
+          "limit": "number (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": {
+            "content": "object",
+            "episodeRanges": "array",
+            "episodes": "array"
+          },
+          "pagination": {
+            "page": "number",
+            "limit": "number",
+            "total": "number",
+            "pages": "number"
+          }
+        }
+      },
+      "appendBannerShowVideo": {
+        "method": "POST",
+        "path": "/banners/:contentId/videos",
+        "description": "Append video to existing banner show",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "fields": {
+          "videoFile": "file (required)",
+          "reelDurationMinutes": "number (default: 3)",
+          "totalDurationMinutes": "number (optional)",
+          "freeEpisodeCount": "number",
+          "lockEpisodes": "boolean",
+          "thumbnailFile": "file (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "message": "string",
+          "data": {
+            "contentId": "string",
+            "addedEpisodes": "number",
+            "episodes": "array"
+          }
+        }
+      },
+      "updateEpisodeLock": {
+        "method": "PATCH",
+        "path": "/episodes/:episodeId/lock",
+        "description": "Lock/unlock an episode",
+        "requiresAuth": true,
+        "requestBody": {
+          "isLocked": "boolean"
+        },
+        "response": {
+          "success": "boolean",
+          "data": {
+            "id": "string",
+            "episode": "number",
+            "title": "string",
+            "isLocked": "boolean",
+            "isFree": "boolean",
+            "processingStatus": "string"
+          }
+        }
+      }
+    },
+    "promotions": {
+      "listPromotions": {
+        "method": "GET",
+        "path": "/promotions",
+        "description": "Get list of promotions",
+        "queryParams": {
+          "page": "number (optional)",
+          "limit": "number (optional)"
+        },
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": [
+            {
+              "id": "string",
+              "title": "string",
+              "subtitle": "string",
+              "videoUrl": "string",
+              "thumbnailUrl": "string",
+              "features": "array",
+              "buttonText": "string",
+              "secondaryButtonText": "string | null",
+              "isActive": "boolean",
+              "order": "number"
+            }
+          ],
+          "pagination": {
+            "page": "number",
+            "limit": "number",
+            "total": "number",
+            "pages": "number"
+          }
+        }
+      },
+      "getActivePromotion": {
+        "method": "GET",
+        "path": "/promotions/active",
+        "description": "Get active promotion",
+        "response": {
+          "success": "boolean",
+          "data": {
+            "id": "string",
+            "title": "string",
+            "subtitle": "string",
+            "videoUrl": "string",
+            "thumbnailUrl": "string",
+            "features": [
+              {
+                "icon": "string",
+                "title": "string",
+                "description": "string"
+              }
+            ],
+            "buttonText": "string",
+            "secondaryButtonText": "string | null",
+            "isActive": "boolean",
+            "order": "number"
+          }
+        }
+      },
+      "getPromotion": {
+        "method": "GET",
+        "path": "/promotions/:id",
+        "description": "Get promotion by ID",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "createPromotion": {
+        "method": "POST",
+        "path": "/promotions",
+        "description": "Create promotion",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "updatePromotion": {
+        "method": "PUT",
+        "path": "/promotions/:id",
+        "description": "Update promotion",
+        "requiresAuth": true,
+        "requestBody": "multipart/form-data",
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "deletePromotion": {
+        "method": "DELETE",
+        "path": "/promotions/:id",
+        "description": "Delete promotion",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "message": "string"
+        }
+      }
+    },
+    "users": {
+      "listUsers": {
+        "method": "GET",
+        "path": "/users",
+        "description": "Get list of users",
+        "queryParams": {
+          "page": "number (optional)",
+          "limit": "number (optional)",
+          "search": "string (optional)",
+          "plan": "string (optional)"
+        },
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": "array",
+          "pagination": "object"
+        }
+      },
+      "getUserById": {
+        "method": "GET",
+        "path": "/users/:id",
+        "description": "Get user by ID",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "updateUser": {
+        "method": "PATCH",
+        "path": "/users/:id",
+        "description": "Update user",
+        "requiresAuth": true,
+        "requestBody": "object",
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "banUser": {
+        "method": "POST",
+        "path": "/users/:id/ban",
+        "description": "Ban user",
+        "requiresAuth": true,
+        "requestBody": {
+          "reason": "string (optional)"
+        },
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "unbanUser": {
+        "method": "POST",
+        "path": "/users/:id/unban",
+        "description": "Unban user",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "data": "object"
+        }
+      },
+      "deleteUser": {
+        "method": "DELETE",
+        "path": "/users/:id",
+        "description": "Delete user",
+        "requiresAuth": true,
+        "response": {
+          "success": "boolean",
+          "message": "string"
+        }
+      }
+    },
+    "health": {
+      "check": {
+        "method": "GET",
+        "path": "/health",
+        "description": "Health check endpoint",
+        "response": {
+          "status": "string",
+          "timestamp": "string (ISO date)"
+        }
+      }
+    }
+  },
+  "adminPanelFeatures": {
+    "banners": {
+      "list": "View all banner shows",
+      "create": "Create new banner show with video splitting",
+      "edit": "Edit banner metadata and images",
+      "update": "Update banner details",
+      "delete": "Delete banner show and all episodes",
+      "appendEpisodes": "Add more episodes to existing show",
+      "toggleLock": "Lock/unlock individual episodes"
+    },
+    "languages": {
+      "list": "View all languages",
+      "create": "Create new language",
+      "edit": "Edit language details",
+      "update": "Update language",
+      "delete": "Delete language"
+    },
+    "promotions": {
+      "list": "View all promotions",
+      "create": "Create new promotion",
+      "edit": "Edit promotion details",
+      "update": "Update promotion",
+      "delete": "Delete promotion"
+    },
+    "users": {
+      "list": "View all users",
+      "view": "View user details",
+      "edit": "Edit user information",
+      "ban": "Ban user",
+      "unban": "Unban user",
+      "delete": "Delete user"
+    }
+  }
+}

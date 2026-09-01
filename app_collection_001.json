@@ -1,0 +1,5100 @@
+{
+  "info": {
+    "name": "app collection 001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/app/movies/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/movies/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/home",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "home"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/banners",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/banners",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "banners"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/explore",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/explore",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "explore"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/search",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/search",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "search"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web-home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web-home",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web-home"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web-browse",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web-browse",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web-browse"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web-detail/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web-detail/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web-detail",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/public/notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/public/notifications",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "public",
+            "notifications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/wallet/balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/balance",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "balance"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/wallet/packages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/packages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/topup",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/topup",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "topup"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/unlock-episode",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/unlock-episode",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "unlock-episode"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/wallet/unlocked-episodes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/unlocked-episodes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "unlocked-episodes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/razorpay/order",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/razorpay/order",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "razorpay",
+            "order"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/razorpay/verify",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/razorpay/verify",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "razorpay",
+            "verify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/packages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/packages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/wallet/packages/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/packages/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/wallet/packages/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/wallet/packages/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/views/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/views/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "views",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin/reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/reviews",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/admin/reviews/:id/status",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/reviews/:id/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "reviews",
+            ":id",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/admin/reviews/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/reviews/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "reviews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/reviews",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/reviews",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/reviews",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/reviews/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/reviews/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "reviews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin-notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-notifications",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-notifications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/admin-notifications/read-all",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-notifications/read-all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-notifications",
+            "read-all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/ads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/ads",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/ads/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ads/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/ads/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ads/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/ads/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/ads/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ads",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/public/ads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/public/ads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "public",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/ads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/ads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/ads/:id/interaction",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/ads/:id/interaction",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "ads",
+            ":id",
+            "interaction"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/healthz",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/healthz",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "healthz"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/auth/me",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/logout",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/auth/profile",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/auth/password",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "password"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/profile/avatar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/profile/avatar",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile",
+            "avatar"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/auth/profile/avatar/presign",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/profile/avatar/presign",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile",
+            "avatar",
+            "presign"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/profile/avatar/confirm",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/profile/avatar/confirm",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile",
+            "avatar",
+            "confirm"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/setup-admin",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/setup-admin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "setup-admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/send-otp",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/send-otp",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "send-otp"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/verify-otp",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/verify-otp",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "verify-otp"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/register",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/google",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/google",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "google"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/apple",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/apple",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "apple"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/logout",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/language/:userId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/language/:userId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "language",
+            ":userId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/language/:userId/skip",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/auth/language/:userId/skip",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "language",
+            ":userId",
+            "skip"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/users/:userId/language",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/users/:userId/language",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "users",
+            ":userId",
+            "language"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/users/:userId/language/skip",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/users/:userId/language/skip",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "users",
+            ":userId",
+            "language",
+            "skip"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/users/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/users/:id",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/users/:id/ban",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/:id/ban",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id",
+            "ban"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/users/:id/unban",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/:id/unban",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id",
+            "unban"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/users/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/languages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/languages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "languages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/languages/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/languages/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "languages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/languages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/languages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "languages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/languages/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/languages/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "languages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/languages/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/languages/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "languages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/promotions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/promotions/active",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions/active",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            "active"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/promotions/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/promotions",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/promotions/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/promotions/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/promotions/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/promotions/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/banners",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners/from-content",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/from-content",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "from-content"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/banners/item/:bannerId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/item/:bannerId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "item",
+            ":bannerId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/banners/item/:bannerId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/item/:bannerId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "item",
+            ":bannerId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/banners/item/:bannerId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/item/:bannerId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "item",
+            ":bannerId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/banners/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners/:contentId/videos",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/banners/:contentId/videos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "banners",
+            ":contentId",
+            "videos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/episodes/:episodeId/lock",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes/:episodeId/lock",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":episodeId",
+            "lock"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/settings",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/settings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/settings",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/settings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/settings/upload-logos",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/settings/upload-logos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "settings",
+            "upload-logos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/settings/email-status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/settings/email-status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "settings",
+            "email-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/settings/test-email",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/settings/test-email",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "settings",
+            "test-email"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/genres",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/genres",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "genres"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/genres/item/:genreId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/genres/item/:genreId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "item",
+            ":genreId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/genres",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/genres",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "genres"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/genres/item/:genreId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/genres/item/:genreId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "item",
+            ":genreId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/genres/item/:genreId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/genres/item/:genreId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "item",
+            ":genreId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/genres/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/genres/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/pages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/pages/:slug",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages/:slug",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages",
+            ":slug"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/pages/item/:pageId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages/item/:pageId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages",
+            "item",
+            ":pageId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/pages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/pages/:pageId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages/:pageId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages",
+            ":pageId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/pages/:pageId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages/:pageId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages",
+            ":pageId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/pages/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/pages/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "pages",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/faqs/public",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs/public",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "public"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/faqs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/faqs/item/:faqId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs/item/:faqId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "item",
+            ":faqId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/faqs",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/faqs/item/:faqId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs/item/:faqId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "item",
+            ":faqId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/faqs/item/:faqId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs/item/:faqId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "item",
+            ":faqId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/faqs/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/faqs/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/actors",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/actors",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "actors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/actors/item/:actorId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/actors/item/:actorId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "item",
+            ":actorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/actors",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/actors",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "actors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/actors/item/:actorId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/actors/item/:actorId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "item",
+            ":actorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/actors/item/:actorId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/actors/item/:actorId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "item",
+            ":actorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/actors/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/actors/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/directors",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/directors",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "directors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/directors/item/:directorId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/directors/item/:directorId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "item",
+            ":directorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/directors",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/directors",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "directors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/directors/item/:directorId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/directors/item/:directorId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "item",
+            ":directorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/directors/item/:directorId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/directors/item/:directorId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "item",
+            ":directorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/directors/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/directors/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-logs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-logs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-logs/item/:notificationId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-logs/item/:notificationId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-logs",
+            "item",
+            ":notificationId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/notification-logs",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-logs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-logs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/notification-logs/item/:notificationId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-logs/item/:notificationId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-logs",
+            "item",
+            ":notificationId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/notification-logs/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-logs/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-logs",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscription-plans",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscription-plans",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscription-plans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscription-plans/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscription-plans/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscription-plans",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscription-plans",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscription-plans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/subscription-plans/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscription-plans/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/subscription-plans/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscription-plans/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscription-plans/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscription-plans/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/plan-limits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/plan-limits",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "plan-limits"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/plan-limits/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/plan-limits/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/plan-limits",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/plan-limits",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "plan-limits"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/plan-limits/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/plan-limits/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/plan-limits/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/plan-limits/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/plan-limits/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/plan-limits/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscriptions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscriptions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscriptions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscriptions/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscriptions/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscriptions",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscriptions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscriptions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/subscriptions/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscriptions/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/subscriptions/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscriptions/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscriptions/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/subscriptions/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/subscription/razorpay/order",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/subscription/razorpay/order",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "subscription",
+            "razorpay",
+            "order"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/subscription/razorpay/verify",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/subscription/razorpay/verify",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "subscription",
+            "razorpay",
+            "verify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/categories",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/categories",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/categories/item/:categoryId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/categories/item/:categoryId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "item",
+            ":categoryId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/categories",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/categories",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/categories/item/:categoryId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/categories/item/:categoryId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "item",
+            ":categoryId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/categories/item/:categoryId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/categories/item/:categoryId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "item",
+            ":categoryId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/categories/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/categories/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-templates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-templates",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-templates"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-templates/item/:templateId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-templates/item/:templateId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/notification-templates",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-templates",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-templates"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/notification-templates/item/:templateId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-templates/item/:templateId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/notification-templates/item/:templateId/toggle-status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-templates/item/:templateId/toggle-status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId",
+            "toggle-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/notification-templates/item/:templateId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/notification-templates/item/:templateId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/media/folders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/folders",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/media/folders",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/folders",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/media/folders/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/folders/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/media/folders/:id/files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/folders/:id/files",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders",
+            ":id",
+            "files"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/media/files/all",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/files/all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "files",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/media/folders/:id/files",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/folders/:id/files",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders",
+            ":id",
+            "files"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/media/files/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/media/files/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "media",
+            "files",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app-settings",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app-settings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app-settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app-settings",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app-settings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app-settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app-settings",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app-settings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app-settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app-settings/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app-settings/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app-settings",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/app-settings/:id",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app-settings/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app-settings",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/stats",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "stats"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/revenue",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/revenue",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "revenue"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/new-subscribers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/new-subscribers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "new-subscribers"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/most-watched",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/most-watched",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "most-watched"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/top-genres",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/top-genres",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "top-genres"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/reviews",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/transactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/dashboard/transactions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "transactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies/pending-approvals",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/pending-approvals",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            "pending-approvals"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/movies",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/movies/item/:id/approve",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/item/:id/approve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            "item",
+            ":id",
+            "approve"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/movies/item/:id/reject",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/item/:id/reject",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            "item",
+            ":id",
+            "reject"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/movies/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/movies/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/movies/:id/status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/movies/:id/featured",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id/featured",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "featured"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/movies/:id/trending",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id/trending",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "trending"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies/:id/processing-status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/movies/:id/processing-status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "processing-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin-users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin-users/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/admin-users",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/admin-users/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/admin-users/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/admin-users/:id/reset-password",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users/:id/reset-password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id",
+            "reset-password"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/admin-users/:id/toggle-status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users/:id/toggle-status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id",
+            "toggle-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/admin-users/profile",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin-users/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/sections",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sections",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sections"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/sections/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sections/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sections",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/sections",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sections",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sections"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/sections/reorder",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sections/reorder",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sections",
+            "reorder"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/sections/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sections/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sections",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/sections/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sections/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sections",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/contents",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/contents",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/contents/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/contents/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/contents/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/contents/:id/status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents/:id/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/contents/:id/videos",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/contents/:id/videos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id",
+            "videos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/episodes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/episodes",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/episodes/seasons",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes/seasons",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            "seasons"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/episodes/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/episodes/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/episodes/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/episodes/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/countries",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/countries",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "countries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/countries/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/countries/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "countries",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/countries",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/countries",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "countries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/countries/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/countries/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "countries",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/countries/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/countries/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "countries",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/crews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/crews",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "crews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/crews/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/crews/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "crews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/crews",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/crews",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "crews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/crews/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/crews/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "crews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/crews/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/crews/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "crews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/crews/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/crews/bulk-delete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "crews",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/like/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/like/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "like",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/watch/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/watch/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "watch",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/share/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/share/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "share",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/share/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/share/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "share",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/wishlist/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/wishlist/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "wishlist",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/wishlist",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/wishlist",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "wishlist"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/wishlist",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/wishlist",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "wishlist"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/app/profile",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/profile/avatar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/profile/avatar",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile",
+            "avatar"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app/profile/video-quality",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/profile/video-quality",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile",
+            "video-quality"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app/profile/language",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/profile/language",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile",
+            "language"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/profile",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/download",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/download",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "download"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/downloads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/downloads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "downloads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/downloads",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/downloads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "downloads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/downloads/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/downloads/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "downloads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web/subscription-plans",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web/subscription-plans",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web",
+            "subscription-plans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/web/download",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web/download",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web",
+            "download"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web/downloads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web/downloads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web",
+            "downloads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/web/downloads/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/web/downloads/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "web",
+            "downloads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/watch/progress",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/watch/progress",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "progress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/watch/progress",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/watch/progress",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "progress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/watch/progress/:contentId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/watch/progress/:contentId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "progress",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/watch/history",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/watch/history",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "history"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/watch/history/all",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/watch/history/all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "history",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/watch/history/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/watch/history/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "history",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/rewards/claim/:id",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/claim/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "claim",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/rewards/claim-daily",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/claim-daily",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "claim-daily"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards/status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards/admin",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/admin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/rewards/admin",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/admin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app/rewards/admin/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/admin/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/rewards/admin/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/admin/:id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards/admin/:id/claims",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/rewards/admin/:id/claims",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin",
+            ":id",
+            "claims"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/app/notifications",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "notifications"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

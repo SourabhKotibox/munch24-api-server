@@ -6,7 +6,7 @@ import { MovieModel } from '../models/Movie';
 import { EpisodeModel } from '../models/Episode';
 import { ContentModel } from '../models/Content';
 import { logger } from '../lib/logger';
-import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToS3, uploadHlsFolderToDO, getActiveStorageSettings } from '../lib/s3';
+import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToCloudStorage, getActiveStorageSettings } from '../lib/s3';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // All 7 quality renditions with Netflix-grade bitrate settings
@@ -362,13 +362,8 @@ const finalizeHlsOutput = async (opts: {
 
   if (storageActive) {
     const settings = await getActiveStorageSettings();
-    if (settings.storageDriver === 'digitalocean') {
-      logger.info({ s3Prefix }, 'Uploading HLS folder to DigitalOcean Spaces…');
-      await uploadHlsFolderToDO(hlsFolder, s3Prefix);
-    } else {
-      logger.info({ s3Prefix }, 'Uploading HLS folder to S3…');
-      await uploadHlsFolderToS3(hlsFolder, s3Prefix);
-    }
+    logger.info({ s3Prefix, storageDriver: settings.storageDriver }, 'Uploading HLS folder to configured cloud storage');
+    await uploadHlsFolderToCloudStorage(hlsFolder, s3Prefix);
 
     const baseUrl = await getHlsPublicBaseUrl();
     const masterUrl = `${baseUrl}/${s3Prefix}/master.m3u8`;
@@ -547,13 +542,8 @@ export const autoDetectAndSyncQualities = async (
       if (storageActive) {
         try {
           const settings = await getActiveStorageSettings();
-          if (settings.storageDriver === 'digitalocean') {
-            logger.info({ id: id.toString(), type, s3Prefix }, 'Auto-detect: Uploading HLS folder to DigitalOcean Spaces…');
-            await uploadHlsFolderToDO(hlsFolder, s3Prefix);
-          } else {
-            logger.info({ id: id.toString(), type, s3Prefix }, 'Auto-detect: Uploading HLS folder to S3…');
-            await uploadHlsFolderToS3(hlsFolder, s3Prefix);
-          }
+          logger.info({ id: id.toString(), type, s3Prefix, storageDriver: settings.storageDriver }, 'Auto-detect: Uploading HLS folder to configured cloud storage');
+          await uploadHlsFolderToCloudStorage(hlsFolder, s3Prefix);
           uploadSucceeded = true;
           logger.info({ id: id.toString(), type }, 'Auto-detect: Cloud upload successful. Cleaning up local files.');
           try {

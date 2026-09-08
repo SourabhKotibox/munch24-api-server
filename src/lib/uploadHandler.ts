@@ -8,7 +8,7 @@ import { MediaFolderModel } from '../models/MediaFolder';
 import { Types } from 'mongoose';
 import { transcodeToHls } from './hlsTranscoder';
 import { logger } from './logger';
-import { isCloudStorageConfigured, getActiveStorageSettings, getCloudPublicUrl, uploadToCloudStorage, deleteFromS3, deleteFromDO } from './s3';
+import { isCloudStorageConfigured, getActiveStorageSettings, getCloudPublicUrl, uploadToCloudStorage, deleteFromS3, deleteFromDO, deleteFromBunny } from './s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,7 +93,7 @@ export interface UploadedFileInfo {
   fileSize: number;
   mimeType: string;
   uploadType: UploadType;
-  storageType?: 'local' | 's3' | 'digitalocean';
+  storageType?: 'local' | 's3' | 'digitalocean' | 'bunny';
   s3Key?: string;
 }
 
@@ -225,7 +225,7 @@ export const saveFileFromPart = async (
           fileSize: existingFile.fileSize,
           mimeType: existingFile.fileType,
           uploadType,
-          storageType: existingFile.storageType as 'local' | 's3' | 'digitalocean',
+          storageType: existingFile.storageType as 'local' | 's3' | 'digitalocean' | 'bunny',
           s3Key: existingFile.s3Key,
         });
       }
@@ -265,11 +265,13 @@ export const saveFileFromPart = async (
             storageType: 'local'
           });
 
-          if (isVideoFile(part.filename, part.mimetype || '')) {
-            transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl).catch(err => {
-              logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (local)');
-            });
-          }
+          const hlsProcessing = isVideoFile(part.filename, part.mimetype || '')
+            ? transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl)
+            : undefined;
+
+          hlsProcessing?.catch(err => {
+              logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS');
+          });
 
           if (cloudActive) {
             try {
@@ -280,17 +282,23 @@ export const saveFileFromPart = async (
               await MediaFileModel.findByIdAndUpdate(mediaFile._id, {
                 url: cloudUrl,
                 filePath: cloudKey,
-                storageType: settings.storageDriver as 's3' | 'digitalocean',
+                storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
                 s3Key: cloudKey
               });
 
-              fs.unlinkSync(fullFilePath);
+              if (hlsProcessing) {
+                hlsProcessing.then(() => {
+                  if (fs.existsSync(fullFilePath)) fs.unlinkSync(fullFilePath);
+                }).catch(() => {});
+              } else {
+                fs.unlinkSync(fullFilePath);
+              }
 
               fileInfo = {
                 ...localFileInfo,
                 url: cloudUrl,
                 filePath: cloudKey,
-                storageType: settings.storageDriver as 's3' | 'digitalocean',
+                storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
                 s3Key: cloudKey
               };
             } catch (cloudErr) {
@@ -312,7 +320,7 @@ export const saveFileFromPart = async (
             ...localFileInfo,
             url: cloudUrl,
             filePath: cloudKey,
-            storageType: settings.storageDriver as 's3' | 'digitalocean',
+            storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
             s3Key: cloudKey
           };
         } catch (cloudErr) {
@@ -327,7 +335,7 @@ export const saveFileFromPart = async (
   });
 };
 
-export const deleteUploadedFile = async (relativeFilePath: string, storageType?: 'local' | 's3' | 'digitalocean') => {
+export const deleteUploadedFile = async (relativeFilePath: string, storageType?: 'local' | 's3' | 'digitalocean' | 'bunny') => {
   if (!relativeFilePath) return;
 
   const fullPath = path.join(UPLOADS_ROOT, relativeFilePath.replace(/^\/*uploads\//, '').replace(/^\/+/, ''));
@@ -339,6 +347,8 @@ export const deleteUploadedFile = async (relativeFilePath: string, storageType?:
     await deleteFromS3(relativeFilePath);
   } else if (storageType === 'digitalocean') {
     await deleteFromDO(relativeFilePath);
+  } else if (storageType === 'bunny') {
+    await deleteFromBunny(relativeFilePath);
   }
 };
 

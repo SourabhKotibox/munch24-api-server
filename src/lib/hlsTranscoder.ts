@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { MediaFileModel, IHlsQuality } from '../models/MediaFile';
 import { logger } from './logger';
+import { getHlsPublicBaseUrl, isCloudStorageConfigured, uploadHlsFolderToCloudStorage } from './s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,13 +159,30 @@ export const transcodeToHls = async (
     fs.writeFileSync(masterPlaylistPath, masterPlaylistContent);
 
     const relativeMasterPlaylistPath = `hls/${mediaFile._id.toString()}/index.m3u8`;
-    const masterPlaylistUrl = `${baseUrl}/uploads/${relativeMasterPlaylistPath}`;
+    let masterPlaylistUrl = `${baseUrl}/uploads/${relativeMasterPlaylistPath}`;
+
+    const cloudStorageActive = await isCloudStorageConfigured();
+    if (cloudStorageActive) {
+      const hlsPrefix = `hls/${mediaFile._id.toString()}`;
+      await uploadHlsFolderToCloudStorage(hlsOutputDir, hlsPrefix);
+      const cloudBaseUrl = await getHlsPublicBaseUrl();
+      masterPlaylistUrl = `${cloudBaseUrl}/${relativeMasterPlaylistPath}`;
+      mediaFile.hlsQualities = qualities.map((quality) => ({
+        ...quality,
+        url: `${cloudBaseUrl}/${quality.filePath.replace(/^\/uploads\//, '')}`,
+        filePath: quality.filePath.replace(/^\/uploads\//, ''),
+      }));
+      fs.rmSync(hlsOutputDir, { recursive: true, force: true });
+    } else {
+      mediaFile.hlsQualities = qualities;
+    }
 
     // Update media file with HLS data
     mediaFile.isHls = true;
     mediaFile.hlsMasterPlaylistUrl = masterPlaylistUrl;
-    mediaFile.hlsMasterPlaylistPath = `/uploads/${relativeMasterPlaylistPath}`;
-    mediaFile.hlsQualities = qualities;
+    mediaFile.hlsMasterPlaylistPath = cloudStorageActive
+      ? relativeMasterPlaylistPath
+      : `/uploads/${relativeMasterPlaylistPath}`;
     mediaFile.hlsStatus = 'completed';
     await mediaFile.save();
 

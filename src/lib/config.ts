@@ -10,7 +10,7 @@
  */
 
 /** Base API URL — strips trailing slash for consistency */
-export const API_URL = (process.env.API_URL || 'https://flipshorts.app/api').replace(/\/$/, '');
+export const API_URL = (process.env.API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
 
 /**
  * Build a smart share / deep-link URL for a content item.

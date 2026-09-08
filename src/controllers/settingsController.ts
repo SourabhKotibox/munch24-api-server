@@ -14,23 +14,26 @@ export const getSettings = async (request: FastifyRequest, reply: FastifyReply) 
   try {
     const settings = await getOrCreateSettings();
     
-    // Check if requester is an admin with settings view permission
-    let isAdmin = false;
+    // A user who can edit settings must also receive the full configuration.
+    // Otherwise a successful save is followed by a redacted refresh that clears
+    // the storage fields in the admin UI.
+    let canReadSensitiveSettings = false;
     try {
       await request.jwtVerify();
       const decodedUser = request.user as { id: string; role: string };
       if (decodedUser?.id) {
         const { checkUserPermission } = await import('../middlewares/rbac');
-        const permResult = await checkUserPermission(decodedUser.id, 'settings', 'canView');
-        if (permResult.allowed) {
-          isAdmin = true;
-        }
+        const viewPermission = await checkUserPermission(decodedUser.id, 'settings', 'canView');
+        const editPermission = viewPermission.allowed
+          ? viewPermission
+          : await checkUserPermission(decodedUser.id, 'settings', 'canEdit');
+        canReadSensitiveSettings = editPermission.allowed;
       }
     } catch {
       // Not logged in or not an admin
     }
 
-    if (isAdmin) {
+    if (canReadSensitiveSettings) {
       return reply.send({
         success: true,
         data: settings

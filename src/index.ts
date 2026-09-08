@@ -27,7 +27,8 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function startServer() {
   try {
-    await Promise.all([connectMongoDB(), connectRedis()]);
+    await connectMongoDB();
+    await connectRedis();
 
     // Seed database with initial data (Disabled on startup to preserve data)
     // await seedDatabase();

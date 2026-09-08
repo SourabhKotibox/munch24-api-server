@@ -8,6 +8,7 @@ import { MediaFolderModel } from '../models/MediaFolder';
 import { Types } from 'mongoose';
 import { transcodeToHls } from './hlsTranscoder';
 import { logger } from './logger';
+import { isCloudStorageConfigured, getActiveStorageSettings, getCloudPublicUrl, uploadToCloudStorage, deleteFromS3, deleteFromDO } from './s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,7 +93,7 @@ export interface UploadedFileInfo {
   fileSize: number;
   mimeType: string;
   uploadType: UploadType;
-  storageType?: 'local' | 's3';
+  storageType?: 'local' | 's3' | 'digitalocean';
   s3Key?: string;
 }
 
@@ -224,7 +225,7 @@ export const saveFileFromPart = async (
           fileSize: existingFile.fileSize,
           mimeType: existingFile.fileType,
           uploadType,
-          storageType: existingFile.storageType as 'local' | 's3',
+          storageType: existingFile.storageType as 'local' | 's3' | 'digitalocean',
           s3Key: existingFile.s3Key,
         });
       }
@@ -233,7 +234,7 @@ export const saveFileFromPart = async (
       const host = request.headers.host;
       const baseUrl = `${protocol}://${host}`;
 
-      const fileInfo: UploadedFileInfo = {
+      const localFileInfo: UploadedFileInfo = {
         originalName: part.filename,
         fileName,
         filePath: `/uploads/${relativeFilePath.replace(/\\/g, '/')}`,
@@ -244,12 +245,15 @@ export const saveFileFromPart = async (
         storageType: 'local'
       };
 
+      let fileInfo = localFileInfo;
+      const cloudActive = await isCloudStorageConfigured();
+
       if (options?.trackInMediaLibrary !== false) {
         try {
           const mediaFile = await MediaFileModel.create({
             name: part.filename,
-            url: fileInfo.url,
-            filePath: fileInfo.filePath,
+            url: localFileInfo.url,
+            filePath: localFileInfo.filePath,
             fileSize: stats.size,
             fileType: part.mimetype || 'application/octet-stream',
             folder: resolvedFolderId ? new Types.ObjectId(resolvedFolderId) : undefined,
@@ -266,8 +270,53 @@ export const saveFileFromPart = async (
               logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (local)');
             });
           }
+
+          if (cloudActive) {
+            try {
+              const settings = await getActiveStorageSettings();
+              const cloudKey = `${Date.now()}-${fileName}`;
+              const cloudUrl = await uploadToCloudStorage(cloudKey, fs.readFileSync(fullFilePath), part.mimetype || 'application/octet-stream');
+              
+              await MediaFileModel.findByIdAndUpdate(mediaFile._id, {
+                url: cloudUrl,
+                filePath: cloudKey,
+                storageType: settings.storageDriver as 's3' | 'digitalocean',
+                s3Key: cloudKey
+              });
+
+              fs.unlinkSync(fullFilePath);
+
+              fileInfo = {
+                ...localFileInfo,
+                url: cloudUrl,
+                filePath: cloudKey,
+                storageType: settings.storageDriver as 's3' | 'digitalocean',
+                s3Key: cloudKey
+              };
+            } catch (cloudErr) {
+              logger.error({ cloudErr, mediaFileId: mediaFile._id }, 'Failed to upload to cloud storage, keeping local file');
+            }
+          }
         } catch (error) {
           console.error('Failed to track file in media library:', error);
+        }
+      } else if (cloudActive) {
+        try {
+          const settings = await getActiveStorageSettings();
+          const cloudKey = `${Date.now()}-${fileName}`;
+          const cloudUrl = await uploadToCloudStorage(cloudKey, fs.readFileSync(fullFilePath), part.mimetype || 'application/octet-stream');
+          
+          fs.unlinkSync(fullFilePath);
+
+          fileInfo = {
+            ...localFileInfo,
+            url: cloudUrl,
+            filePath: cloudKey,
+            storageType: settings.storageDriver as 's3' | 'digitalocean',
+            s3Key: cloudKey
+          };
+        } catch (cloudErr) {
+          logger.error({ cloudErr }, 'Failed to upload to cloud storage, keeping local file');
         }
       }
 
@@ -278,12 +327,18 @@ export const saveFileFromPart = async (
   });
 };
 
-export const deleteUploadedFile = async (relativeFilePath: string, storageType?: 'local' | 's3') => {
+export const deleteUploadedFile = async (relativeFilePath: string, storageType?: 'local' | 's3' | 'digitalocean') => {
   if (!relativeFilePath) return;
 
   const fullPath = path.join(UPLOADS_ROOT, relativeFilePath.replace(/^\/*uploads\//, '').replace(/^\/+/, ''));
   if (fs.existsSync(fullPath)) {
     fs.unlinkSync(fullPath);
+  }
+
+  if (storageType === 's3') {
+    await deleteFromS3(relativeFilePath);
+  } else if (storageType === 'digitalocean') {
+    await deleteFromDO(relativeFilePath);
   }
 };
 

@@ -6,6 +6,7 @@ import { MovieModel } from '../models/Movie';
 import { EpisodeModel } from '../models/Episode';
 import { ContentModel } from '../models/Content';
 import { logger } from '../lib/logger';
+import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToS3, uploadHlsFolderToDO, getActiveStorageSettings } from '../lib/s3';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // All 7 quality renditions with Netflix-grade bitrate settings
@@ -169,13 +170,15 @@ export const transcodeHlsMultiResolution = async (options: {
   let hlsFolder = '';
   let localUrlBase = '';
 
-  if (type === 'movie') {
+   if (type === 'movie') {
     hlsFolder    = path.join(uploadsRoot, 'hls', 'movies', id);
     localUrlBase = `/uploads/hls/movies/${id}`;
   } else {
     hlsFolder    = path.join(uploadsRoot, 'hls', contentIdForEpisode!, `episode-${episodeNumber}`);
     localUrlBase = `/uploads/hls/${contentIdForEpisode}/episode-${episodeNumber}`;
   }
+
+  const s3Prefix = `hls/${type === 'movie' ? 'movies' : 'episodes'}/${id}`;
 
   // Clear any existing HLS files to prevent mixing old and new uploads
   if (fs.existsSync(hlsFolder)) {
@@ -265,15 +268,12 @@ export const transcodeHlsMultiResolution = async (options: {
   fs.writeFileSync(path.join(hlsFolder, 'master.m3u8'), masterLines.join('\n'), 'utf-8');
 
   // ── Upload to S3 (if configured) or keep local ─────────────────────────
-  const processedQualities = await finalizeHlsOutput({
-    qualities,
-    hlsFolder,
-    localUrlBase,
-  });
-
+  const storageActive = await isCloudStorageConfigured();
+  const processedQualities = await finalizeHlsOutput({ qualities, hlsFolder, storageActive, s3Prefix, localUrlBase });
   return {
     hlsUrl: processedQualities.masterUrl,
     videoQualities: processedQualities.renditions,
+    hlsS3Prefix: processedQualities.hlsS3Prefix,
   };
 };
 
@@ -337,14 +337,14 @@ const transcodeHlsSequential = async (opts: {
       `${q.name}/playlist.m3u8`,
     );
   }
-  fs.writeFileSync(path.join(hlsFolder, 'master.m3u8'), masterLines.join('\n'), 'utf-8');
+   fs.writeFileSync(path.join(hlsFolder, 'master.m3u8'), masterLines.join('\n'), 'utf-8');
 
-  const s3Active = await isS3Configured();
-  const out = await finalizeHlsOutput({ qualities, hlsFolder, s3Active, s3Prefix, localUrlBase });
+  const storageActive = await isCloudStorageConfigured();
+  const out = await finalizeHlsOutput({ qualities, hlsFolder, storageActive, s3Prefix, localUrlBase });
   return {
     hlsUrl:          out.masterUrl,
     videoQualities:  out.renditions,
-    hlsS3Prefix:     s3Active ? s3Prefix : undefined,
+    hlsS3Prefix:     storageActive ? s3Prefix : undefined,
   };
 };
 
@@ -354,16 +354,21 @@ const transcodeHlsSequential = async (opts: {
 const finalizeHlsOutput = async (opts: {
   qualities: ReadonlyArray<typeof HLS_QUALITY_LADDER[number]>;
   hlsFolder: string;
-  s3Active: boolean;
+  storageActive: boolean;
   s3Prefix: string;
   localUrlBase: string;
 }) => {
-  const { qualities, hlsFolder, s3Active, s3Prefix, localUrlBase } = opts;
+  const { qualities, hlsFolder, storageActive, s3Prefix, localUrlBase } = opts;
 
-  if (s3Active) {
-    // Upload all .ts segments + .m3u8 playlists to S3
-    logger.info({ s3Prefix }, 'Uploading HLS folder to S3…');
-    await uploadHlsFolderToS3(hlsFolder, s3Prefix);
+  if (storageActive) {
+    const settings = await getActiveStorageSettings();
+    if (settings.storageDriver === 'digitalocean') {
+      logger.info({ s3Prefix }, 'Uploading HLS folder to DigitalOcean Spaces…');
+      await uploadHlsFolderToDO(hlsFolder, s3Prefix);
+    } else {
+      logger.info({ s3Prefix }, 'Uploading HLS folder to S3…');
+      await uploadHlsFolderToS3(hlsFolder, s3Prefix);
+    }
 
     const baseUrl = await getHlsPublicBaseUrl();
     const masterUrl = `${baseUrl}/${s3Prefix}/master.m3u8`;
@@ -374,15 +379,14 @@ const finalizeHlsOutput = async (opts: {
       size: getFolderSize(path.join(hlsFolder, q.name)),
     }));
 
-    // Clean up local temp files to save disk space
     try {
       fs.rmSync(hlsFolder, { recursive: true, force: true });
-      logger.info({ hlsFolder }, 'Cleaned up local HLS temp files after S3 upload');
+      logger.info({ hlsFolder }, 'Cleaned up local HLS temp files after cloud upload');
     } catch (cleanupErr) {
       logger.warn({ cleanupErr }, 'Failed to clean up local HLS temp folder');
     }
 
-    return { masterUrl, renditions };
+    return { masterUrl, renditions, hlsS3Prefix: storageActive ? s3Prefix : undefined };
   } else {
     // Local mode — serve from the uploads directory
     const masterUrl = `${localUrlBase}/master.m3u8`;
@@ -391,7 +395,7 @@ const finalizeHlsOutput = async (opts: {
       url:  `${localUrlBase}/${q.name}/playlist.m3u8`,
       size: getFolderSize(path.join(hlsFolder, q.name)),
     }));
-    return { masterUrl, renditions };
+    return { masterUrl, renditions, hlsS3Prefix: undefined };
   }
 };
 
@@ -536,30 +540,36 @@ export const autoDetectAndSyncQualities = async (
     }
 
     if (detectedQualities.length > 0) {
-      const s3Active = await isS3Configured();
+      const storageActive = await isCloudStorageConfigured();
       let uploadSucceeded = false;
       const s3Prefix = `hls/${folderName}/${id}`;
 
-      if (s3Active) {
+      if (storageActive) {
         try {
-          logger.info({ id: id.toString(), type, s3Prefix }, 'Auto-detect: Uploading HLS folder to S3…');
-          await uploadHlsFolderToS3(hlsFolder, s3Prefix);
+          const settings = await getActiveStorageSettings();
+          if (settings.storageDriver === 'digitalocean') {
+            logger.info({ id: id.toString(), type, s3Prefix }, 'Auto-detect: Uploading HLS folder to DigitalOcean Spaces…');
+            await uploadHlsFolderToDO(hlsFolder, s3Prefix);
+          } else {
+            logger.info({ id: id.toString(), type, s3Prefix }, 'Auto-detect: Uploading HLS folder to S3…');
+            await uploadHlsFolderToS3(hlsFolder, s3Prefix);
+          }
           uploadSucceeded = true;
-          logger.info({ id: id.toString(), type }, 'Auto-detect: S3 upload successful. Cleaning up local files.');
+          logger.info({ id: id.toString(), type }, 'Auto-detect: Cloud upload successful. Cleaning up local files.');
           try {
             fs.rmSync(hlsFolder, { recursive: true, force: true });
           } catch (rmErr) {
             logger.warn({ rmErr }, 'Failed to clean up local folder after sync upload');
           }
         } catch (uploadErr) {
-          logger.error({ uploadErr, id: id.toString() }, 'Auto-detect: Failed to upload HLS to S3, falling back to local files.');
+          logger.error({ uploadErr, id: id.toString() }, 'Auto-detect: Failed to upload HLS to cloud storage, falling back to local files.');
         }
       }
 
       let hlsUrl = '';
       let videoQualities: any[] = [];
 
-      if (s3Active && uploadSucceeded) {
+      if (storageActive && uploadSucceeded) {
         const baseUrl = await getHlsPublicBaseUrl();
         hlsUrl = `${baseUrl}/${s3Prefix}/master.m3u8`;
         videoQualities = detectedQualities.map(q => ({

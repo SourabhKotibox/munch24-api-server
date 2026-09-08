@@ -9,7 +9,7 @@ import { ContentModel } from '../models/Content';
 import { EpisodeModel } from '../models/Episode';
 import { MovieModel } from '../models/Movie';
 import uploadHandler from '../lib/uploadHandler';
-import { isS3Configured, getS3PublicUrl } from '../lib/s3';
+import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
 import { processEpisodesInBackground } from '../services/videoProcessor';
 
 const __filename = fileURLToPath(import.meta.url);

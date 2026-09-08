@@ -5,7 +5,7 @@ import { ContentModel } from '../models/Content';
 import { EpisodeModel } from '../models/Episode';
 import { UserDownloadModel } from '../models/UserDownload';
 import { logger } from '../lib/logger';
-import { isS3Configured, getS3PublicUrl } from '../lib/s3';
+import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
 
 const toAbsoluteUrl = (
   request: FastifyRequest,
@@ -54,24 +54,24 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
       profileId?: string;
     };
 
-    if (!contentId || !mongoose.Types.ObjectId.isValid(contentId)) {
-      return reply.status(400).send({ success: false, message: 'Invalid or missing contentId' });
-    }
+     if (!contentId || !mongoose.Types.ObjectId.isValid(contentId)) {
+       return reply.status(400).send({ success: false, message: 'Invalid or missing contentId' });
+     }
 
-    const s3Active = await isS3Configured();
-    let s3BaseUrl = '';
-    if (s3Active) {
-      const s3Url = await getS3PublicUrl('');
-      s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
-    }
+     const s3Active = await isCloudStorageConfigured();
+     let s3BaseUrl = '';
+     if (s3Active) {
+       const s3Url = await getCloudPublicUrl('');
+       s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
+     }
 
-    let downloadUrl = '';
-    let title = '';
-    let parentTitle = '';
-    let thumbnail = '';
-    let duration = 0;
-    let contentModelType: 'Movie' | 'Content' = 'Movie';
-    let downloadDoc: any = null;
+     let downloadUrl = '';
+     let title = '';
+     let parentTitle = '';
+     let thumbnail = '';
+     let duration = 0;
+     let contentModelType: 'Movie' | 'Content' = 'Movie';
+     let downloadDoc: any = null;
 
     if (contentType === 'movie') {
       const movie = await MovieModel.findById(contentId).lean();
@@ -152,19 +152,19 @@ export const webGetDownloads = async (request: FastifyRequest, reply: FastifyRep
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
     const userId = userPayload.id;
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return reply.status(401).send({ success: false, message: 'Invalid user token' });
-    }
-    const userObjectId = new mongoose.Types.ObjectId(userId);
+     if (!mongoose.Types.ObjectId.isValid(userId)) {
+       return reply.status(401).send({ success: false, message: 'Invalid user token' });
+     }
+     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const s3Active = await isS3Configured();
-    let s3BaseUrl = '';
-    if (s3Active) {
-      const s3Url = await getS3PublicUrl('');
-      s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
-    }
+     const s3Active = await isCloudStorageConfigured();
+     let s3BaseUrl = '';
+     if (s3Active) {
+       const s3Url = await getCloudPublicUrl('');
+       s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
+     }
 
-    const { profileId } = request.query as { profileId?: string };
+     const { profileId } = request.query as { profileId?: string };
     const downloads = await UserDownloadModel.find({ userId: userObjectId, profileId: profileId || null }).sort({ createdAt: -1 }).lean();
     const result = [];
 

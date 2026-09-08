@@ -201,7 +201,7 @@ export const getFilesByFolder = async (request: FastifyRequest, reply: FastifyRe
       let fileUrl = file.url;
       let filePath = file.filePath;
       
-      if (file.storageType !== 's3') {
+      if (!['s3', 'digitalocean'].includes(file.storageType)) {
         const normalizedPath = ensureUploadPath(file.filePath);
         const protocol = request.protocol;
         const host = request.headers.host;
@@ -279,7 +279,7 @@ export const getAllMediaFiles = async (request: FastifyRequest, reply: FastifyRe
       let fileUrl = file.url;
       let filePath = file.filePath;
       
-      if (file.storageType !== 's3') {
+      if (!['s3', 'digitalocean'].includes(file.storageType)) {
         const normalizedPath = ensureUploadPath(file.filePath);
         const protocol = request.protocol;
         const host = request.headers.host;

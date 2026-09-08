@@ -12,7 +12,7 @@ import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
 import '../models/Actor';
 import '../models/Director';
 import { logger } from '../lib/logger';
-import { isS3Configured, getS3PublicUrl } from '../lib/s3';
+import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
 
 // Plan hierarchy
 const PLAN_LEVELS: Record<string, number> = {
@@ -262,10 +262,10 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
     }
 
     // Load S3 settings once for dynamic absolute URL resolution
-    const s3Active = await isS3Configured();
+    const s3Active = await isCloudStorageConfigured();
     let s3BaseUrl = '';
     if (s3Active) {
-      const s3Url = await getS3PublicUrl('');
+      const s3Url = await getCloudPublicUrl('');
       s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
     }
 

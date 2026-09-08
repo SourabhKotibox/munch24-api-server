@@ -41,6 +41,7 @@ export const getSettings = async (request: FastifyRequest, reply: FastifyReply) 
       const sensitiveFields = [
         'mailEmail', 'mailDriver', 'mailHost', 'mailPort', 'mailEncryption', 'mailUsername', 'mailPassword', 'mailFrom', 'mailFromName',
         'awsAccessKeyId', 'awsSecretAccessKey', 'awsRegion', 'awsBucket', 'awsPathStyleEndpoint', 'bunnyStorageZone', 'bunnyAccessKey',
+        'doAccessKey', 'doSecretKey', 'doRegion', 'doBucket', 'doCdnUrl',
         'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId'
       ];
       for (const field of sensitiveFields) {

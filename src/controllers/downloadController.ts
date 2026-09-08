@@ -6,7 +6,7 @@ import { ContentModel } from '../models/Content';
 import { EpisodeModel } from '../models/Episode';
 import { UserDownloadModel } from '../models/UserDownload';
 import { logger } from '../lib/logger';
-import { isS3Configured, getS3PublicUrl } from '../lib/s3';
+import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
 
 // Helper to format bytes to MB
 const formatSizeMB = (sizeBytes: number): string => {
@@ -67,26 +67,26 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
       contentType: 'movie' | 'drama' | 'series';
     };
 
-    if (!mongoose.Types.ObjectId.isValid(contentId)) {
-      return reply.status(400).send({ success: false, message: 'Invalid contentId' });
-    }
+     if (!mongoose.Types.ObjectId.isValid(contentId)) {
+       return reply.status(400).send({ success: false, message: 'Invalid contentId' });
+     }
 
-    // Load S3 settings once for dynamic absolute URL resolution
-    const s3Active = await isS3Configured();
-    let s3BaseUrl = '';
-    if (s3Active) {
-      const s3Url = await getS3PublicUrl('');
-      s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
-    }
+     // Load S3 settings once for dynamic absolute URL resolution
+     const s3Active = await isCloudStorageConfigured();
+     let s3BaseUrl = '';
+     if (s3Active) {
+       const s3Url = await getCloudPublicUrl('');
+       s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
+     }
 
-    let downloadUrl = '';
-    let qualities: any[] = [];
-    let title = '';
-    let parentTitle = '';
-    let thumbnail = '';
-    let duration = 0;
-    let contentModelType: 'Movie' | 'Content' = 'Movie';
-    let downloadDoc: any = null;
+     let downloadUrl = '';
+     let qualities: any[] = [];
+     let title = '';
+     let parentTitle = '';
+     let thumbnail = '';
+     let duration = 0;
+     let contentModelType: 'Movie' | 'Content' = 'Movie';
+     let downloadDoc: any = null;
 
     if (contentType === 'movie') {
       const movie = await MovieModel.findById(contentId).lean();
@@ -200,15 +200,15 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
     const userId = userPayload.id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const downloads = await UserDownloadModel.find({ userId: userObjectId }).sort({ createdAt: -1 }).lean();
+     const downloads = await UserDownloadModel.find({ userId: userObjectId }).sort({ createdAt: -1 }).lean();
 
-    // Load S3 settings once for dynamic absolute URL resolution
-    const s3Active = await isS3Configured();
-    let s3BaseUrl = '';
-    if (s3Active) {
-      const s3Url = await getS3PublicUrl('');
-      s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
-    }
+     // Load S3 settings once for dynamic absolute URL resolution
+     const s3Active = await isCloudStorageConfigured();
+     let s3BaseUrl = '';
+     if (s3Active) {
+       const s3Url = await getCloudPublicUrl('');
+       s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
+     }
 
     const result = [];
 

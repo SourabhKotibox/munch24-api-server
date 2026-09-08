@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import uploadHandler, { UploadType } from '../lib/uploadHandler';
-import { isS3Configured, getS3PublicUrl } from '../lib/s3';
+import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
 import { processEpisodesInBackground } from '../services/videoProcessor';
 
 const __filename = fileURLToPath(import.meta.url);

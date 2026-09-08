@@ -3,13 +3,11 @@ import { logger } from './logger';
 
 let isMongoConnected = false;
 
-export async function connectMongoDB(): Promise<boolean> {
+export async function connectMongoDB(): Promise<void> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    logger.warn('MONGODB_URI not set — using in-memory mock data');
-    return false;
+    throw new Error('MONGODB_URI is not set — cannot start server without database');
   }
-  // Allow localhost for dev testing
   if (uri.includes('localhost') || uri.includes('127.0.0.1')) {
     logger.info('MONGODB_URI points to localhost, attempting connection...');
   }
@@ -18,31 +16,22 @@ export async function connectMongoDB(): Promise<boolean> {
       serverSelectionTimeoutMS: 30000,
       connectTimeoutMS: 30000,
     });
-    isMongoConnected = true;
-    logger.info({ dbName: mongoose.connection.name }, 'MongoDB Atlas connected');
+    logger.info({ dbName: mongoose.connection.name }, 'MongoDB connected');
 
     mongoose.connection.on('error', (err: unknown) => {
       logger.error({ err }, 'MongoDB connection error');
     });
     mongoose.connection.on('connected', () => {
-      isMongoConnected = true;
       logger.info('MongoDB connection established');
     });
     mongoose.connection.on('reconnected', () => {
-      isMongoConnected = true;
       logger.info('MongoDB connection re-established');
     });
     mongoose.connection.on('disconnected', () => {
-      isMongoConnected = false;
-      logger.warn('MongoDB disconnected — queries will buffer or fail');
+      logger.warn('MongoDB disconnected');
     });
-    return true;
   } catch (err) {
-    logger.warn({ err }, 'MongoDB connection failed');
-    return false;
+    logger.error({ err }, 'MongoDB connection failed');
+    throw err;
   }
-}
-
-export function getIsMongoConnected(): boolean {
-  return isMongoConnected;
 }

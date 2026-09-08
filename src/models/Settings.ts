@@ -31,12 +31,21 @@ export interface ISettings extends Document {
   mailFrom: string;
   mailFromName: string;
   // Storage
-  storageDriver: 'local' | 's3' | 'bunny';
+  storageDriver: 'local' | 's3' | 'digitalocean' | 'bunny';
+  // S3
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   awsRegion: string;
   awsBucket: string;
   awsPathStyleEndpoint: boolean;
+  // DigitalOcean Spaces
+  doAccessKey: string;
+  doSecretKey: string;
+  doRegion: string;
+  doBucket: string;
+  doCdnUrl: string;
+  doPathStyle: boolean;
+  // Bunny
   bunnyStorageZone: string;
   bunnyAccessKey: string;
   bunnyCdnUrl: string;
@@ -160,12 +169,18 @@ const SettingsSchema = new Schema<ISettings>(
     mailFrom: { type: String, default: 'info@tripleminds.com' },
     mailFromName: { type: String, default: 'Triple Minds' },
     // Storage
-    storageDriver: { type: String, enum: ['local', 's3', 'bunny'], default: 'local' },
+    storageDriver: { type: String, enum: ['local', 's3', 'digitalocean', 'bunny'], default: 'local' },
     awsAccessKeyId: { type: String, default: '' },
     awsSecretAccessKey: { type: String, default: '' },
     awsRegion: { type: String, default: '' },
     awsBucket: { type: String, default: '' },
     awsPathStyleEndpoint: { type: Boolean, default: false },
+    doAccessKey: { type: String, default: '' },
+    doSecretKey: { type: String, default: '' },
+    doRegion: { type: String, default: 'nyc3' },
+    doBucket: { type: String, default: '' },
+    doCdnUrl: { type: String, default: '' },
+    doPathStyle: { type: Boolean, default: true },
     bunnyStorageZone: { type: String, default: '' },
     bunnyAccessKey: { type: String, default: '' },
     bunnyCdnUrl: { type: String, default: '' },

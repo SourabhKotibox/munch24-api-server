@@ -13,12 +13,7 @@ import { logger } from './lib/logger';
 async function runSeed() {
   try {
     logger.info('Connecting to MongoDB...');
-    const connected = await connectMongoDB();
-    
-    if (!connected) {
-      logger.error('Failed to connect to MongoDB. Make sure MONGODB_URI is set.');
-      process.exit(1);
-    }
+    await connectMongoDB();
     
     logger.info('Running database seed...');
     await seedDatabase();

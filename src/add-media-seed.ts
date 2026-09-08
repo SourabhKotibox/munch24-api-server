@@ -388,11 +388,7 @@ const dramaData = [
 async function addMediaSeed() {
   try {
     console.log('Connecting to database...');
-    const connected = await connectMongoDB();
-    if (!connected) {
-      console.error('Failed to connect to MongoDB');
-      process.exit(1);
-    }
+    await connectMongoDB();
 
     // Load genres & languages from database
     const dbGenres = await GenreModel.find().lean();

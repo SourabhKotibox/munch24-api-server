@@ -265,19 +265,18 @@ export const saveFileFromPart = async (
             storageType: 'local'
           });
 
-          const hlsProcessing = isVideoFile(part.filename, part.mimetype || '')
-            ? transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl)
-            : undefined;
-
-          hlsProcessing?.catch(err => {
-              logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS');
-          });
+          if (isVideoFile(part.filename, part.mimetype || '')) {
+            transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl).catch(err => {
+              logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (local)');
+            });
+          }
 
           if (cloudActive) {
             try {
               const settings = await getActiveStorageSettings();
               const cloudKey = `${Date.now()}-${fileName}`;
-              const cloudUrl = await uploadToCloudStorage(cloudKey, fs.readFileSync(fullFilePath), part.mimetype || 'application/octet-stream');
+              const fileStream = fs.createReadStream(fullFilePath);
+              const cloudUrl = await uploadToCloudStorage(cloudKey, fileStream, part.mimetype || 'application/octet-stream');
               
               await MediaFileModel.findByIdAndUpdate(mediaFile._id, {
                 url: cloudUrl,
@@ -286,10 +285,10 @@ export const saveFileFromPart = async (
                 s3Key: cloudKey
               });
 
-              if (hlsProcessing) {
-                hlsProcessing.then(() => {
-                  if (fs.existsSync(fullFilePath)) fs.unlinkSync(fullFilePath);
-                }).catch(() => {});
+              if (isVideoFile(part.filename, part.mimetype || '')) {
+                transcodeToHls(mediaFile._id.toString(), fullFilePath, cloudUrl).catch(err => {
+                  logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (cloud)');
+                });
               } else {
                 fs.unlinkSync(fullFilePath);
               }
@@ -312,7 +311,8 @@ export const saveFileFromPart = async (
         try {
           const settings = await getActiveStorageSettings();
           const cloudKey = `${Date.now()}-${fileName}`;
-          const cloudUrl = await uploadToCloudStorage(cloudKey, fs.readFileSync(fullFilePath), part.mimetype || 'application/octet-stream');
+          const fileStream = fs.createReadStream(fullFilePath);
+          const cloudUrl = await uploadToCloudStorage(cloudKey, fileStream, part.mimetype || 'application/octet-stream');
           
           fs.unlinkSync(fullFilePath);
 

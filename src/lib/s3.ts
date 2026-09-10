@@ -2,9 +2,12 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command }
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { Readable } from 'stream';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { logger } from './logger';
 import { SettingsModel } from '../models/Settings';
+
+type UploadBody = Buffer | Uint8Array | string | ReadableStream | Blob | Readable | fs.ReadStream;
 
 export interface S3Settings {
   accessKeyId: string;
@@ -164,10 +167,10 @@ export async function generatePresignedUrl(
 
 export async function uploadToS3(
   key: string,
-  body: Buffer | Uint8Array | string | ReadableStream | Blob,
-  contentType: string
+   body: UploadBody,
+   contentType: string
 ): Promise<string> {
-  const settings = await getS3Settings();
+   const settings = await getS3Settings();
   
   if (!settings.accessKeyId || !settings.secretAccessKey || settings.storageDriver !== 's3') {
     logger.warn('AWS S3 credentials not found or S3 not selected, skipping upload to S3');
@@ -193,10 +196,10 @@ export async function uploadToS3(
 
 export async function uploadToDO(
   key: string,
-  body: Buffer | Uint8Array | string | ReadableStream | Blob,
-  contentType: string
+   body: UploadBody,
+   contentType: string
 ): Promise<string> {
-  const settings = await getDOSettings();
+   const settings = await getDOSettings();
   
   if (!settings.accessKeyId || !settings.secretAccessKey || settings.storageDriver !== 'digitalocean') {
     logger.warn('DigitalOcean credentials not found or DO not selected, skipping upload');
@@ -248,9 +251,9 @@ const getBunnyStorageUrl = (settings: S3Settings, key: string): string => {
 
 export async function uploadToBunny(
   key: string,
-  body: Buffer | Uint8Array | string | ReadableStream | Blob,
-  contentType: string,
-  cacheControl?: string
+   body: UploadBody,
+   contentType: string,
+   cacheControl?: string
 ): Promise<string> {
   const settings = await getBunnySettings();
   if (!settings.accessKeyId || !settings.bucket || settings.storageDriver !== 'bunny') {
@@ -276,11 +279,11 @@ export async function uploadToBunny(
 }
 
 export async function uploadToCloudStorage(
-  key: string,
-  body: Buffer | Uint8Array | string | ReadableStream | Blob,
-  contentType: string
+   key: string,
+   body: UploadBody,
+   contentType: string
 ): Promise<string> {
-  const settings = await getActiveStorageSettings();
+   const settings = await getActiveStorageSettings();
   
   if (settings.storageDriver === 'digitalocean') {
     return uploadToDO(key, body, contentType);

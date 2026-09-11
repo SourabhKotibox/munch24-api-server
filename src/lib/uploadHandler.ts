@@ -338,6 +338,18 @@ export const saveFileFromPart = async (
 export const deleteUploadedFile = async (relativeFilePath: string, storageType?: 'local' | 's3' | 'digitalocean' | 'bunny') => {
   if (!relativeFilePath) return;
 
+  try {
+    await MediaFileModel.deleteOne({
+      $or: [
+        { filePath: relativeFilePath },
+        { url: relativeFilePath },
+        { s3Key: relativeFilePath }
+      ]
+    });
+  } catch (error) {
+    logger.error({ error, relativeFilePath }, 'Failed to delete file from MediaFileModel');
+  }
+
   const fullPath = path.join(UPLOADS_ROOT, relativeFilePath.replace(/^\/*uploads\//, '').replace(/^\/+/, ''));
   if (fs.existsSync(fullPath)) {
     fs.unlinkSync(fullPath);

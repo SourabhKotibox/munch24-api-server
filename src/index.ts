@@ -12,6 +12,7 @@ import { logger } from './lib/logger';
 import { connectMongoDB } from './lib/mongodb';
 import { connectRedis } from './lib/redis';
 import { seedDatabase } from './lib/seed';
+import { cleanupAbandonedUploads } from './controllers/directUploadController';
 
 const rawPort = process.env.PORT;
 
@@ -36,7 +37,6 @@ async function startServer() {
     await fastify.listen({ port, host: '0.0.0.0' });
     logger.info({ port }, 'Server listening');
 
-    const { cleanupAbandonedUploads } = await import('./controllers/directUploadController.js');
     setTimeout(() => {
       cleanupAbandonedUploads().catch((error) => {
         logger.warn({ error }, 'Initial abandoned upload cleanup failed');

@@ -6,6 +6,9 @@ import { EpisodeModel } from '../models/Episode';
 import { UserDownloadModel } from '../models/UserDownload';
 import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
+import { UserModel } from '../models/User';
+import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
+import { canDownloadContent, getUserEntitlements, resolveDownloadUrl } from '../lib/subscriptionAccess';
 
 const toAbsoluteUrl = (
   request: FastifyRequest,
@@ -46,6 +49,16 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
       return reply.status(401).send({ success: false, message: 'Invalid user token' });
     }
     const userObjectId = new mongoose.Types.ObjectId(userId);
+    const user = await UserModel.findById(userObjectId)
+      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+      .lean();
+    if (!user) {
+      return reply.status(404).send({ success: false, message: 'User not found' });
+    }
+    const entitlements = await getUserEntitlements(user);
+    if (!entitlements.canDownload) {
+      return reply.status(403).send({ success: false, message: 'Your subscription does not allow downloads.' });
+    }
 
     const { contentId, episodeId, contentType, profileId } = (request.body || {}) as {
       contentId: string;
@@ -78,10 +91,13 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
       if (!movie || movie.status !== 'published') {
         return reply.status(404).send({ success: false, message: 'Movie not found' });
       }
+      if (!canDownloadContent(entitlements, movie)) {
+        return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this movie on your plan.' });
+      }
       title = movie.title;
       thumbnail = toAbsoluteUrl(request, (movie as any).thumbnail || '', s3Active, s3BaseUrl) || '';
       duration = (movie as any).duration || 0;
-      downloadUrl = toAbsoluteUrl(request, (movie as any).videoUrl || (movie as any).hlsUrl || '', s3Active, s3BaseUrl) || '';
+      downloadUrl = resolveDownloadUrl(movie, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl));
       contentModelType = 'Movie';
 
       downloadDoc = await UserDownloadModel.findOneAndUpdate(
@@ -106,11 +122,15 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
         return reply.status(404).send({ success: false, message: 'Episode not found or not ready' });
       }
 
+      const coinUnlocked = !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean());
+      if (!canDownloadContent(entitlements, content, episode, coinUnlocked)) {
+        return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this episode on your plan.' });
+      }
       title = episode.title;
       parentTitle = content.title;
       thumbnail = toAbsoluteUrl(request, (episode as any).thumbnail || (content as any).thumbnail || '', s3Active, s3BaseUrl) || '';
       duration = (episode as any).duration || 0;
-      downloadUrl = toAbsoluteUrl(request, (episode as any).sourceVideoUrl || (episode as any).hlsUrl || '', s3Active, s3BaseUrl) || '';
+      downloadUrl = resolveDownloadUrl(episode, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl));
       contentModelType = 'Content';
 
       downloadDoc = await UserDownloadModel.findOneAndUpdate(
@@ -156,6 +176,10 @@ export const webGetDownloads = async (request: FastifyRequest, reply: FastifyRep
        return reply.status(401).send({ success: false, message: 'Invalid user token' });
      }
      const userObjectId = new mongoose.Types.ObjectId(userId);
+     const user = await UserModel.findById(userObjectId)
+       .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+       .lean();
+     const entitlements = await getUserEntitlements(user);
 
      const s3Active = await isCloudStorageConfigured();
      let s3BaseUrl = '';
@@ -181,7 +205,9 @@ export const webGetDownloads = async (request: FastifyRequest, reply: FastifyRep
           parentTitle: '',
           thumbnail: toAbsoluteUrl(request, (movie as any).thumbnail || '', s3Active, s3BaseUrl) || '',
           duration: (movie as any).duration || 0,
-          downloadUrl: toAbsoluteUrl(request, (movie as any).videoUrl || (movie as any).hlsUrl || '', s3Active, s3BaseUrl) || '',
+          downloadUrl: canDownloadContent(entitlements, movie)
+            ? resolveDownloadUrl(movie, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+            : '',
           createdAt: dl.createdAt,
         });
       } else {
@@ -199,7 +225,14 @@ export const webGetDownloads = async (request: FastifyRequest, reply: FastifyRep
           parentTitle: content.title,
           thumbnail: toAbsoluteUrl(request, (episode as any).thumbnail || (content as any).thumbnail || '', s3Active, s3BaseUrl) || '',
           duration: (episode as any).duration || 0,
-          downloadUrl: toAbsoluteUrl(request, (episode as any).sourceVideoUrl || (episode as any).hlsUrl || '', s3Active, s3BaseUrl) || '',
+          downloadUrl: canDownloadContent(
+            entitlements,
+            content,
+            episode,
+            !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean())
+          )
+            ? resolveDownloadUrl(episode, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+            : '',
           createdAt: dl.createdAt,
         });
       }

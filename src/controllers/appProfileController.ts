@@ -4,8 +4,7 @@ import { AdminUserModel } from '../models/AdminUser';
 import { ContentModel } from '../models/Content';
 import { LanguageModel } from '../models/Language';
 import { SettingsModel } from '../models/Settings';
-import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
-import { PlanLimitModel } from '../models/PlanLimit';
+import { getUserEntitlements } from '../lib/subscriptionAccess';
 import mongoose from 'mongoose';
 import { PageModel } from '../models/Page';
 import { UserDownloadModel } from '../models/UserDownload';
@@ -119,17 +118,7 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
         const prefix = appName.substring(0, 4).toUpperCase();
         const displayId = `${prefix}${String(userNumber).padStart(4, '0')}`;
 
-        const plan = await SubscriptionPlanModel.findOne({ name: user.subscriptionPlan }).lean();
-        let profileLimitCount = 1;
-        if (plan) {
-          const limit = await PlanLimitModel.findOne({ planId: plan._id }).lean();
-          if (limit) {
-            profileLimitCount = limit.profileLimitCount;
-          }
-        }
-
-        const isActive = user.subscriptionStatus === 'active' && 
-                         (!user.subscriptionExpiry || user.subscriptionExpiry > new Date());
+        const entitlements = await getUserEntitlements(user);
 
         userProfile = {
           id: user._id.toString(),
@@ -138,10 +127,14 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
           phone: user.phone || null,
           email: user.email || null,
           avatar: (user as any).avatar || null,
-          subscription: isActive,
-          subscriptionStatus: isActive ? 'active' : 'inactive',
-          subscriptionPlan: isActive ? (user.subscriptionPlan || 'free') : 'free',
-          profileLimitCount,
+          subscription: entitlements.paid,
+          subscriptionStatus: entitlements.active ? 'active' : 'inactive',
+          subscriptionPlan: entitlements.planKey,
+          profileLimitCount: entitlements.profileLimit ?? 0,
+          canDownload: entitlements.canDownload,
+          canCast: entitlements.canCast,
+          showAds: entitlements.showAds,
+          maxQuality: entitlements.maxQuality,
           videoQuality: user.videoQuality || 'auto',
           preferredLanguage: user.preferredLanguage || 'Hindi',
           accessToken: getOptionalUserToken(request) || null,
@@ -759,28 +752,9 @@ export const createProfile = async (request: FastifyRequest, reply: FastifyReply
     const user = await UserModel.findById(userId);
     if (!user) return reply.status(404).send({ success: false, message: 'User not found' });
 
-    // Enforce limits
-    let profileLimitCount = 1;
-    const planName = user.subscriptionPlan || 'free';
-    const isActive = user.subscriptionStatus === 'active' && 
-                     (!user.subscriptionExpiry || user.subscriptionExpiry > new Date());
-                     
-    if (isActive && planName !== 'free') {
-      const plan = await SubscriptionPlanModel.findOne({ name: { $regex: new RegExp(`^${planName}$`, 'i') } }).lean();
-      if (plan) {
-        const limit = await PlanLimitModel.findOne({ planId: plan._id }).lean();
-        if (limit) profileLimitCount = limit.profileLimitCount;
-      } else {
-        // Fallback for active premium users if the exact plan name is not found
-        profileLimitCount = 4;
-      }
-    } else if (isActive) {
-      // If they are active but planName is somehow 'free' or empty, give them premium limits as a fallback
-      profileLimitCount = 4;
-    }
-
-    if ((user as any).profiles.length >= profileLimitCount) {
-      return reply.status(403).send({ success: false, message: `Profile limit of ${profileLimitCount} reached on your current plan.` });
+    const entitlements = await getUserEntitlements(user);
+    if (entitlements.profileLimit !== null && (user as any).profiles.length >= entitlements.profileLimit) {
+      return reply.status(403).send({ success: false, message: `Profile limit of ${entitlements.profileLimit} reached on your current plan.` });
     }
 
     const newProfile = {

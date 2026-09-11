@@ -1,6 +1,7 @@
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { UserModel } from '../models/User';
+import { normalizePlanKey, resolvePlanLimits } from '../lib/subscriptionAccess';
 
 function docId(doc: any) {
   if (doc._id) { doc.id = String(doc._id); delete doc._id; delete doc.__v; }
@@ -57,6 +58,13 @@ export const updateSingleUser = async (request: FastifyRequest, reply: FastifyRe
   const { id } = request.params as { id: string };
   const body = request.body as Record<string, unknown>;
   delete body.passwordHash;
+
+  if (typeof body.subscriptionPlan === 'string') {
+    const planKey = normalizePlanKey(body.subscriptionPlan);
+    body.subscriptionPlan = planKey;
+    const { plan } = await resolvePlanLimits(null, planKey);
+    if (plan) body.subscriptionPlanId = plan._id;
+  }
 
   const doc = await UserModel.findByIdAndUpdate(id, { $set: body }, { returnDocument: 'after' })
     .select('-passwordHash')

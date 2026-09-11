@@ -2,11 +2,12 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import mongoose from 'mongoose';
 import { ContentModel } from '../models/Content';
 import { EpisodeModel } from '../models/Episode';
-import { UserModel } from '../models/User';
 import { UserLikeModel } from '../models/UserLike';
 import { UserWishlistModel } from '../models/UserWishlist';
+import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
 import { logger } from '../lib/logger';
 import { buildShareUrl } from '../lib/config';
+import { canAccessContent, canAccessEpisode, getViewerEntitlements, guestEntitlements } from '../lib/subscriptionAccess';
 
 // Helper to convert relative URLs to absolute URLs
 const toAbsoluteUrl = (
@@ -29,23 +30,10 @@ const toAbsoluteUrl = (
   return `${baseUrl}${relPath}`;
 };
 
-// Helper: try to extract userId and plan from JWT without throwing
-const getOptionalUser = async (request: FastifyRequest): Promise<{ userId: string; userPlan: string } | null> => {
-  try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return null;
-    const server = request.server as any;
-    const decoded = server.jwt.verify(authHeader.slice(7)) as any;
-    if (!decoded?.id) return null;
-
-    const user = await UserModel.findById(decoded.id).select('subscriptionPlan subscriptionStatus subscriptionExpiry').lean();
-    if (!user) return { userId: decoded.id, userPlan: 'free' };
-
-    const isActive = user.subscriptionStatus === 'active' && (!user.subscriptionExpiry || user.subscriptionExpiry > new Date());
-    return { userId: decoded.id, userPlan: isActive ? (user.subscriptionPlan || 'free') : 'free' };
-  } catch {
-    return null;
-  }
+const getOptionalUser = async (request: FastifyRequest) => {
+  const entitlements = await getViewerEntitlements(request);
+  if (!entitlements.userId) return { userId: null as string | null, userPlan: 'free', entitlements: guestEntitlements() };
+  return { userId: entitlements.userId, userPlan: entitlements.planKey, entitlements };
 };
 
 export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -58,7 +46,8 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
 
     const userInfo = await getOptionalUser(request);
     const userId = userInfo?.userId || null;
-    const userPlan = userInfo?.userPlan || 'free';
+    const userPlan = userInfo.userPlan;
+    const entitlements = userInfo.entitlements;
 
     const series = await ContentModel.findById(id)
       .populate('cast.actor', 'name image designation')
@@ -142,6 +131,13 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       processingStatus: 'ready'
     }).sort({ season: 1, episode: 1 }).lean();
 
+    const unlockedIds = new Set<string>();
+    if (userId) {
+      const unlocked = await UnlockedEpisodeModel.find({ userId }).select('episodeId').lean();
+      unlocked.forEach((row) => unlockedIds.add(row.episodeId.toString()));
+    }
+
+    const canWatchSeries = canAccessContent(entitlements, series.planRequired);
     const seasonsMap = new Map<number, any[]>();
     for (const ep of allEpisodes) {
       if (!seasonsMap.has(ep.season)) {
@@ -151,6 +147,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       const hours = ep.duration ? Math.floor(ep.duration / 3600) : 0;
       const minutes = ep.duration ? Math.floor((ep.duration % 3600) / 60) : 0;
       const durationStr = ep.duration ? (hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`) : null;
+      const hasAccess = canAccessEpisode(entitlements, series.planRequired, ep, unlockedIds.has(ep._id.toString()));
       
       seasonsMap.get(ep.season)!.push({
         id: ep._id.toString(),
@@ -162,7 +159,8 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         duration: ep.duration || null,
         durationFormatted: durationStr,
         isFree: ep.isFree,
-        videoUrl: toAbsoluteUrl(request, ep.hlsUrl) || null,
+        isLocked: !hasAccess,
+        videoUrl: hasAccess ? (toAbsoluteUrl(request, ep.hlsUrl) || null) : null,
       });
     }
 
@@ -186,7 +184,10 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         type: 'series',
         contentType: series.contentType,
         
-        isLocked: series.planRequired !== 'free' && userPlan === 'free',
+        isLocked: !canWatchSeries,
+        canCast: entitlements.canCast,
+        canDownload: entitlements.canDownload && series.downloadAllowed !== false,
+        showAds: entitlements.showAds,
 
         genres: genreNames,
         genresText: genreNames.join(' & '),

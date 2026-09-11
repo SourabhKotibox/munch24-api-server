@@ -5,7 +5,12 @@ export interface IAd extends Document {
   adType: 'Video' | 'Image' | 'Custom';
   urlType: 'Local' | 'URL';
   mediaUrl: string; // The URL to the video/image, or the raw Custom code (Google Ads)
-  placement: string; // 'Player', 'Home Page', 'Banner', etc.
+  placement: string; // 'Player', 'Home Page', 'Banner', 'Browse', 'Explore', 'Movie Detail', 'Show Detail'
+  rollType: 'preroll' | 'midroll' | 'postroll' | 'between' | 'display';
+  skipEnabled: boolean;
+  skipAfterSeconds: number;
+  midRollAtSeconds: number[];
+  durationSeconds: number;
   redirectUrl?: string;
   targetContentType?: string; // 'Movie', 'TV Shows', 'Video', 'Live TV', 'All'
   targetCategories?: string[]; // Array of category names or tags
@@ -25,6 +30,15 @@ const AdSchema = new Schema<IAd>(
     urlType: { type: String, enum: ['Local', 'URL'], required: true },
     mediaUrl: { type: String, required: true },
     placement: { type: String, required: true },
+    rollType: {
+      type: String,
+      enum: ['preroll', 'midroll', 'postroll', 'between', 'display'],
+      default: 'display',
+    },
+    skipEnabled: { type: Boolean, default: true },
+    skipAfterSeconds: { type: Number, default: 5 },
+    midRollAtSeconds: [{ type: Number }],
+    durationSeconds: { type: Number, default: 0 },
     redirectUrl: { type: String },
     targetContentType: { type: String, default: 'All' },
     targetCategories: [{ type: String }],

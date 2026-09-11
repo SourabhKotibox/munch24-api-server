@@ -3,6 +3,7 @@ import { EpisodeModel } from '../models/Episode';
 import { ContentModel } from '../models/Content';
 import { Types } from 'mongoose';
 import { logger } from '../lib/logger';
+import { isRawSourceVideo } from '../lib/sourceVideo';
 
 export const getAllEpisodes = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -106,10 +107,9 @@ export const createEpisode = async (request: FastifyRequest, reply: FastifyReply
   try {
     const body = request.body as any;
 
-    // Check if the uploaded video is a raw MP4 or local media file (not HLS .m3u8)
-    const isLocalPath = body.sourceVideoUrl && !body.sourceVideoUrl.startsWith('http://') && !body.sourceVideoUrl.startsWith('https://');
-    const isRawLocalVideo = isLocalPath && !body.sourceVideoUrl.endsWith('.m3u8');
-    if (isRawLocalVideo) {
+    const rawSource = body.sourceVideoUrl || body.hlsUrl;
+    const isRawVideo = isRawSourceVideo(rawSource);
+    if (isRawVideo) {
       body.processingStatus = 'queued';
     } else {
       body.processingStatus = 'ready';
@@ -117,9 +117,9 @@ export const createEpisode = async (request: FastifyRequest, reply: FastifyReply
 
     const episode = await EpisodeModel.create(body);
 
-    if (isRawLocalVideo && episode.sourceVideoUrl) {
+    if (isRawVideo && (episode.sourceVideoUrl || episode.hlsUrl)) {
       import('../services/videoProcessor').then(({ processEpisodesInBackground }) => {
-        processEpisodesInBackground([episode._id as Types.ObjectId], episode.sourceVideoUrl!);
+        processEpisodesInBackground([episode._id as Types.ObjectId], episode.sourceVideoUrl || episode.hlsUrl!);
       });
     }
 
@@ -143,12 +143,12 @@ export const updateEpisode = async (request: FastifyRequest, reply: FastifyReply
       return reply.status(404).send({ success: false, error: 'Episode not found' });
     }
 
-    // Check if the sourceVideoUrl has changed to a new raw MP4 or local media file
-    const isLocalPath = body.sourceVideoUrl && !body.sourceVideoUrl.startsWith('http://') && !body.sourceVideoUrl.startsWith('https://');
-    const isRawLocalVideo = isLocalPath && !body.sourceVideoUrl.endsWith('.m3u8') && body.sourceVideoUrl !== (existingEpisode as any).sourceVideoUrl;
-    if (isRawLocalVideo) {
+    const nextSource = body.sourceVideoUrl || body.hlsUrl;
+    const prevSource = (existingEpisode as any).sourceVideoUrl || (existingEpisode as any).hlsUrl;
+    const isRawVideo = isRawSourceVideo(nextSource) && nextSource !== prevSource;
+    if (isRawVideo) {
       body.processingStatus = 'queued';
-    } else if (body.sourceVideoUrl || body.hlsUrl) {
+    } else if (nextSource && !isRawSourceVideo(nextSource)) {
       body.processingStatus = 'ready';
     }
 
@@ -162,9 +162,9 @@ export const updateEpisode = async (request: FastifyRequest, reply: FastifyReply
       return reply.status(404).send({ success: false, error: 'Episode not found' });
     }
 
-    if (isRawLocalVideo && (episode as any).sourceVideoUrl) {
+    if (isRawVideo && ((episode as any).sourceVideoUrl || (episode as any).hlsUrl)) {
       import('../services/videoProcessor').then(({ processEpisodesInBackground }) => {
-        processEpisodesInBackground([new Types.ObjectId(id)], (episode as any).sourceVideoUrl!);
+        processEpisodesInBackground([new Types.ObjectId(id)], (episode as any).sourceVideoUrl || (episode as any).hlsUrl);
       });
     }
 
@@ -287,6 +287,45 @@ export const getSeasons = async (request: FastifyRequest, reply: FastifyReply) =
     });
   } catch (error: any) {
     logger.error({ error }, 'Error getting seasons');
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const getEpisodeProcessingStatus = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const episode = await EpisodeModel.findById(id)
+      .select('title processingStatus processingError hlsUrl hlsS3Prefix videoQualities sourceVideoUrl season episode')
+      .lean();
+
+    if (!episode) {
+      return reply.status(404).send({ success: false, error: 'Episode not found' });
+    }
+
+    const qualities = (episode.videoQualities || []).map((q: any) => ({
+      quality: q.quality,
+      url: q.url,
+      size: q.size,
+    }));
+
+    return reply.send({
+      success: true,
+      data: {
+        id: episode._id?.toString(),
+        title: episode.title,
+        processingStatus: episode.processingStatus || 'queued',
+        processingError: episode.processingError || null,
+        hlsUrl: episode.hlsUrl || null,
+        sourceVideoUrl: episode.sourceVideoUrl || null,
+        availableQualities: qualities,
+        qualityCount: qualities.length,
+        isReady: episode.processingStatus === 'ready',
+        isFailed: episode.processingStatus === 'failed',
+        playbackReady: episode.processingStatus === 'ready' && Boolean(episode.hlsUrl),
+      },
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error getting episode processing status');
     return reply.status(500).send({ success: false, error: error.message });
   }
 };

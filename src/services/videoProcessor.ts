@@ -7,6 +7,7 @@ import { EpisodeModel } from '../models/Episode';
 import { ContentModel } from '../models/Content';
 import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToCloudStorage, getActiveStorageSettings } from '../lib/s3';
+import { resolveLocalVideoFile, toLocalUploadPath as resolveUploadsPath } from '../lib/sourceVideo';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // All 7 quality renditions with Netflix-grade bitrate settings
@@ -85,15 +86,7 @@ const ensureDir = (dir: string) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 };
 
-export const toLocalUploadPath = (urlPath: string): string | null => {
-  if (!urlPath) return null;
-  const uploadsRoot = path.join(process.cwd(), 'uploads');
-  let relPath = urlPath;
-  if (relPath.startsWith('/uploads/')) relPath = relPath.replace('/uploads/', '');
-  else if (relPath.startsWith('uploads/')) relPath = relPath.replace('uploads/', '');
-  else if (relPath.startsWith('/media/')) relPath = relPath.replace('/', '');
-  return path.join(uploadsRoot, relPath);
-};
+export const toLocalUploadPath = (urlPath: string): string | null => resolveUploadsPath(urlPath);
 
 const getFolderSize = (folderPath: string): number => {
   try {
@@ -158,12 +151,9 @@ export const transcodeHlsMultiResolution = async (options: {
 }) => {
   const { id, type, sourceVideoUrl, startSeconds, duration, episodeNumber, contentIdForEpisode } = options;
 
-  // ── Resolve input path ──────────────────────────────────────────────────
-  const sourceVideoPath = toLocalUploadPath(sourceVideoUrl);
-  if (!sourceVideoPath || !fs.existsSync(sourceVideoPath)) {
-    throw new Error(`Source video not found: ${sourceVideoPath}`);
-  }
-  const ffmpegInput = sourceVideoPath;
+  // ── Resolve input path (local disk, or download from Spaces/S3) ─────────
+  const resolvedSource = await resolveLocalVideoFile(sourceVideoUrl);
+  const ffmpegInput = resolvedSource.localPath;
 
   // ── Determine local HLS output folder ──────────────────────────────────
   const uploadsRoot = path.join(process.cwd(), 'uploads');
@@ -250,8 +240,12 @@ export const transcodeHlsMultiResolution = async (options: {
     await runCommand('ffmpeg', args);
   } catch (err: any) {
     logger.error({ err, id, type }, 'FFmpeg single-pass failed — falling back to sequential');
-    // Fallback: process each quality sequentially (avoids OOM on low-RAM EC2)
-    return transcodeHlsSequential({ id, type, sourceVideoUrl, startSeconds, duration, episodeNumber, contentIdForEpisode, qualities, hlsFolder, s3Prefix, localUrlBase, ffmpegInput });
+    try {
+      const sequential = await transcodeHlsSequential({ id, type, sourceVideoUrl, startSeconds, duration, episodeNumber, contentIdForEpisode, qualities, hlsFolder, s3Prefix, localUrlBase, ffmpegInput });
+      return sequential;
+    } finally {
+      resolvedSource.cleanup();
+    }
   }
 
   // ── Build master.m3u8 ───────────────────────────────────────────────────
@@ -270,6 +264,7 @@ export const transcodeHlsMultiResolution = async (options: {
   // ── Upload to S3 (if configured) or keep local ─────────────────────────
   const storageActive = await isCloudStorageConfigured();
   const processedQualities = await finalizeHlsOutput({ qualities, hlsFolder, storageActive, s3Prefix, localUrlBase });
+  resolvedSource.cleanup();
   return {
     hlsUrl: processedQualities.masterUrl,
     videoQualities: processedQualities.renditions,
@@ -399,6 +394,7 @@ const finalizeHlsOutput = async (opts: {
 // ─────────────────────────────────────────────────────────────────────────────
 export const processMovieHls = async (movieId: Types.ObjectId | string, sourceVideoUrl: string) => {
   try {
+    logger.info({ event: 'TRANSCODING_STARTED', contentId: String(movieId), mediaType: 'movie', storageKey: sourceVideoUrl }, 'Movie HLS transcoding started');
     await MovieModel.findByIdAndUpdate(movieId, { processingStatus: 'processing' });
 
     const result = await transcodeHlsMultiResolution({
@@ -417,9 +413,9 @@ export const processMovieHls = async (movieId: Types.ObjectId | string, sourceVi
       processingError: null,
     });
 
-    logger.info({ movieId, hlsUrl: result.hlsUrl }, 'Movie HLS processing complete');
+    logger.info({ event: 'TRANSCODING_COMPLETED', contentId: String(movieId), mediaType: 'movie', storageKey: sourceVideoUrl, hlsUrl: result.hlsUrl }, 'Movie HLS processing complete');
   } catch (error: any) {
-    logger.error({ error, movieId }, 'Error processing movie HLS');
+    logger.error({ event: 'TRANSCODING_FAILED', error, movieId, storageKey: sourceVideoUrl }, 'Error processing movie HLS');
     await MovieModel.findByIdAndUpdate(movieId, {
       processingStatus: 'failed',
       processingError:  error.message,
@@ -441,6 +437,7 @@ export const processEpisodeHls = async (episodeId: Types.ObjectId | string, sour
     const episode = await EpisodeModel.findById(episodeId).lean();
     if (!episode) return;
 
+    logger.info({ event: 'TRANSCODING_STARTED', contentId: String(episodeId), mediaType: 'episode', storageKey: sourceVideoUrl }, 'Episode HLS transcoding started');
     await EpisodeModel.findByIdAndUpdate(episodeId, { processingStatus: 'processing' });
 
     const result = await transcodeHlsMultiResolution({
@@ -471,9 +468,9 @@ export const processEpisodeHls = async (episodeId: Types.ObjectId | string, sour
       ...(actualDuration ? { duration: actualDuration } : {}),
     });
 
-    logger.info({ episodeId, hlsUrl: result.hlsUrl }, 'Episode HLS processing complete');
+    logger.info({ event: 'TRANSCODING_COMPLETED', contentId: String(episodeId), mediaType: 'episode', storageKey: sourceVideoUrl, hlsUrl: result.hlsUrl }, 'Episode HLS processing complete');
   } catch (error: any) {
-    logger.error({ error, episodeId }, 'Error processing episode HLS');
+    logger.error({ event: 'TRANSCODING_FAILED', error, episodeId, storageKey: sourceVideoUrl }, 'Error processing episode HLS');
     await EpisodeModel.findByIdAndUpdate(episodeId, {
       processingStatus: 'failed',
       processingError:  error.message,

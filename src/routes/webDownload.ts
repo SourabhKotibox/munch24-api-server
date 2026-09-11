@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { webRequestDownload, webGetDownloads, webDeleteDownload } from '../controllers/webDownloadController';
 import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
 import { SettingsModel } from '../models/Settings';
+import { resolvePlanLimits, serializePlanFeatures } from '../lib/subscriptionAccess';
 
 const webDownloadRoutes: FastifyPluginAsync = async (fastify) => {
   // Public: list active subscription plans — no auth required
@@ -14,9 +15,9 @@ const webDownloadRoutes: FastifyPluginAsync = async (fastify) => {
       const settings = await SettingsModel.findOne().lean();
       const currencySymbol = settings?.currencySymbol || '₹';
 
-      return reply.send({
-        success: true,
-        data: plans.map((plan) => ({
+      const data = await Promise.all(plans.map(async (plan) => {
+        const { limits } = await resolvePlanLimits(plan._id.toString(), plan.name);
+        return {
           id: plan._id,
           name: plan.name,
           duration: plan.duration,
@@ -27,7 +28,13 @@ const webDownloadRoutes: FastifyPluginAsync = async (fastify) => {
           description: plan.description,
           level: plan.level,
           currencySymbol,
-        })),
+          ...serializePlanFeatures(plan, limits),
+        };
+      }));
+
+      return reply.send({
+        success: true,
+        data,
       });
     } catch (error: any) {
       return reply.status(500).send({ success: false, error: error.message });

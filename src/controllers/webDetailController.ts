@@ -6,6 +6,13 @@ import { logger } from '../lib/logger';
 import { requestContext } from '../lib/context';
 import { UserModel } from '../models/User';
 import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
+import {
+  canAccessContent,
+  canAccessEpisode,
+  getUserEntitlements,
+  getViewerEntitlements,
+  isQualityAllowed,
+} from '../lib/subscriptionAccess';
 
 export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -68,19 +75,33 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
     const genreNames = (item.genres || []).map((g: any) => g?.name || g);
     const languageNames = (item.languages || []).map((l: any) => l?.name || l);
 
+    let entitlements = await getViewerEntitlements(request);
+    const userCtx = requestContext.getStore()?.user;
+    if (!entitlements.userId && userCtx?.id) {
+      const dbUser = await UserModel.findById(userCtx.id)
+        .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+        .lean();
+      if (dbUser) entitlements = await getUserEntitlements(dbUser);
+    }
+
+    const canWatch = canAccessContent(entitlements, item.planRequired);
+
     // Video settings
-    const hlsUrl = isMovie ? (item.hlsUrl || item.videoUrl) : undefined;
+    const rawHlsUrl = isMovie ? (item.hlsUrl || item.videoUrl) : undefined;
+    const hlsUrl = canWatch ? rawHlsUrl : undefined;
     const qualities: any[] = item.videoQualities || [];
     const videoSettings = hlsUrl
       ? [
           { key: 'auto', label: 'Auto', description: 'Adjusts quality automatically', url: hlsUrl },
           ...qualities.map((q: any) => {
             const sizeMB = q.size ? `${Math.round(q.size / (1024 * 1024))} MB` : 'N/A';
+            const locked = !isQualityAllowed(String(q.quality), entitlements.limits);
             return {
               key: q.quality,
               label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
               description: `${q.quality.toUpperCase()} quality option (${sizeMB})`,
-              url: q.url,
+              url: locked ? null : q.url,
+              isLocked: locked,
             };
           })
         ]
@@ -144,10 +165,13 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       genresText: genreNames.join(' & '),
       seasons: type === 'show' ? item.seasons || 1 : undefined,
       trailerUrl: item.trailerUrl,
-      videoUrl: hlsUrl,
-      hlsUrl: hlsUrl,
+      videoUrl: hlsUrl || null,
+      hlsUrl: hlsUrl || null,
       videoSettings,
       playbackSpeeds,
+      canCast: entitlements.canCast,
+      canDownload: entitlements.canDownload && item.downloadAllowed !== false,
+      showAds: entitlements.showAds,
       cast,
       directors: crew.filter((c: any) => c.role === 'Director').map((c: any) => c.name),
       crew,
@@ -156,7 +180,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       studio: item.studio || null,
       producer: item.producer || null,
       tags: item.tags || [],
-      isLocked: item.planRequired !== 'free',
+      isLocked: !canWatch,
       planRequired: item.planRequired || 'free',
       episodeMeta: `HD • ${genreNames.join(', ')} • ${durationFormatted || 'N/A'}`,
       isExclusive: item.isExclusive || false,
@@ -172,34 +196,20 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
         .select('title description thumbnail hlsUrl sourceVideoUrl duration season episode isFree isLocked coinsRequired videoQualities')
         .lean();
 
-      // Check user context for unlocking
-      const userCtx = requestContext.getStore()?.user;
-      let isSubscribed = false;
-      let unlockedEpisodeIds = new Set<string>();
-
-      if (userCtx) {
-        const dbUser = await UserModel.findById(userCtx.id).select('subscriptionStatus');
-        if (dbUser?.subscriptionStatus === 'active') {
-          isSubscribed = true;
-        } else {
-          const unlocked = await UnlockedEpisodeModel.find({ userId: userCtx.id }).select('episodeId').lean();
-          unlocked.forEach(u => unlockedEpisodeIds.add(u.episodeId.toString()));
-        }
+      const unlockedEpisodeIds = new Set<string>();
+      if (entitlements.userId) {
+        const unlocked = await UnlockedEpisodeModel.find({ userId: entitlements.userId }).select('episodeId').lean();
+        unlocked.forEach((u) => unlockedEpisodeIds.add(u.episodeId.toString()));
       }
 
       episodes = eps.map((e: any) => {
-        let epHlsUrl = e.hlsUrl || e.sourceVideoUrl;
-        const isLocked = e.isLocked ?? !e.isFree;
-        
-        // Determine if user has access
-        let hasAccess = false;
-        if (!isLocked || e.isFree) hasAccess = true;
-        else if (isSubscribed) hasAccess = true;
-        else if (unlockedEpisodeIds.has(e._id.toString())) hasAccess = true;
-
-        if (!hasAccess) {
-          epHlsUrl = null; // Hide the URL
-        }
+        const hasAccess = canAccessEpisode(
+          entitlements,
+          item.planRequired,
+          e,
+          unlockedEpisodeIds.has(e._id.toString())
+        );
+        const epHlsUrl = hasAccess ? (e.hlsUrl || null) : null;
 
         const epQualities: any[] = e.videoQualities || [];
         const epVideoSettings = epHlsUrl
@@ -207,11 +217,13 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
               { key: 'auto', label: 'Auto', description: 'Adjusts quality automatically', url: epHlsUrl },
               ...epQualities.map((q: any) => {
                 const sizeMB = q.size ? `${Math.round(q.size / (1024 * 1024))} MB` : 'N/A';
+                const locked = !isQualityAllowed(String(q.quality), entitlements.limits);
                 return {
                   key: q.quality,
                   label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
                   description: `${q.quality.toUpperCase()} quality option (${sizeMB})`,
-                  url: q.url,
+                  url: locked ? null : q.url,
+                  isLocked: locked,
                 };
               })
             ]
@@ -228,7 +240,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
           season: e.season,
           episode: e.episode,
           isFree: e.isFree,
-          isLocked,
+          isLocked: !hasAccess,
           isLockedForUser: !hasAccess,
           coinsRequired: e.coinsRequired || 0,
           videoSettings: epVideoSettings,

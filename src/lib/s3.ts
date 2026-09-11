@@ -244,7 +244,7 @@ export async function uploadToDO(
   }
 }
 
-const normalizeObjectKey = (key: string, bucket?: string): string => {
+export const normalizeObjectKey = (key: string, bucket?: string): string => {
   let normalized = key.trim();
   if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
     try {

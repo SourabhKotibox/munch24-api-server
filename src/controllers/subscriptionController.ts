@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { SubscriptionModel } from '../models/Subscription';
 import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
 import { UserModel } from '../models/User';
+import { revertUserSubscription, syncUserSubscription } from '../lib/subscriptionAccess';
 
 const roundCurrency = (value: number) => Math.round(value * 100) / 100;
 
@@ -218,15 +219,7 @@ export const createSubscription = async (request: FastifyRequest, reply: Fastify
     const payload = await buildSubscriptionPayload(body);
     const subscription = await SubscriptionModel.create(payload);
 
-    // Update user's subscription fields
-    await UserModel.findByIdAndUpdate(payload.userId, {
-      $set: {
-        subscriptionPlan: payload.plan,
-        subscriptionStatus: payload.status,
-        subscriptionExpiry: payload.endDate,
-        subscriptionPlanId: payload.planId
-      }
-    });
+    await syncUserSubscription(String(payload.userId), payload);
 
     const created = await SubscriptionModel.findById(subscription._id)
       .populate('userId', 'name email')
@@ -263,6 +256,8 @@ export const updateSubscription = async (request: FastifyRequest, reply: Fastify
       .populate('planId', 'name')
       .lean();
 
+    await syncUserSubscription(String(payload.userId), payload);
+
     return reply.send({
       success: true,
       data: updated ? serializeSubscription(updated) : null,
@@ -282,6 +277,8 @@ export const deleteSubscription = async (request: FastifyRequest, reply: Fastify
       return reply.status(404).send({ success: false, error: 'Subscription not found' });
     }
 
+    await revertUserSubscription(String(subscription.userId));
+
     return reply.send({ success: true, message: 'Subscription deleted successfully' });
   } catch (error: any) {
     return reply.status(500).send({ success: false, error: error.message });
@@ -296,7 +293,10 @@ export const bulkDeleteSubscriptions = async (request: FastifyRequest, reply: Fa
       return reply.status(400).send({ success: false, error: 'Invalid or empty ids array' });
     }
 
+    const existing = await SubscriptionModel.find({ _id: { $in: ids } }).select('userId').lean();
     const result = await SubscriptionModel.deleteMany({ _id: { $in: ids } });
+    const userIds = [...new Set(existing.map((item) => String(item.userId)))];
+    await Promise.all(userIds.map((userId) => revertUserSubscription(userId)));
 
     return reply.send({
       success: true,
@@ -356,15 +356,7 @@ export const createRazorpayOrder = async (request: FastifyRequest, reply: Fastif
       const payload = await buildSubscriptionPayload(body);
       const subscription = await SubscriptionModel.create(payload);
 
-      const { UserModel } = await import('../models/User');
-      await UserModel.findByIdAndUpdate(userId, {
-        $set: {
-          subscriptionPlan: payload.plan,
-          subscriptionStatus: payload.status,
-          subscriptionExpiry: payload.endDate,
-          subscriptionPlanId: payload.planId
-        }
-      });
+      await syncUserSubscription(String(userId), payload);
 
       return reply.send({
         success: true,
@@ -445,14 +437,7 @@ export const verifyRazorpayPayment = async (request: FastifyRequest, reply: Fast
     const payload = await buildSubscriptionPayload(body);
     const subscription = await SubscriptionModel.create(payload);
 
-    await UserModel.findByIdAndUpdate(userId, {
-      $set: {
-        subscriptionPlan: payload.plan,
-        subscriptionStatus: payload.status,
-        subscriptionExpiry: payload.endDate,
-        subscriptionPlanId: payload.planId
-      }
-    });
+    await syncUserSubscription(String(userId), payload);
 
     return reply.send({
       success: true,

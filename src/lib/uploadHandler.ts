@@ -262,14 +262,9 @@ export const saveFileFromPart = async (
             contentHash,
             contentName: options?.contentName,
             contentType: options?.contentType,
-            storageType: 'local'
+            storageType: 'local',
+            uploadStatus: 'uploaded',
           });
-
-          if (isVideoFile(part.filename, part.mimetype || '')) {
-            transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl).catch(err => {
-              logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (local)');
-            });
-          }
 
           if (cloudActive) {
             try {
@@ -282,12 +277,14 @@ export const saveFileFromPart = async (
                 url: cloudUrl,
                 filePath: cloudKey,
                 storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
-                s3Key: cloudKey
+                s3Key: cloudKey,
+                uploadStatus: isVideoFile(part.filename, part.mimetype || '') ? 'uploaded' : 'ready',
               });
 
               if (isVideoFile(part.filename, part.mimetype || '')) {
+                logger.info({ event: 'TRANSCODING_STARTED', contentId: mediaFile._id.toString(), mediaType: 'media-file', storageKey: cloudKey }, 'Starting HLS after proxy upload');
                 transcodeToHls(mediaFile._id.toString(), fullFilePath, cloudUrl).catch(err => {
-                  logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (cloud)');
+                  logger.error({ event: 'TRANSCODING_FAILED', err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (cloud)');
                 });
               } else {
                 fs.unlinkSync(fullFilePath);
@@ -302,7 +299,16 @@ export const saveFileFromPart = async (
               };
             } catch (cloudErr) {
               logger.error({ cloudErr, mediaFileId: mediaFile._id }, 'Failed to upload to cloud storage, keeping local file');
+              if (isVideoFile(part.filename, part.mimetype || '')) {
+                transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl).catch(err => {
+                  logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (local fallback)');
+                });
+              }
             }
+          } else if (isVideoFile(part.filename, part.mimetype || '')) {
+            transcodeToHls(mediaFile._id.toString(), fullFilePath, baseUrl).catch(err => {
+              logger.error({ err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (local)');
+            });
           }
         } catch (error) {
           console.error('Failed to track file in media library:', error);

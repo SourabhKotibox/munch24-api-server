@@ -6,7 +6,9 @@ const getModel = (role: string): any => role === 'user' ? UserModel : AdminUserM
 import { CoinPackageModel } from '../models/CoinPackage';
 import { TransactionModel } from '../models/Transaction';
 import { EpisodeModel } from '../models/Episode';
+import { ContentModel } from '../models/Content';
 import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
+import { canAccessEpisode, getUserEntitlements } from '../lib/subscriptionAccess';
 import { SettingsModel } from '../models/Settings';
 import { logger } from '../lib/logger';
 import mongoose from 'mongoose';
@@ -121,13 +123,11 @@ export const unlockEpisode = async (request: FastifyRequest, reply: FastifyReply
     const dbUser = await getModel((user as any).role).findById(user.id);
     if (!dbUser) return reply.status(404).send({ success: false, message: 'User not found' });
 
-    // Check if user has an active, non-expired subscription (subscribers don't need to spend coins)
-    const hasActiveSubscription =
-      dbUser.subscriptionStatus === 'active' &&
-      (!dbUser.subscriptionExpiry || dbUser.subscriptionExpiry > new Date());
-
-
-    if (hasActiveSubscription) {
+    const entitlements = await getUserEntitlements(dbUser);
+    const parent = episode.contentId
+      ? await ContentModel.findById(episode.contentId).select('planRequired').lean()
+      : null;
+    if (canAccessEpisode(entitlements, parent?.planRequired, episode)) {
       return reply.send({ success: true, message: 'Unlocked via subscription' });
     }
 

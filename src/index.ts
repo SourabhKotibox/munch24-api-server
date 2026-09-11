@@ -35,6 +35,18 @@ async function startServer() {
 
     await fastify.listen({ port, host: '0.0.0.0' });
     logger.info({ port }, 'Server listening');
+
+    const { cleanupAbandonedUploads } = await import('./controllers/directUploadController.js');
+    setTimeout(() => {
+      cleanupAbandonedUploads().catch((error) => {
+        logger.warn({ error }, 'Initial abandoned upload cleanup failed');
+      });
+    }, 30_000);
+    setInterval(() => {
+      cleanupAbandonedUploads().catch((error) => {
+        logger.warn({ error }, 'Scheduled abandoned upload cleanup failed');
+      });
+    }, 6 * 60 * 60 * 1000);
   } catch (err) {
     logger.error(err);
     process.exit(1);

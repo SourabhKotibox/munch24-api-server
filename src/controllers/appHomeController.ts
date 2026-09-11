@@ -14,6 +14,13 @@ import mongoose from 'mongoose';
 
 // Base URL for the backend API (used for smart share links)
 import { API_URL, buildShareUrl } from '../lib/config';
+import {
+  canAccessContent,
+  canAccessEpisode,
+  getViewerEntitlements,
+  guestEntitlements,
+  type ViewerEntitlements,
+} from '../lib/subscriptionAccess';
 
 // ── URL Resolver ─────────────────────────────────────────────────────────────
 // Converts any stored path/key to a proper full URL:
@@ -59,7 +66,13 @@ const mapContentItem = (
   firstEpisode?: any,
   likeCount = 0,
   isLikedByUser = false,
-) => ({
+  entitlements?: ViewerEntitlements,
+) => {
+  const access = entitlements || guestEntitlements();
+  const hasAccess = firstEpisode
+    ? canAccessEpisode(access, item.planRequired || item.plan, firstEpisode)
+    : canAccessContent(access, item.planRequired || item.plan);
+  return {
   id: item._id.toString(),
   title: item.title,
   description: item.description,
@@ -87,7 +100,7 @@ const mapContentItem = (
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
   // Preview video info — only first episode (short-drama reel style)
-  videoUrl: resolveUrl(firstEpisode?.hlsUrl || item.hlsUrl || null),
+  videoUrl: hasAccess ? resolveUrl(firstEpisode?.hlsUrl || item.hlsUrl || null) : null,
   trailerUrl: resolveUrl(firstEpisode?.trailerUrl || item.trailerUrl || null),
   firstEpisodeId: firstEpisode?._id?.toString() || null,
   firstEpisodeTitle: firstEpisode?.title || null,
@@ -95,7 +108,9 @@ const mapContentItem = (
   firstEpisodeDuration: firstEpisode?.duration || null,
   firstEpisodeIsFree: firstEpisode?.isFree ?? null,
   contentPlan: item.planRequired || item.plan || 'free',
-});
+  isLocked: !hasAccess,
+  };
+};
 
 const populateBannersContent = async (banners: any[]) => {
   const contentIds = banners.map((b) => b.contentId).filter(Boolean);
@@ -140,6 +155,7 @@ const mapBanner = (
   firstEpisode?: any,
   likeCount = 0,
   isLikedByUser = false,
+  entitlements?: ViewerEntitlements,
 ) => {
   const content = banner.contentId;
   const thumbnail = resolveUrl(content?.thumbnail || banner.imageUrl);
@@ -154,7 +170,7 @@ const mapBanner = (
     ctaText: banner.ctaText,
     ctaLink: banner.ctaLink,
     contentId: banner.contentId?._id?.toString(),
-    content: content ? mapContentItem(content, content.contentType === 'drama' ? 'drama' : (content.type || banner.contentType || 'series'), resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser) : undefined,
+    content: content ? mapContentItem(content, content.contentType === 'drama' ? 'drama' : (content.type || banner.contentType || 'series'), resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements) : undefined,
     type: banner.type,
     contentType: banner.contentType,
     position: banner.position,
@@ -196,6 +212,7 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
     const limit = Math.min(20, Math.max(1, Number(query.limit || 10)));
     
     const { userId, profileId } = getAuthData(request);
+    const entitlements = await getViewerEntitlements(request);
 
     const resolveUrl = buildUrlResolver(request);
 
@@ -429,9 +446,9 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
         if (tab === 'drama') {
           const episodeCount = episodeCountMap.get(cid) || 0;
           const firstEpisode = firstEpisodeMap.get(cid);
-          return mapContentItem(item, 'drama', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser);
+          return mapContentItem(item, 'drama', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
         } else {
-          return mapContentItem(item, 'movie', resolveUrl, 0, undefined, likeCount, isLikedByUser);
+          return mapContentItem(item, 'movie', resolveUrl, 0, undefined, likeCount, isLikedByUser, entitlements);
         }
       }),
     }));
@@ -462,9 +479,9 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
         if (tab === 'drama') {
           const episodeCount = episodeCountMap.get(cid) || 0;
           const firstEpisode = firstEpisodeMap.get(cid);
-          mapped = mapContentItem(item, 'drama', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser);
+          mapped = mapContentItem(item, 'drama', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
         } else {
-          mapped = mapContentItem(item, 'movie', resolveUrl, 0, undefined, likeCount, isLikedByUser);
+          mapped = mapContentItem(item, 'movie', resolveUrl, 0, undefined, likeCount, isLikedByUser, entitlements);
         }
 
         // Inject watch progress detail
@@ -573,6 +590,7 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
     }
 
     const { userId } = getAuthData(request);
+    const entitlements = await getViewerEntitlements(request);
     const allContentIds = banners
       .filter(b => b.contentId)
       .map(b => new mongoose.Types.ObjectId((b.contentId as any)._id.toString()));
@@ -604,13 +622,13 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
     }
 
     const mappedBanners = banners.map(banner => {
-      if (!banner.contentId) return mapBanner(banner, resolveUrl);
+      if (!banner.contentId) return mapBanner(banner, resolveUrl, 0, undefined, 0, false, entitlements);
       const cid = (banner.contentId as any)._id.toString();
       const likeCount = (banner.contentId as any).likes || 0;
       const isLikedByUser = likedContentIdSet.has(cid);
       const episodeCount = episodeCountMap.get(cid) || 0;
       const firstEpisode = firstEpisodeMap.get(cid);
-      return mapBanner(banner, resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser);
+      return mapBanner(banner, resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
     });
 
     return reply.send({

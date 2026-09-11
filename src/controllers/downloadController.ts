@@ -7,6 +7,13 @@ import { EpisodeModel } from '../models/Episode';
 import { UserDownloadModel } from '../models/UserDownload';
 import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
+import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
+import {
+  canDownloadContent,
+  filterDownloadQualities,
+  getUserEntitlements,
+  resolveDownloadUrl,
+} from '../lib/subscriptionAccess';
 
 // Helper to format bytes to MB
 const formatSizeMB = (sizeBytes: number): string => {
@@ -50,15 +57,16 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
     // Cast userId string to ObjectId for all DB queries
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    // Check user subscription status
-    const user = await UserModel.findById(userObjectId).select('subscriptionStatus subscriptionExpiry').lean();
+    const user = await UserModel.findById(userObjectId)
+      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+      .lean();
     if (!user) {
       return reply.status(404).send({ success: false, message: 'User not found' });
     }
 
-    const isActive = user.subscriptionStatus === 'active' && (!user.subscriptionExpiry || user.subscriptionExpiry > new Date());
-    if (!isActive) {
-      return reply.status(403).send({ success: false, message: 'Active subscription required to download content.' });
+    const entitlements = await getUserEntitlements(user);
+    if (!entitlements.canDownload) {
+      return reply.status(403).send({ success: false, message: 'Your subscription does not allow downloads.' });
     }
 
     const { contentId, episodeId, contentType } = request.body as {
@@ -94,21 +102,16 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
         return reply.status(404).send({ success: false, message: 'Movie not found' });
       }
 
-      if (!movie.downloadAllowed) {
-        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this movie.' });
+      if (!canDownloadContent(entitlements, movie)) {
+        return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this movie on your plan.' });
       }
 
       title = movie.title;
       thumbnail = toAbsoluteUrl(request, movie.thumbnail || '', s3Active, s3BaseUrl) || '';
       duration = movie.duration || 0;
-      downloadUrl = toAbsoluteUrl(request, movie.videoUrl || movie.hlsUrl || '', s3Active, s3BaseUrl) || '';
-      qualities = (movie.videoQualities || []).map((q: any) => ({
-        quality: q.quality,
-        label: q.quality.toUpperCase(),
-        size: q.size,
-        sizeFormatted: formatSizeMB(q.size),
-        url: toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl)
-      }));
+      qualities = filterDownloadQualities(movie.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+        .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }));
+      downloadUrl = resolveDownloadUrl(movie, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl));
       contentModelType = 'Movie';
 
       // Upsert download record
@@ -140,22 +143,18 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
         return reply.status(404).send({ success: false, message: 'Episode not found or not ready' });
       }
 
-      if (!drama.downloadAllowed) {
-        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this series.' });
+      const coinUnlocked = !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean());
+      if (!canDownloadContent(entitlements, drama, episode, coinUnlocked)) {
+        return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this episode on your plan.' });
       }
 
       title = episode.title;
       parentTitle = drama.title;
       thumbnail = toAbsoluteUrl(request, episode.thumbnail || drama.thumbnail || '', s3Active, s3BaseUrl) || '';
       duration = episode.duration || 0;
-      downloadUrl = toAbsoluteUrl(request, episode.sourceVideoUrl || episode.hlsUrl || '', s3Active, s3BaseUrl) || '';
-      qualities = (episode.videoQualities || []).map((q: any) => ({
-        quality: q.quality,
-        label: q.quality.toUpperCase(),
-        size: q.size,
-        sizeFormatted: formatSizeMB(q.size),
-        url: toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl)
-      }));
+      qualities = filterDownloadQualities(episode.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+        .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }));
+      downloadUrl = resolveDownloadUrl(episode, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl));
       contentModelType = 'Content';
 
       // Upsert download record
@@ -200,6 +199,11 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
     const userId = userPayload.id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
+    const user = await UserModel.findById(userObjectId)
+      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+      .lean();
+    const entitlements = await getUserEntitlements(user);
+
      const downloads = await UserDownloadModel.find({ userId: userObjectId }).sort({ createdAt: -1 }).lean();
 
      // Load S3 settings once for dynamic absolute URL resolution
@@ -227,14 +231,14 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
           title = movie.title;
           thumbnail = toAbsoluteUrl(request, movie.thumbnail || '', s3Active, s3BaseUrl) || '';
           duration = movie.duration || 0;
-          downloadUrl = toAbsoluteUrl(request, movie.videoUrl || movie.hlsUrl || '', s3Active, s3BaseUrl) || '';
-          qualities = (movie.videoQualities || []).map((q: any) => ({
-            quality: q.quality,
-            label: q.quality.toUpperCase(),
-            size: q.size,
-            sizeFormatted: formatSizeMB(q.size),
-            url: toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl)
-          }));
+          const canGetFile = canDownloadContent(entitlements, movie);
+          qualities = canGetFile
+            ? filterDownloadQualities(movie.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+                .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }))
+            : [];
+          downloadUrl = canGetFile
+            ? resolveDownloadUrl(movie, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+            : '';
           exists = true;
         }
       } else {
@@ -247,14 +251,15 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
           parentTitle = drama.title;
           thumbnail = toAbsoluteUrl(request, episode.thumbnail || drama.thumbnail || '', s3Active, s3BaseUrl) || '';
           duration = episode.duration || 0;
-          downloadUrl = toAbsoluteUrl(request, episode.sourceVideoUrl || episode.hlsUrl || '', s3Active, s3BaseUrl) || '';
-          qualities = (episode.videoQualities || []).map((q: any) => ({
-            quality: q.quality,
-            label: q.quality.toUpperCase(),
-            size: q.size,
-            sizeFormatted: formatSizeMB(q.size),
-            url: toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl)
-          }));
+          const coinUnlocked = !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean());
+          const canGetFile = canDownloadContent(entitlements, drama, episode, coinUnlocked);
+          qualities = canGetFile
+            ? filterDownloadQualities(episode.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+                .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }))
+            : [];
+          downloadUrl = canGetFile
+            ? resolveDownloadUrl(episode, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
+            : '';
           exists = true;
         }
       }

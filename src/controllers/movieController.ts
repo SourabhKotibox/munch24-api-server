@@ -3,6 +3,7 @@ import { MovieModel } from '../models/Movie';
 import { SectionModel } from '../models/Section';
 import { logger } from '../lib/logger';
 import { sendApprovalEmail, sendRejectionEmail } from '../lib/email';
+import { isRawSourceVideo } from '../lib/sourceVideo';
 
 const syncSections = async (contentIdStr: string, sections: string[] | undefined) => {
   await SectionModel.updateMany(
@@ -139,10 +140,8 @@ export const createMovie = async (request: FastifyRequest, reply: FastifyReply) 
   try {
     const body = request.body as any;
 
-    // Check if the uploaded video is a raw MP4 or local media file
-    const isLocalPath = body.hlsUrl && !body.hlsUrl.startsWith('http://') && !body.hlsUrl.startsWith('https://');
-    const isRawLocalVideo = isLocalPath && !body.hlsUrl.endsWith('.m3u8');
-    if (isRawLocalVideo) {
+    const isRawVideo = isRawSourceVideo(body.hlsUrl);
+    if (isRawVideo) {
       body.processingStatus = 'queued';
     } else {
       body.processingStatus = 'ready';
@@ -169,7 +168,7 @@ export const createMovie = async (request: FastifyRequest, reply: FastifyReply) 
       logger.error({ notifErr }, 'Error sending new movie notification');
     }
 
-    if (isRawLocalVideo) {
+    if (isRawVideo) {
       import('../services/videoProcessor').then(({ processMovieInBackground }) => {
         processMovieInBackground(movie._id, body.hlsUrl);
       });
@@ -199,12 +198,10 @@ export const updateMovie = async (request: FastifyRequest, reply: FastifyReply) 
       return reply.status(404).send({ success: false, error: 'Movie not found' });
     }
 
-    // Check if the hlsUrl has changed to a new raw MP4
-    const isLocalPath = body.hlsUrl && !body.hlsUrl.startsWith('http://') && !body.hlsUrl.startsWith('https://');
-    const isRawLocalVideo = isLocalPath && !body.hlsUrl.endsWith('.m3u8') && body.hlsUrl !== (existingMovie as any).hlsUrl;
-    if (isRawLocalVideo) {
+    const isRawVideo = isRawSourceVideo(body.hlsUrl) && body.hlsUrl !== (existingMovie as any).hlsUrl;
+    if (isRawVideo) {
       body.processingStatus = 'queued';
-    } else if (body.hlsUrl) {
+    } else if (body.hlsUrl && !isRawSourceVideo(body.hlsUrl)) {
       body.processingStatus = 'ready';
     }
 
@@ -222,7 +219,7 @@ export const updateMovie = async (request: FastifyRequest, reply: FastifyReply) 
       await syncSections(id, body.sections);
     }
 
-    if (isRawLocalVideo) {
+    if (isRawVideo) {
       import('../services/videoProcessor').then(({ processMovieInBackground }) => {
         processMovieInBackground(movie._id, body.hlsUrl);
       });

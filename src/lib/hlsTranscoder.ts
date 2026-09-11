@@ -184,12 +184,15 @@ export const transcodeToHls = async (
       ? relativeMasterPlaylistPath
       : `/uploads/${relativeMasterPlaylistPath}`;
     mediaFile.hlsStatus = 'completed';
+    mediaFile.uploadStatus = 'ready';
     await mediaFile.save();
 
   } catch (error) {
     logger.error({ error }, 'Error transcoding to HLS');
     mediaFile.hlsStatus = 'failed';
+    mediaFile.uploadStatus = 'failed';
     mediaFile.hlsError = error instanceof Error ? error.message : String(error);
+    mediaFile.uploadError = mediaFile.hlsError;
     await mediaFile.save();
     throw error;
   }

@@ -1,9 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { UserModel } from '../models/User';
-import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
-import { PlanLimitModel } from '../models/PlanLimit';
 import { LanguageModel } from '../models/Language';
+import { getUserEntitlements, isDeviceTypeAllowed } from '../lib/subscriptionAccess';
 import { MessageCentralService } from '../services/messageCentralService';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
@@ -25,6 +24,7 @@ const verifyOtpSchema = z.object({
   otp: z.string().regex(/^\d{4}$/, 'OTP must be 4 digits'),
   deviceId: z.string().optional(),
   deviceName: z.string().optional(),
+  deviceType: z.string().optional(),
 });
 
 const setLanguageSchema = z.object({
@@ -69,7 +69,7 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
         errors: body.error.flatten().fieldErrors,
       });
     }
-    const { mobileNumber, verificationId, otp, deviceId, deviceName } = body.data;
+    const { mobileNumber, verificationId, otp, deviceId, deviceName, deviceType } = body.data;
 
     const verifyResult = await messageCentralService.verifyOtp(verificationId, otp);
     if (!verifyResult.success) {
@@ -135,46 +135,36 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
 
     // ── Manage Device Limits ──────────────────────────────────────────────────
     if (deviceId) {
-      // Find plan limits
-      let deviceLimitCount = 1; // Default
-      const planName = userDoc.subscriptionPlan || 'free';
-      const isActive = userDoc.subscriptionStatus === 'active' && 
-                       (!userDoc.subscriptionExpiry || userDoc.subscriptionExpiry > new Date());
-                       
-      if (isActive && planName !== 'free') {
-        const plan = await SubscriptionPlanModel.findOne({ name: planName }).lean();
-        if (plan) {
-          const limit = await PlanLimitModel.findOne({ planId: plan._id }).lean();
-          if (limit) {
-            deviceLimitCount = limit.deviceLimitCount;
-          }
-        }
+      const entitlements = await getUserEntitlements(userDoc);
+      if (!isDeviceTypeAllowed(entitlements, deviceType)) {
+        return reply.status(403).send({
+          success: false,
+          message: 'This device type is not allowed on your current subscription plan.',
+        });
       }
 
       const devices = (userDoc as any).devices || [];
       const existingDeviceIndex = devices.findIndex((d: any) => d.deviceId === deviceId);
 
       if (existingDeviceIndex !== -1) {
-        // Device already exists, just update timestamp
         devices[existingDeviceIndex].lastActive = new Date();
         devices[existingDeviceIndex].deviceName = deviceName || devices[existingDeviceIndex].deviceName;
+        if (deviceType) devices[existingDeviceIndex].deviceType = deviceType;
       } else {
-        // New device
-        const newDevice = {
+        if (entitlements.deviceLimit !== null && devices.length >= entitlements.deviceLimit) {
+          return reply.status(403).send({
+            success: false,
+            message: `Device limit of ${entitlements.deviceLimit} reached on your current plan.`,
+          });
+        }
+
+        devices.push({
           deviceId,
           deviceName: deviceName || 'Unknown Device',
-          deviceType: 'mobile',
+          deviceType: deviceType || 'mobile',
           lastActive: new Date(),
           addedAt: new Date()
-        };
-        
-        // Enforce limit by removing oldest if necessary
-        while (devices.length >= deviceLimitCount) {
-          // Sort by oldest lastActive
-          devices.sort((a: any, b: any) => new Date(a.lastActive).getTime() - new Date(b.lastActive).getTime());
-          devices.shift(); // Remove oldest
-        }
-        devices.push(newDevice);
+        });
       }
       (userDoc as any).devices = devices;
     }

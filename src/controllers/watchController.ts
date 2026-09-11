@@ -6,53 +6,28 @@ import { EpisodeModel } from '../models/Episode';
 import { UserLikeModel } from '../models/UserLike';
 import { UserWishlistModel } from '../models/UserWishlist';
 import { UserDownloadModel } from '../models/UserDownload';
-import { UserModel } from '../models/User';
 import { UserWatchProgressModel } from '../models/UserWatchProgress';
 import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
 import '../models/Actor';
 import '../models/Director';
 import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
-
-// Plan hierarchy
-const PLAN_LEVELS: Record<string, number> = {
-  free: 0,
-  basic: 1,
-  standard: 2,
-  premium: 3,
-};
+import {
+  canAccessContent,
+  canAccessEpisode,
+  getViewerEntitlements,
+  guestEntitlements,
+  isQualityAllowed,
+  type ViewerEntitlements,
+} from '../lib/subscriptionAccess';
 
 import { buildShareUrl } from '../lib/config';
 
-const getOptionalUser = async (request: FastifyRequest): Promise<{ userId: string; userPlan: string; profileId?: string } | null> => {
-  try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return null;
-    const server = request.server as any;
-    const decoded = server.jwt.verify(authHeader.slice(7)) as any;
-    if (!decoded?.id) return null;
-
-    const user = await UserModel.findById(decoded.id).select('subscriptionPlan subscriptionStatus subscriptionExpiry').lean();
-    if (!user) return null;
-
-    const profileId = request.headers['x-profile-id'] as string | undefined;
-
-    const isActive = user.subscriptionStatus === 'active' && (!user.subscriptionExpiry || user.subscriptionExpiry > new Date());
-    return { userId: decoded.id, userPlan: isActive ? (user.subscriptionPlan || 'free') : 'free', profileId };
-  } catch {
-    return null;
-  }
-};
-
-const canAccessItem = (isFree: boolean, isLocked: boolean, contentPlanRequired: string, userPlan: string): boolean => {
-  if (isFree) return true;
-  if (isLocked) {
-    // If the episode is locked, the user must have at least a 'basic' plan (level 1), 
-    // or higher if the content itself requires a higher plan
-    const requiredLevel = Math.max(PLAN_LEVELS[contentPlanRequired] ?? 0, 1);
-    return (PLAN_LEVELS[userPlan] ?? 0) >= requiredLevel;
-  }
-  return true;
+const getOptionalUser = async (request: FastifyRequest): Promise<{ userId: string; userPlan: string; profileId?: string; entitlements: ViewerEntitlements } | null> => {
+  const entitlements = await getViewerEntitlements(request);
+  const profileId = request.headers['x-profile-id'] as string | undefined;
+  if (!entitlements.userId) return null;
+  return { userId: entitlements.userId, userPlan: entitlements.planKey, profileId, entitlements };
 };
 
 // Helper to convert relative URLs to absolute URLs
@@ -121,7 +96,7 @@ const buildNamedQualities = (
   qualities: any[] = [],
   s3Active: boolean,
   s3BaseUrl: string,
-  userPlan: string = 'free'
+  entitlements?: ViewerEntitlements
 ) => {
   const autoUrl = toAbsoluteUrl(request, hlsUrl, s3Active, s3BaseUrl);
 
@@ -153,9 +128,7 @@ const buildNamedQualities = (
     const absoluteUrl = toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl);
     if (!absoluteUrl) continue;
     const requiredPlan = QUALITY_PLAN_GATE[q.quality] || 'free';
-    // isLocked: currently always false — flip to real check when subscriptions go live:
-    // const isLocked = PLAN_LEVELS[userPlan] < PLAN_LEVELS[requiredPlan];
-    const isLocked = false;
+    const isLocked = entitlements ? !isQualityAllowed(q.quality, entitlements.limits) : false;
     result.push({
       key:          q.quality,
       label:        QUALITY_LABELS[q.quality] || q.quality,
@@ -168,7 +141,7 @@ const buildNamedQualities = (
                     q.quality === '1440p' ? '2K — requires fast connection' :
                     q.quality === '2160p' ? '4K Ultra HD — requires very fast connection' :
                     `Stream at ${QUALITY_LABELS[q.quality] || q.quality}`,
-      url:          absoluteUrl,
+      url:          isLocked ? null : absoluteUrl,
       requiresPlan: requiredPlan,
       isLocked,
     });
@@ -187,8 +160,9 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
     }
 
     const userInfo = await getOptionalUser(request);
+    const entitlements = userInfo?.entitlements || guestEntitlements();
     const userId = userInfo?.userId || null;
-    const userPlan = userInfo?.userPlan || 'free';
+    const userPlan = entitlements.planKey;
     const profileId = userInfo?.profileId || null;
 
     // Cast userId to ObjectId once for ALL DB lookups
@@ -320,7 +294,7 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
 
     // ── 7. Logic for Movies ───────────────────────────────────────────────────
     if (isMovieType) {
-      const isAccessible = canAccessItem(contentPlan === 'free', contentPlan !== 'free', contentPlan, userPlan);
+      const isAccessible = canAccessContent(entitlements, contentPlan);
       
       let watchProgress = null;
       if (userObjectId) {
@@ -343,7 +317,7 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
         isLocked: !isAccessible,
         hlsUrl: isAccessible ? toAbsoluteUrl(request, content.hlsUrl, s3Active, s3BaseUrl) : null,
         trailerUrl: toAbsoluteUrl(request, content.trailerUrl, s3Active, s3BaseUrl),
-        videoSettings: isAccessible ? buildNamedQualities(request, content.hlsUrl, content.videoQualities, s3Active, s3BaseUrl) : null,
+        videoSettings: isAccessible ? buildNamedQualities(request, content.hlsUrl, content.videoQualities, s3Active, s3BaseUrl, entitlements) : null,
         watchProgress,
       };
 
@@ -394,10 +368,12 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
       episodeMeta = `${requestedEpisode} of ${totalEpisodes} Episodes • Season ${requestedSeason} • ${genresText}`;
 
       const mapEpisode = (ep: any) => {
-        let accessible = canAccessItem(ep.isFree, ep.isLocked || contentPlan !== 'free', contentPlan, userPlan);
-        // Subscribers also bypass locked status for episode unlocking
-        if (userPlan !== 'free') accessible = true; 
-        if (unlockedEpisodeIdSet.has(ep._id.toString())) accessible = true;
+        const accessible = canAccessEpisode(
+          entitlements,
+          contentPlan,
+          ep,
+          unlockedEpisodeIdSet.has(ep._id.toString())
+        );
 
         return {
           id: ep._id.toString(),
@@ -442,7 +418,8 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
             currentEpisodeRaw.hlsUrl,
             currentEpisodeRaw.videoQualities || [],
             s3Active,
-            s3BaseUrl
+            s3BaseUrl,
+            entitlements
           );
         } else {
           currentEpisode.videoSettings = null;
@@ -519,6 +496,10 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
           isLoggedIn: !!userId,
           userPlan,
           canAccessCurrentEpisode: currentEpisode ? !currentEpisode.isLocked : false,
+          canDownload: entitlements.canDownload,
+          canCast: entitlements.canCast,
+          showAds: entitlements.showAds,
+          maxQuality: entitlements.maxQuality,
         },
       },
     });

@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AdModel } from '../models/Ad';
+import { getViewerEntitlements } from '../lib/subscriptionAccess';
 
 // --- Admin Endpoints ---
 
@@ -69,6 +70,11 @@ export const bulkDeleteAds = async (request: FastifyRequest, reply: FastifyReply
 
 export const getActiveAds = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
+    const entitlements = await getViewerEntitlements(request);
+    if (!entitlements.showAds) {
+      return reply.send({ success: true, data: [] });
+    }
+
     const query = request.query as any;
     const now = new Date();
     
@@ -80,8 +86,20 @@ export const getActiveAds = async (request: FastifyRequest, reply: FastifyReply)
     };
     
     // Specific UI Targeting
-    if (query.placement) filter.placement = query.placement;
-    if (query.targetContentType) filter.targetContentType = query.targetContentType;
+    if (query.placement) {
+      const placements = String(query.placement).split(',').map((item: string) => item.trim()).filter(Boolean);
+      filter.placement = placements.length > 1 ? { $in: placements } : placements[0];
+    }
+    if (query.rollType) {
+      const rolls = String(query.rollType).split(',').map((item: string) => item.trim()).filter(Boolean);
+      filter.$or = [
+        { rollType: { $in: rolls } },
+        { rollType: { $exists: false } },
+      ];
+    }
+    if (query.targetContentType && query.targetContentType !== 'All') {
+      filter.targetContentType = { $in: [query.targetContentType, 'All'] };
+    }
     
     // Match specific tags (e.g. 'Operation Viper') if passed by the frontend
     if (query.targetCategory) {

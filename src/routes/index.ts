@@ -108,7 +108,7 @@ const router: FastifyPluginAsync = async (fastify) => {
   // Download routes (POST /download, GET /downloads, DELETE /downloads/:id)
   fastify.register(downloadRoutes, { prefix: '/app' });
 
-  // Web download routes — separate from app, no subscription gate
+  // Web download + public subscription plans (downloads enforce plan downloadStatus)
   fastify.register(webDownloadRoutes, { prefix: '/web' });
 
   // Watch progress routes (POST /watch/progress, DELETE /watch/progress/:contentId)

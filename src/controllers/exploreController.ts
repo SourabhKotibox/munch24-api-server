@@ -28,6 +28,13 @@ const getOptionalUserId = (request: FastifyRequest): string | null => {
 };
 
 import { buildShareUrl } from '../lib/config';
+import {
+  canAccessContent,
+  canAccessEpisode,
+  getViewerEntitlements,
+  guestEntitlements,
+  type ViewerEntitlements,
+} from '../lib/subscriptionAccess';
 
 // Helper to convert relative URLs to absolute URLs
 const toAbsoluteUrl = (request: FastifyRequest, url: string | null | undefined): string | null => {
@@ -52,7 +59,13 @@ const mapContentItem = (
   firstEpisode?: any,
   likeCount = 0,
   isLikedByUser = false,
-) => ({
+  entitlements?: ViewerEntitlements,
+) => {
+  const access = entitlements || guestEntitlements();
+  const hasAccess = firstEpisode
+    ? canAccessEpisode(access, item.planRequired || item.plan, firstEpisode)
+    : canAccessContent(access, item.planRequired || item.plan);
+  return {
   id: item._id.toString(),
   title: item.title,
   description: item.description,
@@ -79,15 +92,17 @@ const mapContentItem = (
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
   // Preview — ONLY episode 1 (short-drama reel style, no full list)
-  videoUrl: toAbsoluteUrl(request, firstEpisode?.hlsUrl || item.hlsUrl) || null,
+  videoUrl: hasAccess ? (toAbsoluteUrl(request, firstEpisode?.hlsUrl || item.hlsUrl) || null) : null,
   trailerUrl: toAbsoluteUrl(request, firstEpisode?.trailerUrl || item.trailerUrl) || null,
   firstEpisodeId: firstEpisode?._id?.toString() || null,
   firstEpisodeTitle: firstEpisode?.title || null,
   firstEpisodeThumbnail: toAbsoluteUrl(request, firstEpisode?.thumbnail || item.thumbnail) || null,
   firstEpisodeDuration: firstEpisode?.duration || null,
   firstEpisodeIsFree: firstEpisode?.isFree ?? null,
-  contentPlan: item.plan || 'free',
-});
+  contentPlan: item.planRequired || item.plan || 'free',
+  isLocked: !hasAccess,
+  };
+};
 
 // Get explore page data (infinite scroll, short-drama reel style)
 export const getExplore = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -113,6 +128,7 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
 
     // Optional auth — used for isLikedByUser
     const userId = getOptionalUserId(request);
+    const entitlements = await getViewerEntitlements(request);
 
     let sortBy: any = {};
     let filter: any = { status: 'published' };
@@ -297,11 +313,11 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
       const isLikedByUser: boolean = likedContentIdSet.has(cid);
 
       if (contentType === 'movie') {
-        return mapContentItem(request, content, 'movie', 0, undefined, likeCount, isLikedByUser);
+        return mapContentItem(request, content, 'movie', 0, undefined, likeCount, isLikedByUser, entitlements);
       } else {
         const episodeCount = episodeCountMap.get(cid) || 0;
         const firstEpisode = firstEpisodeMap.get(cid);
-        return mapContentItem(request, content, content.type || 'series', episodeCount, firstEpisode, likeCount, isLikedByUser);
+        return mapContentItem(request, content, content.type || 'series', episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
       }
     });
 

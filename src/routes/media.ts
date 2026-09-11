@@ -10,6 +10,14 @@ import {
   deleteFile,
   seedDefaultFolders,
 } from '../controllers/mediaController';
+import {
+  initDirectUpload,
+  signDirectUploadPart,
+  completeDirectUpload,
+  abortDirectUpload,
+  getDirectUploadSession,
+  getMediaFileStatus,
+} from '../controllers/directUploadController';
 
 const media: FastifyPluginAsync = async (fastify) => {
   // Seed default folders on startup
@@ -25,6 +33,13 @@ const media: FastifyPluginAsync = async (fastify) => {
   fastify.get('/files/all', { onRequest: [requirePermission('mediaLibrary', 'canView')] }, getAllMediaFiles);
   fastify.post('/folders/:id/files', { onRequest: [requirePermission('mediaLibrary', 'canCreate')] }, uploadFilesToFolder);
   fastify.delete('/files/:id', { onRequest: [requirePermission('mediaLibrary', 'canDelete')] }, deleteFile);
+  fastify.get('/files/:id/status', { onRequest: [requirePermission('mediaLibrary', 'canView')] }, getMediaFileStatus);
+
+  fastify.post('/direct-upload/init', { onRequest: [requirePermission('mediaLibrary', 'canCreate')] }, initDirectUpload);
+  fastify.post('/direct-upload/:sessionId/sign-part', { onRequest: [requirePermission('mediaLibrary', 'canCreate')] }, signDirectUploadPart);
+  fastify.post('/direct-upload/:sessionId/complete', { onRequest: [requirePermission('mediaLibrary', 'canCreate')] }, completeDirectUpload);
+  fastify.post('/direct-upload/:sessionId/abort', { onRequest: [requirePermission('mediaLibrary', 'canCreate')] }, abortDirectUpload);
+  fastify.get('/direct-upload/:sessionId', { onRequest: [requirePermission('mediaLibrary', 'canView')] }, getDirectUploadSession);
 };
 
 export default media;

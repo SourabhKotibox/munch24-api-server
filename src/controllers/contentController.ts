@@ -5,7 +5,11 @@ import { SectionModel } from '../models/Section';
 import { Types } from 'mongoose';
 import { logger } from '../lib/logger';
 import { createEpisodeSlices } from './categoryController';
-import { toLocalUploadPath } from '../services/videoProcessor';
+import { resolveLocalVideoFile } from '../lib/sourceVideo';
+import fs from 'fs';
+import { pipeline } from 'stream/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const syncSections = async (contentIdStr: string, sections: string[] | undefined) => {
   await SectionModel.updateMany(
@@ -268,22 +272,13 @@ export const appendContentVideo = async (request: FastifyRequest, reply: Fastify
           if (s > 0) seasonNumber = s;
         }
       } else if (part.type === 'file' && part.fieldname === 'videoFile') {
-        // Save file to a temp path for processing
-        const { writeFile } = await import('fs/promises');
-        const { join } = await import('path');
-        const { fileURLToPath } = await import('url');
         const __filename = fileURLToPath(import.meta.url);
-        const __dirname = (await import('path')).dirname(__filename);
-        const uploadsDir = join(__dirname, '../../uploads/videos');
-        const { mkdirSync } = await import('fs');
-        mkdirSync(uploadsDir, { recursive: true });
-        const filename = `${Date.now()}_${part.filename}`;
-        const fullPath = join(uploadsDir, filename);
-        const chunks: Buffer[] = [];
-        for await (const chunk of part.file) {
-          chunks.push(chunk);
-        }
-        await writeFile(fullPath, Buffer.concat(chunks));
+        const __dirname = path.dirname(__filename);
+        const uploadsDir = path.join(__dirname, '../../uploads/videos');
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        const filename = `${Date.now()}_${path.basename(part.filename).replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const fullPath = path.join(uploadsDir, filename);
+        await pipeline(part.file, fs.createWriteStream(fullPath));
         videoFilePath = `/uploads/videos/${filename}`;
       }
     }
@@ -293,10 +288,12 @@ export const appendContentVideo = async (request: FastifyRequest, reply: Fastify
       return reply.status(400).send({ success: false, error: 'Video URL or file required' });
     }
 
+    const resolved = await resolveLocalVideoFile(sourceVideoUrl);
+
     const episodes = await createEpisodeSlices({
       contentId: content._id as Types.ObjectId,
       sourceVideoUrl,
-      sourceVideoPath: toLocalUploadPath(sourceVideoUrl) || sourceVideoUrl,
+      sourceVideoPath: resolved.localPath,
       reelDurationMinutes,
       totalDurationMinutes,
       freeEpisodeCount,

@@ -30,6 +30,8 @@ export interface IMediaFile extends Document {
   hlsStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   hlsError?: string;
   duration?: number; // Video duration in seconds
+  uploadStatus?: 'uploading' | 'uploaded' | 'processing' | 'transcoding' | 'ready' | 'failed';
+  uploadError?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +70,8 @@ const MediaFileSchema = new Schema<IMediaFile>(
     hlsStatus: { type: String, enum: ['pending', 'processing', 'completed', 'failed'], default: 'pending' },
     hlsError: { type: String, required: false },
     duration: { type: Number, required: false }, // in seconds
+    uploadStatus: { type: String, enum: ['uploading', 'uploaded', 'processing', 'transcoding', 'ready', 'failed'], required: false },
+    uploadError: { type: String, required: false },
   },
   { timestamps: true }
 );

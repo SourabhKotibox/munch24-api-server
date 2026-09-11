@@ -2,7 +2,6 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import mongoose from 'mongoose';
 import { MovieModel } from '../models/Movie';
 import { ContentModel } from '../models/Content';
-import { UserModel } from '../models/User';
 import { UserLikeModel } from '../models/UserLike';
 import { UserWishlistModel } from '../models/UserWishlist';
 import { UserWatchProgressModel } from '../models/UserWatchProgress';
@@ -10,6 +9,7 @@ import { UserDownloadModel } from '../models/UserDownload';
 import { logger } from '../lib/logger';
 import { buildShareUrl } from '../lib/config';
 import { QUALITY_LABELS, QUALITY_PLAN_GATE } from './watchController';
+import { canAccessContent, getViewerEntitlements, guestEntitlements, isQualityAllowed } from '../lib/subscriptionAccess';
 
 // Helper to convert relative URLs to absolute URLs
 const toAbsoluteUrl = (
@@ -32,23 +32,10 @@ const toAbsoluteUrl = (
   return `${baseUrl}${relPath}`;
 };
 
-// Helper: try to extract userId and plan from JWT without throwing
-const getOptionalUser = async (request: FastifyRequest): Promise<{ userId: string; userPlan: string } | null> => {
-  try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return null;
-    const server = request.server as any;
-    const decoded = server.jwt.verify(authHeader.slice(7)) as any;
-    if (!decoded?.id) return null;
-
-    const user = await UserModel.findById(decoded.id).select('subscriptionPlan subscriptionStatus subscriptionExpiry').lean();
-    if (!user) return { userId: decoded.id, userPlan: 'free' };
-
-    const isActive = user.subscriptionStatus === 'active' && (!user.subscriptionExpiry || user.subscriptionExpiry > new Date());
-    return { userId: decoded.id, userPlan: isActive ? (user.subscriptionPlan || 'free') : 'free' };
-  } catch {
-    return null;
-  }
+const getOptionalUser = async (request: FastifyRequest) => {
+  const entitlements = await getViewerEntitlements(request);
+  if (!entitlements.userId) return { userId: null as string | null, userPlan: 'free', entitlements: guestEntitlements() };
+  return { userId: entitlements.userId, userPlan: entitlements.planKey, entitlements };
 };
 
 // ── GET /api/app/movies/:id ────────────────────────────────────────────────────
@@ -64,7 +51,8 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
 
     const userInfo = await getOptionalUser(request);
     const userId = userInfo?.userId || null;
-    const userPlan = userInfo?.userPlan || 'free';
+    const userPlan = userInfo.userPlan;
+    const entitlements = userInfo.entitlements;
 
     // ── 1. Fetch Movie with populated cast/crew/genres ────────────────────────
     const movie = await MovieModel.findById(id)
@@ -77,6 +65,8 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
     if (!movie || movie.status !== 'published') {
       return reply.status(404).send({ success: false, message: 'Movie not found.' });
     }
+
+    const canWatch = canAccessContent(entitlements, movie.planRequired);
 
     // ── 2. User-specific flags (like + wishlist + watch progress + download) ───
     let isLikedByUser = false;
@@ -186,8 +176,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
             const sizeMB = q.size ? `${Math.round(q.size / (1024 * 1024))} MB` : null;
             const label = QUALITY_LABELS[q.quality] || q.quality;
             const requiredPlan = QUALITY_PLAN_GATE[q.quality] || 'free';
-            // isLocked: currently always false — flip to real check when subscriptions go live
-            const isLocked = false;
+            const isLocked = !canWatch || !isQualityAllowed(q.quality, entitlements.limits);
             const description = q.quality === '144p' ? 'Very low quality — for slow connections' :
                                 q.quality === '240p' ? 'Low quality — saves data' :
                                 q.quality === '360p' ? 'Low quality' :
@@ -201,7 +190,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
               key: q.quality,
               label,
               description: sizeMB ? `${description} (${sizeMB})` : description,
-              url: toAbsoluteUrl(request, q.url),
+              url: isLocked ? null : toAbsoluteUrl(request, q.url),
               requiresPlan: requiredPlan,
               isLocked,
             };
@@ -228,8 +217,11 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
         type: 'movie',
 
         // Video
-        hlsUrl: toAbsoluteUrl(request, hlsUrl),
-        videoSettings,
+        hlsUrl: canWatch ? toAbsoluteUrl(request, hlsUrl) : null,
+        videoSettings: canWatch ? videoSettings : null,
+        canCast: entitlements.canCast,
+        canDownload: entitlements.canDownload && movie.downloadAllowed !== false,
+        showAds: entitlements.showAds,
         playbackSpeeds: [
           { value: 0.75, label: '0.75x' },
           { value: 1.0, label: 'Normal' },
@@ -238,7 +230,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
           { value: 1.75, label: '1.75x' },
           { value: 2.0, label: '2.0x' }
         ],
-        isLocked: movie.planRequired !== 'free' && userPlan === 'free',
+        isLocked: !canWatch,
 
         // Meta
         genres: genreNames,

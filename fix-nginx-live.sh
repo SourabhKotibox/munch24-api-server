@@ -1,39 +1,48 @@
 #!/bin/bash
-# Fixes Nginx 413 Request Entity Too Large and improves upload speed for Manch24
-# Run this on your live server (65.1.107.153)
+# Fixes Nginx 413 on manch24.com and other site configs.
+# Run on the live server (65.1.107.153), then reload nginx.
+#   sudo bash api-server/fix-nginx-live.sh
 
-echo "Fixing Nginx upload limits and speed..."
+set -euo pipefail
 
-# 1. Update the main nginx.conf
-sudo sed -i '/http {/a \    client_max_body_size 10G;' /etc/nginx/nginx.conf
+echo "Raising Nginx upload limit to 10G..."
 
-# 2. Add configuration to your site's Nginx config if it exists
-SITE_CONF="/etc/nginx/sites-available/default"
-if [ -f "/etc/nginx/sites-available/manch24" ]; then
-    SITE_CONF="/etc/nginx/sites-available/manch24"
-elif [ -f "/etc/nginx/sites-available/triple-minds" ]; then
-    SITE_CONF="/etc/nginx/sites-available/triple-minds"
+MAIN_CONF="/etc/nginx/nginx.conf"
+if [ -f "$MAIN_CONF" ]; then
+  if grep -q "client_max_body_size" "$MAIN_CONF"; then
+    sudo sed -i 's/client_max_body_size .*/client_max_body_size 10G;/' "$MAIN_CONF"
+  else
+    sudo sed -i '/http {/a \    client_max_body_size 10G;' "$MAIN_CONF"
+  fi
 fi
 
-if [ -f "$SITE_CONF" ]; then
-    echo "Updating $SITE_CONF..."
-    # Ensure client_max_body_size is 10G
-    sudo sed -i 's/client_max_body_size .*/client_max_body_size 10G;/g' $SITE_CONF
-    
-    # Disable buffering for faster uploads and preventing disk/timeout errors
-    if ! grep -q "proxy_request_buffering off;" $SITE_CONF; then
-        sudo sed -i '/proxy_pass/a \        proxy_buffering off;\n        proxy_request_buffering off;' $SITE_CONF
-    fi
-fi
+SNIPPET_FILE="/etc/nginx/conf.d/manch24-uploads.conf"
+sudo tee "$SNIPPET_FILE" >/dev/null <<'EOF'
+# Shared by all manch24 server blocks once included, or as a global http override.
+client_max_body_size 10G;
+client_body_timeout 3600s;
+client_header_timeout 300s;
+send_timeout 3600s;
+EOF
 
-# 3. Test and reload Nginx
-echo "Testing Nginx configuration..."
+mapfile -t SITE_CONFS < <(find /etc/nginx/sites-available /etc/nginx/sites-enabled /etc/nginx/conf.d -type f \( -name '*.conf' -o -name 'default' -o -name 'manch24' -o -name 'triple-minds' \) 2>/dev/null | sort -u)
+
+for SITE_CONF in "${SITE_CONFS[@]}"; do
+  [ -f "$SITE_CONF" ] || continue
+  echo "Updating $SITE_CONF"
+
+  if grep -q "client_max_body_size" "$SITE_CONF"; then
+    sudo sed -i 's/client_max_body_size .*/client_max_body_size 10G;/' "$SITE_CONF"
+  else
+    sudo sed -i '/server {/a \    client_max_body_size 10G;' "$SITE_CONF"
+  fi
+
+  if ! grep -q "proxy_request_buffering off;" "$SITE_CONF"; then
+    sudo sed -i '/proxy_pass/a \        proxy_buffering off;\n        proxy_request_buffering off;\n        proxy_read_timeout 3600s;\n        proxy_send_timeout 3600s;\n        client_max_body_size 10G;' "$SITE_CONF"
+  fi
+done
+
+echo "Testing Nginx..."
 sudo nginx -t
-
-if [ $? -eq 0 ]; then
-    echo "Reloading Nginx..."
-    sudo systemctl reload nginx
-    echo "✅ Success! Large uploads should now work with better speed and no 413 errors."
-else
-    echo "❌ Nginx configuration test failed. Please check your config."
-fi
+sudo systemctl reload nginx
+echo "Nginx reload complete. Large proxy uploads should no longer return 413."

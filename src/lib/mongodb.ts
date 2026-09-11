@@ -49,6 +49,9 @@ async function ensureLocalMongoRunning(): Promise<void> {
   }
 }
 
+import mongoose from 'mongoose';
+import { logger } from './logger';
+
 export async function connectMongoDB(): Promise<void> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {

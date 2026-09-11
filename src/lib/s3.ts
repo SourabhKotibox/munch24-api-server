@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
@@ -6,6 +7,10 @@ import { Readable } from 'stream';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { logger } from './logger';
 import { SettingsModel } from '../models/Settings';
+
+export interface UploadProgressCallback {
+  (progress: { loaded: number; total: number; percent: number }): void;
+}
 
 type UploadBody = Buffer | Uint8Array | string | ReadableStream | Blob | Readable | fs.ReadStream;
 
@@ -167,11 +172,12 @@ export async function generatePresignedUrl(
 
 export async function uploadToS3(
   key: string,
-   body: UploadBody,
-   contentType: string
+  body: UploadBody,
+  contentType: string,
+  onProgress?: UploadProgressCallback
 ): Promise<string> {
    const settings = await getS3Settings();
-  
+   
   if (!settings.accessKeyId || !settings.secretAccessKey || settings.storageDriver !== 's3') {
     logger.warn('AWS S3 credentials not found or S3 not selected, skipping upload to S3');
     throw new Error('AWS S3 credentials not configured');
@@ -179,14 +185,21 @@ export async function uploadToS3(
 
   try {
     const s3Client = await getS3Client();
-    const command = new PutObjectCommand({
-      Bucket: settings.bucket,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
+    const parallelUpload = new Upload({
+      client: s3Client,
+      params: {
+        Bucket: settings.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      },
+      queueSize: 8,
+      partSize: 50 * 1024 * 1024,
+      leavePartsOnError: true,
+      ...(onProgress ? { onProgress: ({ loaded, total }) => onProgress({ loaded, total, percent: total > 0 ? (loaded / total) * 100 : 0 }) } : {}),
     });
 
-    await s3Client.send(command);
+    await parallelUpload.done();
     return getS3PublicUrl(key);
   } catch (error) {
     logger.error(error, 'Error uploading to S3');
@@ -196,11 +209,12 @@ export async function uploadToS3(
 
 export async function uploadToDO(
   key: string,
-   body: UploadBody,
-   contentType: string
+  body: UploadBody,
+  contentType: string,
+  onProgress?: UploadProgressCallback
 ): Promise<string> {
    const settings = await getDOSettings();
-  
+   
   if (!settings.accessKeyId || !settings.secretAccessKey || settings.storageDriver !== 'digitalocean') {
     logger.warn('DigitalOcean credentials not found or DO not selected, skipping upload');
     throw new Error('DigitalOcean credentials not configured');
@@ -208,14 +222,21 @@ export async function uploadToDO(
 
   try {
     const doClient = await getDOClient();
-    const command = new PutObjectCommand({
-      Bucket: settings.bucket,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
+    const parallelUpload = new Upload({
+      client: doClient,
+      params: {
+        Bucket: settings.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      },
+      queueSize: 8,
+      partSize: 50 * 1024 * 1024,
+      leavePartsOnError: true,
+      ...(onProgress ? { onProgress: ({ loaded, total }) => onProgress({ loaded, total, percent: total > 0 ? (loaded / total) * 100 : 0 }) } : {}),
     });
 
-    await doClient.send(command);
+    await parallelUpload.done();
     return getDOPublicUrl(key);
   } catch (error) {
     logger.error(error, 'Error uploading to DigitalOcean');
@@ -251,9 +272,10 @@ const getBunnyStorageUrl = (settings: S3Settings, key: string): string => {
 
 export async function uploadToBunny(
   key: string,
-   body: UploadBody,
-   contentType: string,
-   cacheControl?: string
+  body: UploadBody,
+  contentType: string,
+  onProgress?: UploadProgressCallback,
+  cacheControl?: string
 ): Promise<string> {
   const settings = await getBunnySettings();
   if (!settings.accessKeyId || !settings.bucket || settings.storageDriver !== 'bunny') {
@@ -270,6 +292,7 @@ export async function uploadToBunny(
       },
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
+      ...(onProgress ? { onUploadProgress: (event: any) => onProgress({ loaded: event.bytesRead, total: event.contentLength || event.total, percent: event.contentLength ? (event.bytesRead / event.contentLength) * 100 : 0 }) } : {}),
     });
     return getPublicUrl(settings, key);
   } catch (error) {
@@ -281,17 +304,18 @@ export async function uploadToBunny(
 export async function uploadToCloudStorage(
    key: string,
    body: UploadBody,
-   contentType: string
+   contentType: string,
+   onProgress?: UploadProgressCallback
 ): Promise<string> {
    const settings = await getActiveStorageSettings();
-  
+   
   if (settings.storageDriver === 'digitalocean') {
-    return uploadToDO(key, body, contentType);
+    return uploadToDO(key, body, contentType, onProgress);
   }
   if (settings.storageDriver === 'bunny') {
-    return uploadToBunny(key, body, contentType);
+    return uploadToBunny(key, body, contentType, onProgress);
   }
-  return uploadToS3(key, body, contentType);
+  return uploadToS3(key, body, contentType, onProgress);
 }
 
 export async function deleteFromS3(key: string): Promise<void> {
@@ -516,8 +540,9 @@ async function uploadHlsFolderToBunny(localFolderPath: string, prefix: string): 
           : 'application/octet-stream';
       await uploadToBunny(
         objectKey,
-        fs.readFileSync(fullPath),
+        fs.createReadStream(fullPath),
         contentType,
+        undefined,
         ext === '.m3u8' ? 'no-cache' : 'max-age=31536000'
       );
       uploadCount++;
@@ -553,18 +578,23 @@ async function uploadHlsFolder(
       if (entry.isDirectory()) {
         await uploadDir(fullPath, objectKey);
       } else if (entry.isFile()) {
-        const body        = fs.readFileSync(fullPath);
+        const body        = fs.createReadStream(fullPath);
         const contentType = getContentType(entry.name);
         const ext         = path.extname(entry.name).toLowerCase();
-        await client.send(
-          new PutObjectCommand({
-            Bucket:      settings.bucket,
-            Key:         objectKey,
-            Body:        body,
-            ContentType: contentType,
+        const parallelUpload = new Upload({
+          client,
+          params: {
+            Bucket:       settings.bucket,
+            Key:          objectKey,
+            Body:         body,
+            ContentType:  contentType,
             CacheControl: ext === '.m3u8' ? 'no-cache' : 'max-age=31536000',
-          })
-        );
+          },
+          queueSize: 8,
+          partSize: 50 * 1024 * 1024,
+          leavePartsOnError: true,
+        });
+        await parallelUpload.done();
         uploadCount++;
         logger.debug(`Uploaded HLS file: ${objectKey}`);
       }

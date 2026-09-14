@@ -1,6 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import mongoose from 'mongoose';
 import { UserModel } from '../models/User';
+import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
+import { PlanLimitModel } from '../models/PlanLimit';
 import { MovieModel } from '../models/Movie';
 import { ContentModel } from '../models/Content';
 import { EpisodeModel } from '../models/Episode';
@@ -65,8 +67,11 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
     }
 
     const entitlements = await getUserEntitlements(user);
+    if (!entitlements.active) {
+      return reply.status(403).send({ success: false, message: 'Active subscription required to download content.' });
+    }
     if (!entitlements.canDownload) {
-      return reply.status(403).send({ success: false, message: 'Your subscription does not allow downloads.' });
+      return reply.status(403).send({ success: false, message: 'Your current subscription plan does not allow downloads.' });
     }
 
     const { contentId, episodeId, contentType } = request.body as {
@@ -100,6 +105,10 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
       const movie = await MovieModel.findById(contentId).lean();
       if (!movie || movie.status !== 'published') {
         return reply.status(404).send({ success: false, message: 'Movie not found' });
+      }
+
+      if (movie.downloadAllowed === false) {
+        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this movie.' });
       }
 
       if (!canDownloadContent(entitlements, movie)) {
@@ -141,6 +150,14 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
 
       if (!episode || episode.processingStatus !== 'ready') {
         return reply.status(404).send({ success: false, message: 'Episode not found or not ready' });
+      }
+
+      if (drama.downloadAllowed === false) {
+        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this series.' });
+      }
+
+      if (episode.downloadAllowed === false) {
+        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this episode.' });
       }
 
       const coinUnlocked = !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean());

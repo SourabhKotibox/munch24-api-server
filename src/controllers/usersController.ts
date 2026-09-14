@@ -1,7 +1,7 @@
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { UserModel } from '../models/User';
-import { normalizePlanKey, resolvePlanLimits } from '../lib/subscriptionAccess';
+import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
 
 function docId(doc: any) {
   if (doc._id) { doc.id = String(doc._id); delete doc._id; delete doc.__v; }
@@ -56,14 +56,59 @@ export const getSingleUser = async (request: FastifyRequest, reply: FastifyReply
 
 export const updateSingleUser = async (request: FastifyRequest, reply: FastifyReply) => {
   const { id } = request.params as { id: string };
-  const body = request.body as Record<string, unknown>;
+  const body = request.body as Record<string, any>;
   delete body.passwordHash;
 
-  if (typeof body.subscriptionPlan === 'string') {
-    const planKey = normalizePlanKey(body.subscriptionPlan);
-    body.subscriptionPlan = planKey;
-    const { plan } = await resolvePlanLimits(null, planKey);
-    if (plan) body.subscriptionPlanId = plan._id;
+  const existingUser = await UserModel.findById(id);
+  if (!existingUser) return reply.status(404).send({ success: false, error: 'User not found' });
+
+  // Validate plan assignment if subscriptionPlan is provided
+  if (body.subscriptionPlan !== undefined) {
+    const targetPlanName = String(body.subscriptionPlan).trim().toLowerCase();
+    const currentPlanName = String(existingUser.subscriptionPlan || 'free').trim().toLowerCase();
+
+    // If changing/newly assigning a different plan
+    if (targetPlanName !== currentPlanName) {
+      if (targetPlanName !== 'free') {
+        const plan = await SubscriptionPlanModel.findOne({
+          name: { $regex: new RegExp(`^${targetPlanName}$`, 'i') }
+        }).lean();
+
+        if (!plan) {
+          return reply.status(400).send({
+            success: false,
+            error: `Plan "${body.subscriptionPlan}" not found`
+          });
+        }
+
+        if (plan.status === false) {
+          return reply.status(400).send({
+            success: false,
+            error: `Plan "${plan.name}" is currently inactive and cannot be newly assigned to users.`
+          });
+        }
+
+        body.subscriptionPlanId = plan._id;
+        body.subscriptionPlan = plan.name.toLowerCase();
+      } else {
+        // Free plan is always allowed
+        const freePlan = await SubscriptionPlanModel.findOne({
+          name: { $regex: /^free$/i }
+        }).lean();
+        body.subscriptionPlanId = freePlan ? freePlan._id : undefined;
+        body.subscriptionPlan = 'free';
+      }
+    } else {
+      // User is already on this plan - keep subscriptionPlanId synced if available
+      if (!existingUser.subscriptionPlanId) {
+        const plan = await SubscriptionPlanModel.findOne({
+          name: { $regex: new RegExp(`^${targetPlanName}$`, 'i') }
+        }).lean();
+        if (plan) {
+          body.subscriptionPlanId = plan._id;
+        }
+      }
+    }
   }
 
   const doc = await UserModel.findByIdAndUpdate(id, { $set: body }, { returnDocument: 'after' })

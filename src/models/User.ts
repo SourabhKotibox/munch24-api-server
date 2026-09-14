@@ -15,7 +15,7 @@ export interface IUser extends Document {
   phone?: string;
   avatar?: string;
   passwordHash?: string;
-  subscriptionPlan: 'free' | 'basic' | 'standard' | 'premium';
+  subscriptionPlan: 'free' | 'basic' | 'standard' | 'premium' | 'vip' | string;
   subscriptionStatus: 'active' | 'inactive' | 'cancelled' | 'expired';
   subscriptionExpiry?: Date;
   subscriptionPlanId?: Types.ObjectId;
@@ -52,7 +52,6 @@ const UserSchema = new Schema<IUser>(
     passwordHash: String,
     subscriptionPlan: {
       type: String,
-      enum: ['free', 'basic', 'standard', 'premium'],
       default: 'free',
     },
     subscriptionStatus: {

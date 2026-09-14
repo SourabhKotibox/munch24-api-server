@@ -82,6 +82,10 @@ const buildSubscriptionPayload = async (body: Record<string, any>, existing?: an
     throw new Error('Plan not found');
   }
 
+  if (plan && plan.status === false && !existing) {
+    throw new Error('This plan is currently inactive and cannot be assigned to new subscriptions');
+  }
+
   const duration = body.duration || plan?.duration || existing?.duration || 'Month';
   const durationValue = Math.max(
     1,
@@ -231,7 +235,8 @@ export const createSubscription = async (request: FastifyRequest, reply: Fastify
       data: created ? serializeSubscription(created) : serializeSubscription(subscription),
     });
   } catch (error: any) {
-    const statusCode = error.message === 'Plan not found' ? 404 : 500;
+    const statusCode = error.message === 'Plan not found' ? 404 :
+                       error.message?.includes('currently inactive') ? 400 : 500;
     return reply.status(statusCode).send({ success: false, error: error.message });
   }
 };
@@ -320,6 +325,10 @@ export const createRazorpayOrder = async (request: FastifyRequest, reply: Fastif
     const plan = await SubscriptionPlanModel.findById(planId).lean();
     if (!plan) {
       return reply.status(404).send({ success: false, error: 'Plan not found' });
+    }
+
+    if (plan.status === false) {
+      return reply.status(400).send({ success: false, error: 'This plan is currently unavailable for subscription' });
     }
 
     // Get settings
@@ -421,6 +430,10 @@ export const verifyRazorpayPayment = async (request: FastifyRequest, reply: Fast
     const plan = await SubscriptionPlanModel.findById(planId).lean();
     if (!plan) {
       return reply.status(404).send({ success: false, error: 'Plan not found' });
+    }
+
+    if (plan.status === false) {
+      return reply.status(400).send({ success: false, error: 'This plan is currently unavailable for subscription' });
     }
 
     const body = {

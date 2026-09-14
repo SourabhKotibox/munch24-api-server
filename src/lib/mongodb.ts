@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+import { logger } from './logger';
 import fs from 'fs';
 import path from 'path';
 import { spawn, execSync } from 'child_process';

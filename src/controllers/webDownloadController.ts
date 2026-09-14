@@ -4,9 +4,11 @@ import { MovieModel } from '../models/Movie';
 import { ContentModel } from '../models/Content';
 import { EpisodeModel } from '../models/Episode';
 import { UserDownloadModel } from '../models/UserDownload';
+import { UserModel } from '../models/User';
+import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
+import { PlanLimitModel } from '../models/PlanLimit';
 import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
-import { UserModel } from '../models/User';
 import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
 import { canDownloadContent, getUserEntitlements, resolveDownloadUrl } from '../lib/subscriptionAccess';
 
@@ -56,8 +58,11 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
       return reply.status(404).send({ success: false, message: 'User not found' });
     }
     const entitlements = await getUserEntitlements(user);
+    if (!entitlements.active) {
+      return reply.status(403).send({ success: false, message: 'Active subscription required to download content.' });
+    }
     if (!entitlements.canDownload) {
-      return reply.status(403).send({ success: false, message: 'Your subscription does not allow downloads.' });
+      return reply.status(403).send({ success: false, message: 'Your current subscription plan does not allow downloads.' });
     }
 
     const { contentId, episodeId, contentType, profileId } = (request.body || {}) as {
@@ -91,6 +96,9 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
       if (!movie || movie.status !== 'published') {
         return reply.status(404).send({ success: false, message: 'Movie not found' });
       }
+      if (movie.downloadAllowed === false) {
+        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this movie.' });
+      }
       if (!canDownloadContent(entitlements, movie)) {
         return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this movie on your plan.' });
       }
@@ -120,6 +128,12 @@ export const webRequestDownload = async (request: FastifyRequest, reply: Fastify
       }
       if (!episode || episode.processingStatus !== 'ready') {
         return reply.status(404).send({ success: false, message: 'Episode not found or not ready' });
+      }
+      if (content.downloadAllowed === false) {
+        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this content.' });
+      }
+      if (episode.downloadAllowed === false) {
+        return reply.status(400).send({ success: false, message: 'Downloading is disabled for this episode.' });
       }
 
       const coinUnlocked = !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean());

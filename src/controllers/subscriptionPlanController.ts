@@ -142,11 +142,29 @@ export const updateSubscriptionPlan = async (request: FastifyRequest, reply: Fas
     if (body.description !== undefined) updateData.description = body.description;
     if (body.level !== undefined) updateData.level = parseInt(body.level, 10);
 
+    const existingPlan = await SubscriptionPlanModel.findById(id);
+    if (!existingPlan) {
+      return reply.status(404).send({ success: false, error: 'Plan not found' });
+    }
+
+    const isFreePlan = (existingPlan.name || '').trim().toLowerCase() === 'free' ||
+                       (body.name !== undefined && String(body.name).trim().toLowerCase() === 'free');
+
+    if (isFreePlan && body.status !== undefined && !body.status) {
+      return reply.status(400).send({
+        success: false,
+        error: 'The Free plan is permanently active and cannot be deactivated.'
+      });
+    }
+
+    if (isFreePlan) {
+      updateData.status = true;
+    }
+
     // Recalculate totalPrice if price or discount changes
     if (updateData.price !== undefined || updateData.discount !== undefined) {
-      const existingPlan = await SubscriptionPlanModel.findById(id);
-      const currentPrice = updateData.price !== undefined ? updateData.price : existingPlan?.price;
-      const currentDiscount = updateData.discount !== undefined ? updateData.discount : existingPlan?.discount;
+      const currentPrice = updateData.price !== undefined ? updateData.price : existingPlan.price;
+      const currentDiscount = updateData.discount !== undefined ? updateData.discount : existingPlan.discount;
       if (currentPrice !== undefined && currentDiscount !== undefined) {
         updateData.totalPrice = Math.round(currentPrice * (1 - currentDiscount / 100) * 100) / 100;
       }
@@ -187,11 +205,17 @@ export const updateSubscriptionPlan = async (request: FastifyRequest, reply: Fas
 export const deleteSubscriptionPlan = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = request.params as { id: string };
-    const plan = await SubscriptionPlanModel.findByIdAndDelete(id);
+    const existing = await SubscriptionPlanModel.findById(id);
 
-    if (!plan) {
+    if (!existing) {
       return reply.status(404).send({ success: false, error: 'Plan not found' });
     }
+
+    if ((existing.name || '').trim().toLowerCase() === 'free') {
+      return reply.status(400).send({ success: false, error: 'The Free plan cannot be deleted.' });
+    }
+
+    await SubscriptionPlanModel.findByIdAndDelete(id);
 
     return reply.send({
       success: true,
@@ -210,7 +234,11 @@ export const bulkDeleteSubscriptionPlans = async (request: FastifyRequest, reply
       return reply.status(400).send({ success: false, message: 'Invalid or empty ids array' });
     }
 
-    const result = await SubscriptionPlanModel.deleteMany({ _id: { $in: ids } });
+    // Never delete the Free plan
+    const result = await SubscriptionPlanModel.deleteMany({
+      _id: { $in: ids },
+      name: { $not: /^free$/i },
+    });
 
     return reply.send({
       success: true,

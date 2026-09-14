@@ -187,13 +187,14 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       featured: item.featured || false,
       trending: item.trending || false,
       releaseDate: item.releaseDate || null,
+      downloadAllowed: item.downloadAllowed !== false,
     };
 
     let episodes: any[] = [];
     if (!isMovie) {
       const eps = await EpisodeModel.find({ contentId: item._id })
         .sort({ season: 1, episode: 1 })
-        .select('title description thumbnail hlsUrl sourceVideoUrl duration season episode isFree isLocked coinsRequired videoQualities')
+        .select('title description thumbnail hlsUrl sourceVideoUrl duration season episode isFree isLocked coinsRequired videoQualities downloadAllowed')
         .lean();
 
       const unlockedEpisodeIds = new Set<string>();
@@ -244,6 +245,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
           isLockedForUser: !hasAccess,
           coinsRequired: e.coinsRequired || 0,
           videoSettings: epVideoSettings,
+          downloadAllowed: e.downloadAllowed !== false && item.downloadAllowed !== false,
         };
       });
     }

@@ -16,6 +16,7 @@ import mongoose from 'mongoose';
 import { MovieModel } from '../models/Movie';
 import { EpisodeModel } from '../models/Episode';
 import { SectionModel } from '../models/Section';
+
 import { GenreModel } from '../models/Genre';
 import { ActorModel } from '../models/Actor';
 import { DirectorModel } from '../models/Director';

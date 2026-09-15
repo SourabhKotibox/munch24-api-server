@@ -137,6 +137,14 @@ export interface ISettings extends Document {
   razorpayEnabled: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
+  // Message Gateway
+  otpEnabled: boolean;
+  customerId: string;
+  authToken: string;
+  baseUrl: string;
+  countryCode: string;
+  otpLength: number;
+  flow: string;
 }
 
 const SettingsSchema = new Schema<ISettings>(
@@ -274,6 +282,14 @@ const SettingsSchema = new Schema<ISettings>(
     razorpayEnabled: { type: Boolean, default: false },
     razorpayKeyId: { type: String, default: '' },
     razorpayKeySecret: { type: String, default: '' },
+    // Message Gateway
+    otpEnabled: { type: Boolean, default: false },
+    customerId: { type: String, default: '' },
+    authToken: { type: String, default: '' },
+    baseUrl: { type: String, default: 'https://cpaas.messagecentral.com' },
+    countryCode: { type: String, default: '91' },
+    otpLength: { type: Number, default: 4 },
+    flow: { type: String, default: 'SMS' },
   },
   { timestamps: true }
 );

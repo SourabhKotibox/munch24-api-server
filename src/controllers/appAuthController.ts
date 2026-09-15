@@ -10,8 +10,8 @@ import { sendTemplateEmail } from '../lib/email';
 import { SettingsModel } from '../models/Settings';
 import jwt from 'jsonwebtoken';
 
+
 const messageCentralService = new MessageCentralService();
-const STATIC_OTP = '1234';
 
 // Validation schemas
 const sendOtpSchema = z.object({
@@ -21,11 +21,12 @@ const sendOtpSchema = z.object({
 const verifyOtpSchema = z.object({
   mobileNumber: z.string().regex(/^\d{10}$/, 'Mobile number must be 10 digits'),
   verificationId: z.string().optional(),
-  otp: z.string().regex(/^\d{4}$/, 'OTP must be 4 digits'),
+  otp: z.string().regex(/^\d{4,6}$/, 'OTP must be 4 to 6 digits'),
   deviceId: z.string().optional(),
   deviceName: z.string().optional(),
   deviceType: z.string().optional(),
 });
+
 
 const setLanguageSchema = z.object({
   language: z.string().trim().min(1, 'Language is required'),

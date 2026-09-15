@@ -45,7 +45,8 @@ export const getSettings = async (request: FastifyRequest, reply: FastifyReply) 
         'mailEmail', 'mailDriver', 'mailHost', 'mailPort', 'mailEncryption', 'mailUsername', 'mailPassword', 'mailFrom', 'mailFromName',
         'awsAccessKeyId', 'awsSecretAccessKey', 'awsRegion', 'awsBucket', 'awsPathStyleEndpoint', 'bunnyStorageZone', 'bunnyAccessKey',
         'doAccessKey', 'doSecretKey', 'doRegion', 'doBucket', 'doCdnUrl',
-        'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId'
+        'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId',
+        'authToken', 'customerId'
       ];
       for (const field of sensitiveFields) {
         delete publicSettings[field];
@@ -63,7 +64,10 @@ export const getSettings = async (request: FastifyRequest, reply: FastifyReply) 
 
 export const updateSettings = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const body = request.body as Record<string, any>;
+    const body = { ...(request.body as Record<string, any>) };
+    if (body.authToken === '••••••••' || body.authToken === '') {
+      delete body.authToken;
+    }
     const settings = await SettingsModel.findOneAndUpdate(
       {},
       { $set: body },
@@ -182,6 +186,88 @@ export const testEmail = async (request: FastifyRequest, reply: FastifyReply) =>
       success: false,
       error: 'Email not sent. SMTP credentials are not configured.',
       hint: 'Go to Settings → Mail and configure mailUsername, mailPassword, mailHost, and mailPort. Or set EMAIL_USER and EMAIL_PASS in your .env file.'
+    });
+  } catch (error: any) {
+    console.error(error);
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const getMessageGatewaySettings = async (_request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const settings = await getOrCreateSettings();
+    const hasAuthToken = Boolean(settings.authToken && settings.authToken.trim().length > 0);
+
+    return reply.send({
+      success: true,
+      data: {
+        otpEnabled: settings.otpEnabled ?? false,
+        customerId: settings.customerId || '',
+        authToken: hasAuthToken ? '••••••••' : '',
+        hasAuthToken,
+        baseUrl: settings.baseUrl || 'https://cpaas.messagecentral.com',
+        countryCode: settings.countryCode || '91',
+        otpLength: settings.otpLength || 4,
+        flow: settings.flow || 'SMS',
+      }
+    });
+  } catch (error: any) {
+    console.error(error);
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const updateMessageGatewaySettings = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const body = request.body as Record<string, any>;
+    const updateFields: Record<string, any> = {};
+
+    if (body.otpEnabled !== undefined) {
+      updateFields.otpEnabled = Boolean(body.otpEnabled);
+    }
+    if (body.customerId !== undefined) {
+      updateFields.customerId = String(body.customerId).trim();
+    }
+    if (body.authToken !== undefined && body.authToken.trim() !== '' && body.authToken !== '••••••••') {
+      updateFields.authToken = String(body.authToken).trim();
+    }
+    if (body.baseUrl !== undefined) {
+      updateFields.baseUrl = String(body.baseUrl).trim();
+    }
+    if (body.countryCode !== undefined) {
+      updateFields.countryCode = String(body.countryCode).trim();
+    }
+    if (body.otpLength !== undefined) {
+      const len = typeof body.otpLength === 'number'
+        ? body.otpLength
+        : parseInt(String(body.otpLength), 10) || 4;
+      updateFields.otpLength = len;
+    }
+    if (body.flow !== undefined) {
+      updateFields.flow = String(body.flow).trim();
+    }
+
+    const settings = await SettingsModel.findOneAndUpdate(
+      {},
+      { $set: updateFields },
+      { returnDocument: 'after', upsert: true }
+    );
+
+    const hasAuthToken = Boolean(settings.authToken && settings.authToken.trim().length > 0);
+
+    return reply.send({
+      success: true,
+      message: 'Message Gateway settings updated successfully',
+      data: {
+        otpEnabled: settings.otpEnabled ?? false,
+        customerId: settings.customerId || '',
+        authToken: hasAuthToken ? '••••••••' : '',
+        hasAuthToken,
+        baseUrl: settings.baseUrl || 'https://cpaas.messagecentral.com',
+        countryCode: settings.countryCode || '91',
+        otpLength: settings.otpLength || 4,
+        flow: settings.flow || 'SMS',
+      }
     });
   } catch (error: any) {
     console.error(error);

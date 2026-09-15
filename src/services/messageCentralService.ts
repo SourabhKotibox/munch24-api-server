@@ -35,14 +35,33 @@ export class MessageCentralService {
   }
 
   /**
-   * Authenticate with MessageCentral and return a short-lived session token.
-   * The authToken stored in settings is the API key/secret, NOT the session token.
+   * Authenticate with MessageCentral and return the authToken.
+   * If the user provided a JWT authToken directly (e.g. from the MessageCentral console,
+   * starting with "eyJ" or long token), it is used directly.
+   * Otherwise, if an API key/password is provided, we fetch a session token via GET /auth/v1/authentication/token.
    */
-  private async getSessionToken(baseUrl: string, customerId: string, apiKey: string): Promise<string> {
+  private async getSessionToken(baseUrl: string, customerId: string, apiKeyOrToken: string): Promise<string> {
+    const trimmed = (apiKeyOrToken || '').trim();
+    if (!trimmed) {
+      throw new Error('Auth Token is missing in settings.');
+    }
+
+    // Direct JWT authToken (e.g. pasted directly from MessageCentral console)
+    if (trimmed.startsWith('eyJ') || trimmed.length > 60) {
+      return trimmed;
+    }
+
     // MessageCentral requires the API key to be base64-encoded
-    const encodedKey = Buffer.from(apiKey).toString('base64');
+    const encodedKey = Buffer.from(trimmed).toString('base64');
     const url = `${baseUrl}/auth/v1/authentication/token?customerId=${encodeURIComponent(customerId)}&key=${encodedKey}&scope=NEW`;
-    const res = await fetch(url, { method: 'POST' });
+
+    // MessageCentral documentation specifies GET request
+    let res = await fetch(url, { method: 'GET', headers: { accept: '*/*' } });
+    if (!res.ok) {
+      // Fallback try POST if GET failed
+      res = await fetch(url, { method: 'POST', headers: { accept: '*/*' } });
+    }
+
     if (!res.ok) {
       const body = await res.json().catch(() => ({})) as any;
       throw new Error(body.message || `MessageCentral authentication failed (HTTP ${res.status})`);
@@ -74,8 +93,9 @@ export class MessageCentralService {
       return { success: false, message: err.message };
     }
 
+    const cleanBaseUrl = (settings.baseUrl || 'https://cpaas.messagecentral.com').replace(/\/+$/, '');
     const url =
-      `${settings.baseUrl}/verification/v3/send` +
+      `${cleanBaseUrl}/verification/v3/send` +
       `?countryCode=${encodeURIComponent(settings.countryCode || '91')}` +
       `&customerId=${encodeURIComponent(settings.customerId)}` +
       `&flowType=${encodeURIComponent(settings.flow || 'SMS')}` +
@@ -84,19 +104,30 @@ export class MessageCentralService {
 
     const res = await fetch(url, {
       method: 'POST',
-      headers: { authToken: sessionToken },
+      headers: {
+        authToken: sessionToken,
+        accept: '*/*',
+      },
     });
 
     const data = await res.json().catch(() => ({})) as any;
 
-    if (!res.ok || data.responseCode !== 200) {
-      console.error('[MessageCentral] Send OTP error:', data);
-      return { success: false, message: data.message || 'Failed to send OTP. Please try again.' };
+    if (!res.ok || (data.responseCode && Number(data.responseCode) !== 200)) {
+      console.error('[MessageCentral] Send OTP error:', JSON.stringify(data));
+      const errMsg =
+        data.data?.errorMessage ||
+        data.errorMessage ||
+        data.message ||
+        data.data?.message ||
+        data.responseDescription ||
+        data.error ||
+        `MessageCentral Error (HTTP ${res.status})`;
+      return { success: false, message: errMsg };
     }
 
-    const verificationId: string | undefined = data.data?.verificationId;
+    const verificationId: string | undefined = data.data?.verificationId || data.verificationId;
     if (!verificationId) {
-      return { success: false, message: 'MessageCentral did not return a verification ID.' };
+      return { success: false, message: data.data?.errorMessage || data.message || 'MessageCentral did not return a verification ID.' };
     }
 
     return {
@@ -130,25 +161,39 @@ export class MessageCentralService {
       return { success: false, message: err.message };
     }
 
+    const cleanBaseUrl = (settings.baseUrl || 'https://cpaas.messagecentral.com').replace(/\/+$/, '');
     const url =
-      `${settings.baseUrl}/verification/v3/validateOtp` +
-      `?verificationId=${encodeURIComponent(verificationId)}` +
+      `${cleanBaseUrl}/verification/v3/validateOtp` +
+      `?customerId=${encodeURIComponent(settings.customerId)}` +
+      `&verificationId=${encodeURIComponent(verificationId)}` +
       `&code=${encodeURIComponent(code)}`;
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: { authToken: sessionToken },
+      headers: {
+        authToken: sessionToken,
+        accept: '*/*',
+      },
     });
 
     const data = await res.json().catch(() => ({})) as any;
 
-    if (!res.ok || data.responseCode !== 200) {
-      console.error('[MessageCentral] Verify OTP error:', data);
-      return { success: false, message: data.message || 'Invalid OTP. Please try again.' };
+    if (!res.ok || (data.responseCode && Number(data.responseCode) !== 200)) {
+      console.error('[MessageCentral] Verify OTP error:', JSON.stringify(data));
+      const errMsg =
+        data.data?.errorMessage ||
+        data.errorMessage ||
+        data.message ||
+        data.data?.message ||
+        data.responseDescription ||
+        data.error ||
+        'Invalid OTP. Please try again.';
+      return { success: false, message: errMsg };
     }
 
-    if (data.data?.verificationStatus !== 'VERIFICATION_COMPLETED') {
-      return { success: false, message: 'OTP verification failed. Please try again.' };
+    const verificationStatus = data.data?.verificationStatus || data.verificationStatus;
+    if (verificationStatus !== 'VERIFICATION_COMPLETED' && verificationStatus !== 'SUCCESS') {
+      return { success: false, message: data.data?.errorMessage || data.message || 'OTP verification failed. Please try again.' };
     }
 
     return { success: true, message: 'OTP verified successfully.' };

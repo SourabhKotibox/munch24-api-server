@@ -203,7 +203,7 @@ export const getMessageGatewaySettings = async (_request: FastifyRequest, reply:
       data: {
         otpEnabled: settings.otpEnabled ?? false,
         customerId: settings.customerId || '',
-        authToken: hasAuthToken ? '••••••••' : '',
+        authToken: settings.authToken || '',
         hasAuthToken,
         baseUrl: settings.baseUrl || 'https://cpaas.messagecentral.com',
         countryCode: settings.countryCode || '91',
@@ -247,8 +247,9 @@ export const updateMessageGatewaySettings = async (request: FastifyRequest, repl
       updateFields.flow = String(body.flow).trim();
     }
 
-    const settings = await SettingsModel.findOneAndUpdate(
-      {},
+    const existing = await getOrCreateSettings();
+    const settings = await SettingsModel.findByIdAndUpdate(
+      existing._id,
       { $set: updateFields },
       { returnDocument: 'after', upsert: true }
     );
@@ -261,7 +262,7 @@ export const updateMessageGatewaySettings = async (request: FastifyRequest, repl
       data: {
         otpEnabled: settings.otpEnabled ?? false,
         customerId: settings.customerId || '',
-        authToken: hasAuthToken ? '••••••••' : '',
+        authToken: settings.authToken || '',
         hasAuthToken,
         baseUrl: settings.baseUrl || 'https://cpaas.messagecentral.com',
         countryCode: settings.countryCode || '91',

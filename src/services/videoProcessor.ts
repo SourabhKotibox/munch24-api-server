@@ -9,6 +9,11 @@ import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToCloudStorage, getActiveStorageSettings } from '../lib/s3';
 import { resolveLocalVideoFile, toLocalUploadPath as resolveUploadsPath } from '../lib/sourceVideo';
 
+const httpProtocolArgs = (input: string) =>
+  input.startsWith('http://') || input.startsWith('https://')
+    ? ['-protocol_whitelist', 'file,http,https,tcp,tls,crypto']
+    : [];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // All 7 quality renditions with Netflix-grade bitrate settings
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +74,7 @@ const runCommand = (command: string, args: string[]): Promise<string> => {
 const getVideoDurationSeconds = async (filePath: string): Promise<number | undefined> => {
   try {
     const output = await runCommand('ffprobe', [
+      ...httpProtocolArgs(filePath),
       '-v', 'error',
       '-show_entries', 'format=duration',
       '-of', 'default=noprint_wrappers=1:nokey=1',
@@ -110,6 +116,7 @@ const getFolderSize = (folderPath: string): number => {
 const probeResolution = async (inputPath: string): Promise<{ width: number; height: number } | null> => {
   try {
     const output = await runCommand('ffprobe', [
+      ...httpProtocolArgs(inputPath),
       '-v', 'error',
       '-select_streams', 'v:0',
       '-show_entries', 'stream=width,height',
@@ -187,7 +194,7 @@ export const transcodeHlsMultiResolution = async (options: {
   logger.info({ id, type, sourceHeight, qualityCount: qualities.length }, 'Starting HLS transcoding');
 
   // ── Build single-pass FFmpeg args ───────────────────────────────────────
-  const args: string[] = ['-y'];
+  const args: string[] = ['-y', ...httpProtocolArgs(ffmpegInput)];
 
   // Input seek (must come before -i for fast seek)
   if (startSeconds !== undefined && startSeconds > 0) {
@@ -295,7 +302,7 @@ const transcodeHlsSequential = async (opts: {
     const qFolder = path.join(hlsFolder, q.name);
     ensureDir(qFolder);
 
-    const args: string[] = ['-y'];
+    const args: string[] = ['-y', ...httpProtocolArgs(ffmpegInput)];
     if (startSeconds !== undefined && startSeconds > 0) args.push('-ss', String(startSeconds));
     args.push('-i', ffmpegInput);
     if (duration !== undefined && duration > 0) args.push('-t', String(duration));

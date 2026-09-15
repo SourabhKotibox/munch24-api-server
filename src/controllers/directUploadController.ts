@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'crypto';
+import fs from 'fs';
 import path from 'path';
 import { Types } from 'mongoose';
 import { MediaFileModel } from '../models/MediaFile';
@@ -26,7 +27,6 @@ import {
   listUploadedParts,
   supportsBrowserDirectUpload,
 } from '../lib/spacesMultipart';
-import { resolveLocalVideoFile } from '../lib/sourceVideo';
 
 const VIDEO_EXTS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.m4v', '.mpeg', '.mpg'];
 const ALLOWED_EXTS = new Set<string>([...UPLOAD_TYPES.MEDIA_LIBRARY.allowedExts]);
@@ -110,12 +110,7 @@ const startTranscodeFromCloud = (mediaFileId: string, key: string, publicUrl: st
         hlsStatus: 'processing',
       });
       logger.info({ event: 'TRANSCODING_STARTED', contentId: mediaFileId, mediaType: 'media-file', storageKey: key }, 'HLS transcoding started');
-      const resolved = await resolveLocalVideoFile(key);
-      try {
-        await transcodeToHls(mediaFileId, resolved.localPath, publicUrl);
-      } finally {
-        resolved.cleanup();
-      }
+      await transcodeToHls(mediaFileId, key, publicUrl);
       await MediaFileModel.findByIdAndUpdate(mediaFileId, { uploadStatus: 'ready' });
       logger.info({ event: 'TRANSCODING_COMPLETED', contentId: mediaFileId, mediaType: 'media-file', storageKey: key }, 'HLS transcoding completed');
     } catch (error: any) {
@@ -164,8 +159,40 @@ export const initDirectUpload = async (request: FastifyRequest, reply: FastifyRe
     const mimeType = sanitizeMime(body.fileName, body.mimeType);
     const cloudActive = await isCloudStorageConfigured();
     const settings = await getActiveStorageSettings();
+    const proxyLimitBytes = 50 * 1024 * 1024;
 
-    if (!cloudActive || !supportsBrowserDirectUpload(settings.storageDriver)) {
+    if (settings.storageDriver === 's3' || settings.storageDriver === 'digitalocean') {
+      if (!cloudActive) {
+        return reply.status(400).send({
+          success: false,
+          error: 'DigitalOcean/S3 is selected but Access Key, Secret Key, and Bucket are missing. Save complete storage settings first.',
+        });
+      }
+
+      try {
+        const origin = request.headers.origin;
+        const frontend = process.env.FRONTEND_URL;
+        const origins = Array.from(new Set(['*', origin, frontend].filter(Boolean) as string[]));
+        await ensureBrowserUploadCors(origins);
+      } catch (corsError: any) {
+        logger.warn({ error: corsError?.message }, 'Could not auto-apply Spaces CORS before direct upload');
+      }
+    } else if (settings.storageDriver === 'bunny' && cloudActive) {
+      return reply.send({
+        success: true,
+        data: {
+          mode: 'proxy',
+          streamToCloud: true,
+          reason: 'Bunny Storage uploads through the API and streams to the storage zone',
+        },
+      });
+    } else if (!cloudActive || !supportsBrowserDirectUpload(settings.storageDriver)) {
+      if (body.fileSize > proxyLimitBytes) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Storage is set to Local. Large movies must use DigitalOcean Spaces — uploading through the API server fills the disk (ENOSPC). Open Settings → Storage, select DigitalOcean Spaces, save, then enable CORS.',
+        });
+      }
       return reply.send({
         success: true,
         data: {
@@ -338,12 +365,22 @@ export const completeDirectUpload = async (request: FastifyRequest, reply: Fasti
       return reply.send({ success: true, data: serializeSession(session, mediaFile) });
     }
 
-    const normalizedParts = parts
-      .filter((part) => part.partNumber && part.etag)
-      .map((part) => ({
-        PartNumber: part.partNumber,
-        ETag: part.etag,
-      }));
+    const listedParts = await listUploadedParts(session.key, session.uploadId).catch(() => []);
+    const etagByPart = new Map<number, string>();
+    for (const part of listedParts) {
+      if (part.partNumber && part.etag) etagByPart.set(part.partNumber, part.etag);
+    }
+    for (const part of parts) {
+      if (part.partNumber && part.etag) etagByPart.set(part.partNumber, part.etag);
+    }
+
+    const normalizedParts = [...etagByPart.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([PartNumber, ETag]) => ({ PartNumber, ETag }));
+
+    if (normalizedParts.length === 0) {
+      throw new Error('No uploaded parts found in DigitalOcean Spaces. Retry the upload after enabling bucket CORS.');
+    }
 
     await completeMultipartUpload(session.key, session.uploadId, normalizedParts);
 
@@ -573,6 +610,12 @@ export const cleanupAbandonedUploads = async () => {
 
     if (aborted > 0 || staleSessions.length > 0) {
       logger.info({ aborted, staleSessions: staleSessions.length }, 'Abandoned upload cleanup finished');
+    }
+
+    const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      logger.info({ tempDir }, 'Cleared leftover local transcode temp files');
     }
   } catch (error) {
     logger.warn({ error }, 'Abandoned upload cleanup failed');

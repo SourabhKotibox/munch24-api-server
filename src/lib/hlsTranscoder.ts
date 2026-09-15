@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { MediaFileModel, IHlsQuality } from '../models/MediaFile';
 import { logger } from './logger';
 import { getHlsPublicBaseUrl, isCloudStorageConfigured, uploadHlsFolderToCloudStorage } from './s3';
+import { resolveLocalVideoFile } from './sourceVideo';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,9 +34,15 @@ const QUALITY_PRESETS = [
   { quality: '2160p', height: 2160, bitrate: 16000 },
 ];
 
+const ffmpegInputOptions = (input: string) =>
+  input.startsWith('http://') || input.startsWith('https://')
+    ? ['-protocol_whitelist', 'file,http,https,tcp,tls,crypto']
+    : [];
+
 export const getVideoInfo = (filePath: string): Promise<{ duration: number; width: number; height: number }> => {
   return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
+    const command = ffmpeg(filePath).inputOptions(ffmpegInputOptions(filePath));
+    command.ffprobe((err, metadata) => {
       if (err) {
         logger.error(err, 'Error getting video info');
         reject(err);
@@ -65,12 +72,20 @@ export const transcodeToHls = async (
     throw new Error('Media file not found');
   }
 
+  let cleanup = () => undefined as void;
+  let ffmpegInput = inputFilePath;
+  if (!inputFilePath || inputFilePath.startsWith('http://') || inputFilePath.startsWith('https://') || !fs.existsSync(inputFilePath)) {
+    const resolved = await resolveLocalVideoFile(inputFilePath || mediaFile.s3Key || mediaFile.filePath || mediaFile.url);
+    ffmpegInput = resolved.localPath;
+    cleanup = resolved.cleanup;
+  }
+
   try {
     // Update status to processing
     mediaFile.hlsStatus = 'processing';
     await mediaFile.save();
 
-    const { duration, width, height } = await getVideoInfo(inputFilePath);
+    const { duration, width, height } = await getVideoInfo(ffmpegInput);
     mediaFile.duration = Math.round(duration);
 
     // Determine which presets to use based on input height
@@ -98,7 +113,8 @@ export const transcodeToHls = async (
       const segmentPattern = path.join(outputDir, 'segment-%03d.ts');
 
       await new Promise((resolve, reject) => {
-        ffmpeg(inputFilePath)
+        ffmpeg(ffmpegInput)
+          .inputOptions(ffmpegInputOptions(ffmpegInput))
           .outputOptions([
             '-preset', 'fast',
             '-g', '48',
@@ -195,6 +211,8 @@ export const transcodeToHls = async (
     mediaFile.uploadError = mediaFile.hlsError;
     await mediaFile.save();
     throw error;
+  } finally {
+    cleanup();
   }
 };
 

@@ -103,6 +103,25 @@ export async function getPresignedPartUrl(
   return getSignedUrl(client, command, { expiresIn });
 }
 
+export async function getPresignedGetUrl(keyOrUrl: string, expiresIn = 12 * 3600): Promise<string> {
+  const settings = await getActiveStorageSettings();
+  const key = extractObjectKey(keyOrUrl, settings);
+  if (!key) {
+    throw new Error('Cannot create a signed download URL without an object key');
+  }
+
+  if (settings.storageDriver === 'bunny') {
+    return getPublicUrl(settings, key);
+  }
+
+  const client = await getCloudStorageClient();
+  const command = new GetObjectCommand({
+    Bucket: settings.bucket,
+    Key: key,
+  });
+  return getSignedUrl(client, command, { expiresIn });
+}
+
 export async function completeMultipartUpload(
   key: string,
   uploadId: string,

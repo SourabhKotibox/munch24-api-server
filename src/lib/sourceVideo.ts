@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
 import { logger } from './logger';
 import { getActiveStorageSettings, isCloudStorageConfigured } from './s3';
-import { downloadCloudObjectToFile, extractObjectKey } from './spacesMultipart';
+import { extractObjectKey, getPresignedGetUrl } from './spacesMultipart';
 
 const uploadsRoot = () => path.join(process.cwd(), 'uploads');
 
@@ -51,26 +50,10 @@ export async function resolveLocalVideoFile(source: string): Promise<{
     throw new Error(`Source video not found: ${source}`);
   }
 
-  const hash = crypto.createHash('sha1').update(key).digest('hex').slice(0, 16);
-  const ext = path.extname(key.split('?')[0]) || '.mp4';
-  const destPath = path.join(uploadsRoot(), 'temp', 'source', `${hash}${ext}`);
-
-  if (fs.existsSync(destPath) && fs.statSync(destPath).size > 0) {
-    return { localPath: destPath, cleanup: () => undefined };
-  }
-
-  logger.info({ event: 'SOURCE_DOWNLOAD_STARTED', storageKey: key }, 'Downloading source video from cloud for transcoding');
-  await downloadCloudObjectToFile(key, destPath);
-  logger.info({ event: 'SOURCE_DOWNLOAD_COMPLETED', storageKey: key, destPath }, 'Source video downloaded for transcoding');
-
+  const signedUrl = await getPresignedGetUrl(key);
+  logger.info({ event: 'SOURCE_STREAM_READY', storageKey: key }, 'Using signed cloud URL for FFmpeg instead of downloading to disk');
   return {
-    localPath: destPath,
-    cleanup: () => {
-      try {
-        if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
-      } catch {
-        // keep temp file if another job is using it
-      }
-    },
+    localPath: signedUrl,
+    cleanup: () => undefined,
   };
 }

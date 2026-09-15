@@ -8,7 +8,7 @@ import { MediaFolderModel } from '../models/MediaFolder';
 import { Types } from 'mongoose';
 import { transcodeToHls } from './hlsTranscoder';
 import { logger } from './logger';
-import { isCloudStorageConfigured, getActiveStorageSettings, getCloudPublicUrl, uploadToCloudStorage, deleteFromS3, deleteFromDO, deleteFromBunny } from './s3';
+import { isCloudStorageConfigured, getActiveStorageSettings, uploadToCloudStorage, deleteFromS3, deleteFromDO, deleteFromBunny } from './s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -130,6 +130,83 @@ const isVideoFile = (fileName: string, mimeType: string): boolean => {
   return videoExtensions.includes(ext) || mimeType.startsWith('video/');
 };
 
+const mapUploadError = (error: any): Error => {
+  const code = error?.code || error?.cause?.code;
+  const message = String(error?.message || error || '');
+  if (code === 'ENOSPC' || message.includes('ENOSPC') || message.toLowerCase().includes('no space left')) {
+    return new Error(
+      'Server disk is full. Large movies must upload directly to DigitalOcean Spaces. Open Settings → Storage and click “Enable browser direct uploads (CORS)”, then retry.'
+    );
+  }
+  return error instanceof Error ? error : new Error(message);
+};
+
+const savePartDirectToCloud = async (
+  part: any,
+  uploadType: UploadType,
+  fileName: string,
+  resolvedFolderId: string | undefined,
+  options?: {
+    trackInMediaLibrary?: boolean;
+    source?: string;
+    sourceId?: string;
+    folderId?: string;
+    contentName?: string;
+    contentType?: string;
+  }
+): Promise<UploadedFileInfo> => {
+  const settings = await getActiveStorageSettings();
+  const mimeType = part.mimetype || 'application/octet-stream';
+  const cloudKey = `${Date.now()}-${fileName}`;
+
+  try {
+    const cloudUrl = await uploadToCloudStorage(cloudKey, part.file, mimeType);
+    const fileSize = Number(part.file?.bytesRead || 0);
+
+    const fileInfo: UploadedFileInfo = {
+      originalName: part.filename,
+      fileName,
+      filePath: cloudKey,
+      url: cloudUrl,
+      fileSize,
+      mimeType,
+      uploadType,
+      storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
+      s3Key: cloudKey,
+    };
+
+    if (options?.trackInMediaLibrary !== false) {
+      const mediaFile = await MediaFileModel.create({
+        name: part.filename,
+        url: cloudUrl,
+        filePath: cloudKey,
+        fileSize,
+        fileType: mimeType,
+        folder: resolvedFolderId ? new Types.ObjectId(resolvedFolderId) : undefined,
+        source: options?.source || uploadType.toLowerCase(),
+        sourceId: options?.sourceId ? new Types.ObjectId(options.sourceId) : undefined,
+        contentName: options?.contentName,
+        contentType: options?.contentType,
+        storageType: settings.storageDriver,
+        s3Key: cloudKey,
+        uploadStatus: isVideoFile(part.filename, mimeType) ? 'uploaded' : 'ready',
+        hlsStatus: isVideoFile(part.filename, mimeType) ? 'pending' : undefined,
+      });
+
+      if (isVideoFile(part.filename, mimeType)) {
+        logger.info({ event: 'TRANSCODING_STARTED', contentId: mediaFile._id.toString(), mediaType: 'media-file', storageKey: cloudKey }, 'Starting HLS after cloud stream upload');
+        transcodeToHls(mediaFile._id.toString(), cloudKey, cloudUrl).catch((err) => {
+          logger.error({ event: 'TRANSCODING_FAILED', err, mediaFileId: mediaFile._id }, 'Failed to transcode video to HLS (cloud stream)');
+        });
+      }
+    }
+
+    return fileInfo;
+  } catch (error: any) {
+    throw mapUploadError(error);
+  }
+};
+
 export const saveFileFromPart = async (
   part: any,
   request: FastifyRequest,
@@ -167,6 +244,10 @@ export const saveFileFromPart = async (
   }
 
   const fileName = generateUniqueFileName(part.filename);
+  if (await isCloudStorageConfigured()) {
+    return savePartDirectToCloud(part, uploadType, fileName, resolvedFolderId, options);
+  }
+
   ensureUploadDir(targetDir);
   const relativeFilePath = path.join(targetDir, fileName);
   const fullFilePath = path.join(UPLOADS_ROOT, relativeFilePath);
@@ -337,7 +418,7 @@ export const saveFileFromPart = async (
       resolve(fileInfo);
     });
 
-    writeStream.on('error', reject);
+    writeStream.on('error', (error) => reject(mapUploadError(error)));
   });
 };
 

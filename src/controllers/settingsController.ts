@@ -84,6 +84,20 @@ export const updateSettings = async (request: FastifyRequest, reply: FastifyRepl
       updateEnvFile(envUpdates);
     }
 
+    if (
+      settings?.storageDriver === 'digitalocean' ||
+      settings?.storageDriver === 's3' ||
+      body.storageDriver === 'digitalocean' ||
+      body.storageDriver === 's3'
+    ) {
+      try {
+        const { ensureBrowserUploadCors } = await import('../lib/spacesMultipart');
+        await ensureBrowserUploadCors(['*']);
+      } catch (corsError: any) {
+        console.warn('Could not auto-apply storage CORS after saving settings:', corsError?.message);
+      }
+    }
+
     return reply.send({
       success: true,
       data: settings

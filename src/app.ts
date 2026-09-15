@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 const fastify = Fastify({
   logger: true,
-  bodyLimit: 10000 * 1024 * 1024 // 10GB
+  bodyLimit: 20 * 1024 * 1024 * 1024 // 20GB
 });
 
 // Register request context lifecycle hook
@@ -80,7 +80,7 @@ fastify.register(fastifyJwt, {
 // Register Multipart for file uploads with optimized config
 fastify.register(fastifyMultipart as any, {
   limits: {
-    fileSize: 10000 * 1024 * 1024, // 10GB
+    fileSize: 20 * 1024 * 1024 * 1024, // 20GB
     files: 10 // Max files per request
   }
 });

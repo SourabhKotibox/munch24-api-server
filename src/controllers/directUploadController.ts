@@ -30,7 +30,7 @@ import { resolveLocalVideoFile } from '../lib/sourceVideo';
 
 const VIDEO_EXTS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.m4v', '.mpeg', '.mpg'];
 const ALLOWED_EXTS = new Set<string>([...UPLOAD_TYPES.MEDIA_LIBRARY.allowedExts]);
-const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024;
+const MAX_FILE_SIZE = 20 * 1024 * 1024 * 1024;
 
 const isVideoFile = (fileName: string, mimeType: string) => {
   const ext = path.extname(fileName).toLowerCase();
@@ -158,7 +158,7 @@ export const initDirectUpload = async (request: FastifyRequest, reply: FastifyRe
       return reply.status(400).send({ success: false, error: `Invalid file type. Allowed: ${[...ALLOWED_EXTS].join(', ')}` });
     }
     if (body.fileSize > MAX_FILE_SIZE) {
-      return reply.status(400).send({ success: false, error: 'File exceeds the 10GB upload limit' });
+      return reply.status(400).send({ success: false, error: 'File exceeds the 20GB upload limit' });
     }
 
     const mimeType = sanitizeMime(body.fileName, body.mimeType);

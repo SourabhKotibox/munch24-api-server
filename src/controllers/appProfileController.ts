@@ -125,7 +125,7 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
           displayId,
           name: user.name,
           phone: user.phone || null,
-          email: user.email || null,
+          email: (user.email && !user.email.endsWith('@temp.local')) ? user.email : null,
           avatar: (user as any).avatar || null,
           subscription: entitlements.paid,
           subscriptionStatus: entitlements.active ? 'active' : 'inactive',
@@ -667,7 +667,7 @@ export const updateAppProfile = async (request: FastifyRequest, reply: FastifyRe
       data: {
         id: (user._id as any).toString(),
         name: user.name,
-        email: user.email,
+        email: (user.email && !user.email.endsWith('@temp.local')) ? user.email : null,
         avatar: (user as any).avatar || null,
         phone: (user as any).phone || null,
       },

@@ -5,6 +5,8 @@ interface SendOtpResponse {
   success: boolean;
   verificationId?: string;
   message?: string;
+  code?: number;
+  rawMessage?: string;
 }
 
 interface VerifyOtpResponse {
@@ -114,15 +116,28 @@ export class MessageCentralService {
 
     if (!res.ok || (data.responseCode && Number(data.responseCode) !== 200)) {
       console.error('[MessageCentral] Send OTP error:', JSON.stringify(data));
-      const errMsg =
+      const rawCode = Number(data.responseCode || res.status);
+      const rawMsg = String(
         data.data?.errorMessage ||
         data.errorMessage ||
         data.message ||
         data.data?.message ||
         data.responseDescription ||
         data.error ||
-        `MessageCentral Error (HTTP ${res.status})`;
-      return { success: false, message: errMsg };
+        `MessageCentral Error (HTTP ${res.status})`
+      );
+
+      let cleanMsg = rawMsg;
+      if (rawCode === 506 || rawMsg.toUpperCase().includes('REQUEST_ALREADY_EXISTS')) {
+        cleanMsg = 'Please wait a few seconds before requesting another OTP.';
+      }
+
+      return {
+        success: false,
+        code: rawCode,
+        rawMessage: rawMsg,
+        message: cleanMsg,
+      };
     }
 
     const verificationId: string | undefined = data.data?.verificationId || data.verificationId;
@@ -130,9 +145,14 @@ export class MessageCentralService {
       return { success: false, message: data.data?.errorMessage || data.message || 'MessageCentral did not return a verification ID.' };
     }
 
+    const timeoutRaw = data.data?.timeout ?? data.timeout;
+    const timeoutNum = timeoutRaw ? Math.round(Number(timeoutRaw)) : undefined;
+    const timeout = timeoutNum && !isNaN(timeoutNum) && timeoutNum > 0 ? timeoutNum : undefined;
+
     return {
       success: true,
       verificationId,
+      timeout,
       message: 'OTP sent successfully.',
     };
   }

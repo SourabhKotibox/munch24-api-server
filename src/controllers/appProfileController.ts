@@ -612,6 +612,22 @@ export const updateAppProfile = async (request: FastifyRequest, reply: FastifyRe
       return reply.status(400).send({ success: false, message: 'No fields to update' });
     }
 
+    // Check if email is already registered to another account
+    if (updateData.email) {
+      const existingEmail = await UserModel.findOne({ email: updateData.email, _id: { $ne: userId } });
+      if (existingEmail) {
+        return reply.status(400).send({ success: false, message: 'This email is already registered to another account.' });
+      }
+    }
+
+    // Check if phone number is already registered to another account
+    if (updateData.phone) {
+      const existingPhone = await UserModel.findOne({ phone: updateData.phone, _id: { $ne: userId } });
+      if (existingPhone) {
+        return reply.status(400).send({ success: false, message: 'This mobile number is already registered to another account.' });
+      }
+    }
+
     let user = await UserModel.findByIdAndUpdate(
       userId,
       { $set: updateData },
@@ -619,6 +635,13 @@ export const updateAppProfile = async (request: FastifyRequest, reply: FastifyRe
     ).lean();
 
     if (!user) {
+      if (updateData.email) {
+        const existingAdminEmail = await AdminUserModel.findOne({ email: updateData.email, _id: { $ne: userId } });
+        if (existingAdminEmail) {
+          return reply.status(400).send({ success: false, message: 'This email is already registered to another account.' });
+        }
+      }
+
       const admin = await AdminUserModel.findByIdAndUpdate(
         userId,
         { $set: updateData },
@@ -652,6 +675,13 @@ export const updateAppProfile = async (request: FastifyRequest, reply: FastifyRe
   } catch (error: any) {
     logger.error({ error }, 'Error updating app profile');
     if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || error.keyValue || {})[0];
+      if (field === 'email') {
+        return reply.status(400).send({ success: false, message: 'This email is already registered to another account.' });
+      }
+      if (field === 'phone') {
+        return reply.status(400).send({ success: false, message: 'This mobile number is already registered to another account.' });
+      }
       return reply.status(400).send({ success: false, message: 'This email or phone number is already registered to another account.' });
     }
     return reply.status(500).send({ success: false, message: 'Failed to update profile' });

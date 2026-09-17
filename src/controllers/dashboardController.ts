@@ -8,6 +8,7 @@ import { GenreModel } from '../models/Genre';
 import { UserWatchProgressModel } from '../models/UserWatchProgress';
 import { ReviewModel } from '../models/Review';
 import { SettingsModel } from '../models/Settings';
+import { MediaFileModel } from '../models/MediaFile';
 import mongoose from 'mongoose';
 
 // Helper to determine date range
@@ -101,6 +102,49 @@ export const getDashboardStats = async (request: FastifyRequest, reply: FastifyR
     const decimals = settings?.decimalPlaces ?? 2;
     const formatValue = (val: number) => position === 'before' ? `${symbol}${val.toFixed(decimals)}` : `${val.toFixed(decimals)} ${symbol}`;
 
+    // Calculate real storage usage from MediaFile records
+    const storageAggResult = await MediaFileModel.aggregate([
+      {
+        $match: {
+          uploadStatus: { $nin: ['uploading', 'failed'] },
+          fileSize: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: '$storageType',
+          totalBytes: { $sum: '$fileSize' },
+          fileCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Sum all storage types
+    let totalBytes = 0;
+    const storageBreakdown: Record<string, { bytes: number; count: number }> = {};
+    for (const row of storageAggResult) {
+      totalBytes += row.totalBytes || 0;
+      storageBreakdown[row._id || 'local'] = {
+        bytes: row.totalBytes || 0,
+        count: row.fileCount || 0,
+      };
+    }
+
+    // Format bytes to human-readable
+    const formatBytes = (bytes: number): string => {
+      if (bytes === 0) return '0 B';
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+      if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    };
+
+    const digitalOceanBytes = storageBreakdown['digitalocean']?.bytes || 0;
+    const digitalOceanCount = storageBreakdown['digitalocean']?.count || 0;
+    const s3Bytes = storageBreakdown['s3']?.bytes || 0;
+    const localBytes = storageBreakdown['local']?.bytes || 0;
+    const bunnyBytes = storageBreakdown['bunny']?.bytes || 0;
+
     return reply.send({
       success: true,
       data: {
@@ -108,7 +152,14 @@ export const getDashboardStats = async (request: FastifyRequest, reply: FastifyR
         totalSubscribers: activeSubscriptions,
         soonToExpire,
         totalReviews,
-        totalStorageUsage: 'Dynamic MB', // Placeholder for actual S3 calculation if needed
+        totalStorageUsage: formatBytes(totalBytes),
+        totalStorageBytes: totalBytes,
+        storageBreakdown: {
+          digitalocean: { bytes: digitalOceanBytes, formatted: formatBytes(digitalOceanBytes), count: digitalOceanCount },
+          s3: { bytes: s3Bytes, formatted: formatBytes(s3Bytes), count: storageBreakdown['s3']?.count || 0 },
+          local: { bytes: localBytes, formatted: formatBytes(localBytes), count: storageBreakdown['local']?.count || 0 },
+          bunny: { bytes: bunnyBytes, formatted: formatBytes(bunnyBytes), count: storageBreakdown['bunny']?.count || 0 },
+        },
         restContent: totalContent + totalMovies,
         subscriptionRevenue: formatValue(subscriptionRevenue),
         coinRevenue: formatValue(totalCoinRevenue),
@@ -122,6 +173,7 @@ export const getDashboardStats = async (request: FastifyRequest, reply: FastifyR
     return reply.status(500).send({ success: false, error: error.message });
   }
 };
+
 
 export const getRevenueData = async (request: FastifyRequest, reply: FastifyReply) => {
   try {

@@ -1,0 +1,5100 @@
+{
+  "info": {
+    "name": "Manch24 All Mobile APIs (Live)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/app/movies/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/movies/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/home",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "home"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/banners",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/banners",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "banners"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/explore",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/explore",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "explore"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/search",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/search",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "search"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web-home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web-home",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web-home"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web-browse",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web-browse",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web-browse"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web-detail/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web-detail/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web-detail",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/public/notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/public/notifications",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "public",
+            "notifications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/wallet/balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/balance",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "balance"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/wallet/packages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/packages",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/topup",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/topup",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "topup"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/unlock-episode",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/unlock-episode",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "unlock-episode"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/wallet/unlocked-episodes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/unlocked-episodes",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "unlocked-episodes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/razorpay/order",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/razorpay/order",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "razorpay",
+            "order"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/razorpay/verify",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/razorpay/verify",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "razorpay",
+            "verify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/wallet/packages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/packages",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/wallet/packages/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/packages/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/wallet/packages/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/wallet/packages/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "wallet",
+            "packages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/views/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/views/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "views",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin/reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin/reviews",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/admin/reviews/:id/status",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin/reviews/:id/status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "reviews",
+            ":id",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/admin/reviews/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin/reviews/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "reviews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/reviews",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/reviews",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/reviews",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/reviews/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/reviews/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "reviews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin-notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-notifications",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-notifications"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/admin-notifications/read-all",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-notifications/read-all",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-notifications",
+            "read-all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/ads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/ads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/ads",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/ads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/ads/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/ads/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "ads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/ads/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/ads/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "ads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/ads/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/ads/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "ads",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/public/ads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/public/ads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "public",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/ads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/ads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "ads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/ads/:id/interaction",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/ads/:id/interaction",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "ads",
+            ":id",
+            "interaction"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/healthz",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/healthz",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "healthz"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/login",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/auth/me",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/me",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/logout",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/auth/profile",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/profile",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/auth/password",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/password",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "password"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/profile/avatar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/profile/avatar",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile",
+            "avatar"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/auth/profile/avatar/presign",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/profile/avatar/presign",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile",
+            "avatar",
+            "presign"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/profile/avatar/confirm",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/profile/avatar/confirm",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "profile",
+            "avatar",
+            "confirm"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/auth/setup-admin",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/auth/setup-admin",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "setup-admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/send-otp",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/send-otp",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "send-otp"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/verify-otp",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/verify-otp",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "verify-otp"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/register",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/register",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/login",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/google",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/google",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "google"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/apple",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/apple",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "apple"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/logout",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/language/:userId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/language/:userId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "language",
+            ":userId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/auth/language/:userId/skip",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/auth/language/:userId/skip",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "auth",
+            "language",
+            ":userId",
+            "skip"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/users/:userId/language",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/users/:userId/language",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "users",
+            ":userId",
+            "language"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/users/:userId/language/skip",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/users/:userId/language/skip",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "users",
+            ":userId",
+            "language",
+            "skip"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/users",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/users/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/users/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/users/:id",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/users/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/users/:id/ban",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/users/:id/ban",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id",
+            "ban"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/users/:id/unban",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/users/:id/unban",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id",
+            "unban"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/users/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/users/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/languages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/languages",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "languages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/languages/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/languages/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "languages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/languages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/languages",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "languages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/languages/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/languages/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "languages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/languages/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/languages/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "languages",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/promotions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/promotions/active",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions/active",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            "active"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/promotions/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/promotions",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/promotions/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/promotions/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/promotions/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/promotions/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "promotions",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/banners",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners/from-content",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/from-content",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "from-content"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/banners/item/:bannerId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/item/:bannerId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "item",
+            ":bannerId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/banners/item/:bannerId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/item/:bannerId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "item",
+            ":bannerId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/banners/item/:bannerId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/item/:bannerId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "item",
+            ":bannerId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/banners/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/banners/:contentId/videos",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/banners/:contentId/videos",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "banners",
+            ":contentId",
+            "videos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/episodes/:episodeId/lock",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes/:episodeId/lock",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":episodeId",
+            "lock"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/settings",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/settings",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/settings",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/settings",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/settings/upload-logos",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/settings/upload-logos",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "settings",
+            "upload-logos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/settings/email-status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/settings/email-status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "settings",
+            "email-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/settings/test-email",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/settings/test-email",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "settings",
+            "test-email"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/genres",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/genres",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "genres"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/genres/item/:genreId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/genres/item/:genreId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "item",
+            ":genreId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/genres",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/genres",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "genres"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/genres/item/:genreId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/genres/item/:genreId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "item",
+            ":genreId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/genres/item/:genreId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/genres/item/:genreId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "item",
+            ":genreId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/genres/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/genres/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "genres",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/pages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/pages/:slug",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages/:slug",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages",
+            ":slug"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/pages/item/:pageId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages/item/:pageId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages",
+            "item",
+            ":pageId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/pages",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/pages/:pageId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages/:pageId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages",
+            ":pageId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/pages/:pageId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages/:pageId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages",
+            ":pageId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/pages/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/pages/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "pages",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/faqs/public",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs/public",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "public"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/faqs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/faqs/item/:faqId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs/item/:faqId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "item",
+            ":faqId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/faqs",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/faqs/item/:faqId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs/item/:faqId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "item",
+            ":faqId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/faqs/item/:faqId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs/item/:faqId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "item",
+            ":faqId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/faqs/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/faqs/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "faqs",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/actors",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/actors",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "actors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/actors/item/:actorId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/actors/item/:actorId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "item",
+            ":actorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/actors",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/actors",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "actors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/actors/item/:actorId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/actors/item/:actorId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "item",
+            ":actorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/actors/item/:actorId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/actors/item/:actorId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "item",
+            ":actorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/actors/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/actors/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "actors",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/directors",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/directors",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "directors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/directors/item/:directorId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/directors/item/:directorId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "item",
+            ":directorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/directors",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/directors",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "directors"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/directors/item/:directorId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/directors/item/:directorId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "item",
+            ":directorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/directors/item/:directorId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/directors/item/:directorId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "item",
+            ":directorId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/directors/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/directors/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "directors",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-logs",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-logs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-logs/item/:notificationId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-logs/item/:notificationId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-logs",
+            "item",
+            ":notificationId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/notification-logs",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-logs",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-logs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/notification-logs/item/:notificationId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-logs/item/:notificationId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-logs",
+            "item",
+            ":notificationId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/notification-logs/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-logs/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-logs",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscription-plans",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscription-plans",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscription-plans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscription-plans/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscription-plans/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscription-plans",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscription-plans",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscription-plans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/subscription-plans/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscription-plans/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/subscription-plans/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscription-plans/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscription-plans/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscription-plans/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscription-plans",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/plan-limits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/plan-limits",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "plan-limits"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/plan-limits/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/plan-limits/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/plan-limits",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/plan-limits",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "plan-limits"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/plan-limits/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/plan-limits/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/plan-limits/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/plan-limits/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/plan-limits/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/plan-limits/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "plan-limits",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscriptions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscriptions",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscriptions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/subscriptions/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscriptions/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscriptions",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscriptions",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscriptions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/subscriptions/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscriptions/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/subscriptions/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscriptions/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/subscriptions/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/subscriptions/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "subscriptions",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/subscription/razorpay/order",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/subscription/razorpay/order",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "subscription",
+            "razorpay",
+            "order"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/subscription/razorpay/verify",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/subscription/razorpay/verify",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "subscription",
+            "razorpay",
+            "verify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/categories",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/categories",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/categories/item/:categoryId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/categories/item/:categoryId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "item",
+            ":categoryId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/categories",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/categories",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/categories/item/:categoryId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/categories/item/:categoryId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "item",
+            ":categoryId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/categories/item/:categoryId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/categories/item/:categoryId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "item",
+            ":categoryId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/categories/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/categories/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "categories",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-templates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-templates",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-templates"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/notification-templates/item/:templateId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-templates/item/:templateId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/notification-templates",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-templates",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-templates"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/notification-templates/item/:templateId",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-templates/item/:templateId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/notification-templates/item/:templateId/toggle-status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-templates/item/:templateId/toggle-status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId",
+            "toggle-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/notification-templates/item/:templateId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/notification-templates/item/:templateId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "notification-templates",
+            "item",
+            ":templateId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/media/folders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/folders",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/media/folders",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/folders",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/media/folders/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/folders/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/media/folders/:id/files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/folders/:id/files",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders",
+            ":id",
+            "files"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/media/files/all",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/files/all",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "files",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/media/folders/:id/files",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/folders/:id/files",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "folders",
+            ":id",
+            "files"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/media/files/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/media/files/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "media",
+            "files",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app-settings",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app-settings",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app-settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app-settings",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app-settings",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app-settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app-settings",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app-settings",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app-settings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app-settings/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app-settings/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app-settings",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/app-settings/:id",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app-settings/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app-settings",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/stats",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "stats"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/revenue",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/revenue",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "revenue"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/new-subscribers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/new-subscribers",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "new-subscribers"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/most-watched",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/most-watched",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "most-watched"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/top-genres",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/top-genres",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "top-genres"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/reviews",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/transactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/dashboard/transactions",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "dashboard",
+            "transactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies/pending-approvals",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/pending-approvals",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            "pending-approvals"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/movies",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/movies/item/:id/approve",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/item/:id/approve",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            "item",
+            ":id",
+            "approve"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/movies/item/:id/reject",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/item/:id/reject",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            "item",
+            ":id",
+            "reject"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/movies/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/movies/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/movies/:id/status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id/status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/movies/:id/featured",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id/featured",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "featured"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/movies/:id/trending",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id/trending",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "trending"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/movies/:id/processing-status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/movies/:id/processing-status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "movies",
+            ":id",
+            "processing-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin-users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/admin-users/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/admin-users",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/admin-users/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/admin-users/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/admin-users/:id/reset-password",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users/:id/reset-password",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id",
+            "reset-password"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/admin-users/:id/toggle-status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users/:id/toggle-status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            ":id",
+            "toggle-status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/admin-users/profile",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/admin-users/profile",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "admin-users",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/sections",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/sections",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "sections"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/sections/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/sections/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "sections",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/sections",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/sections",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "sections"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/sections/reorder",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/sections/reorder",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "sections",
+            "reorder"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/sections/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/sections/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "sections",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/sections/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/sections/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "sections",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/contents",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/contents",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/contents/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/contents/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/contents/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/contents/:id/status",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents/:id/status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/contents/:id/videos",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/contents/:id/videos",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "contents",
+            ":id",
+            "videos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/episodes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/episodes",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/episodes/seasons",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes/seasons",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            "seasons"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/episodes/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/episodes/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/episodes/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/episodes/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "episodes",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/countries",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/countries",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "countries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/countries/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/countries/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "countries",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/countries",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/countries",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "countries"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/countries/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/countries/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "countries",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/countries/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/countries/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "countries",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/crews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/crews",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "crews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/crews/:id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/crews/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "crews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/crews",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/crews",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "crews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/crews/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/crews/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "crews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/crews/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/crews/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "crews",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/crews/bulk-delete",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/crews/bulk-delete",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "crews",
+            "bulk-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/like/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/like/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "like",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/watch/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/watch/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "watch",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/share/:contentId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/share/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "share",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/share/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/share/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "share",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/wishlist/:contentId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/wishlist/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "wishlist",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/wishlist",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/wishlist",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "wishlist"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/wishlist",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/wishlist",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "wishlist"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/profile",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/app/profile",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/profile",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/profile/avatar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/profile/avatar",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile",
+            "avatar"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app/profile/video-quality",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/profile/video-quality",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile",
+            "video-quality"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app/profile/language",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/profile/language",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile",
+            "language"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/profile",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/profile",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/download",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/download",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "download"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/downloads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/downloads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "downloads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/downloads",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/downloads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "downloads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/downloads/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/downloads/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "downloads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web/subscription-plans",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web/subscription-plans",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web",
+            "subscription-plans"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/web/download",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web/download",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web",
+            "download"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/web/downloads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web/downloads",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web",
+            "downloads"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/web/downloads/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/web/downloads/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "web",
+            "downloads",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/watch/progress",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/watch/progress",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "progress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/watch/progress",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/watch/progress",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "progress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/watch/progress/:contentId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/watch/progress/:contentId",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "progress",
+            ":contentId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/watch/history",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/watch/history",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "history"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/watch/history/all",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/watch/history/all",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "history",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/watch/history/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/watch/history/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "watch",
+            "history",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/rewards/claim/:id",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/claim/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "claim",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/rewards/claim-daily",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/claim-daily",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "claim-daily"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards/status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/status",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards/admin",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/admin",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/rewards/admin",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/admin",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/app/rewards/admin/:id",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/admin/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/app/rewards/admin/:id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/admin/:id",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin",
+            ":id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/rewards/admin/:id/claims",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/rewards/admin/:id/claims",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "rewards",
+            "admin",
+            ":id",
+            "claims"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://manch24.com/api/app/notifications",
+          "host": [
+            "https://manch24.com"
+          ],
+          "path": [
+            "api",
+            "app",
+            "notifications"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

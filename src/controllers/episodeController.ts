@@ -24,7 +24,7 @@ export const getAllEpisodes = async (request: FastifyRequest, reply: FastifyRepl
     if (query.contentId) {
       filter.contentId = query.contentId;
     } else if (query.contentType) {
-      const contentIds = await ContentModel.find({ contentType: query.contentType as 'drama' | 'movie' })
+      const contentIds = await ContentModel.find({ contentType: query.contentType as 'drama' | 'movie' | 'series' })
         .select('_id')
         .lean()
         .then((contents) => contents.map((c) => c._id));
@@ -246,7 +246,7 @@ export const getSeasons = async (request: FastifyRequest, reply: FastifyReply) =
     }
 
     if (query.contentType) {
-      const contentIds = await ContentModel.find({ contentType: query.contentType as 'drama' | 'movie' })
+      const contentIds = await ContentModel.find({ contentType: query.contentType as 'drama' | 'movie' | 'series' })
         .select('_id')
         .lean()
         .then((contents) => contents.map((c) => c._id));

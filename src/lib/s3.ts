@@ -39,16 +39,18 @@ export async function getS3Settings(): Promise<S3Settings> {
 
 export async function getDOSettings(): Promise<S3Settings> {
   const settings = await SettingsModel.findOne();
-  const region = settings?.doRegion || process.env.DO_REGION || 'nyc3';
+  const region = settings?.doRegion || process.env.DO_REGION || 'sgp1';
+  const bucket = settings?.doBucket || process.env.DO_BUCKET || 'manch24';
+  const cdnUrl = settings?.doCdnUrl || process.env.DO_CDN_URL || (bucket && region ? `https://${bucket}.${region}.cdn.digitaloceanspaces.com` : '');
   return {
     accessKeyId: settings?.doAccessKey || process.env.DO_ACCESS_KEY || '',
     secretAccessKey: settings?.doSecretKey || process.env.DO_SECRET_KEY || '',
     region,
-    bucket: settings?.doBucket || process.env.DO_BUCKET || '',
-    pathStyle: settings?.doPathStyle ?? true,
+    bucket,
+    pathStyle: settings?.doPathStyle ?? false,
     storageDriver: settings?.storageDriver || 'local',
     endpoint: `https://${region}.digitaloceanspaces.com`,
-    cdnUrl: settings?.doCdnUrl || process.env.DO_CDN_URL || ''
+    cdnUrl
   };
 }
 
@@ -154,6 +156,7 @@ export async function generatePresignedUrl(
       Bucket: settings.bucket,
       Key: key,
       ContentType: contentType,
+      ACL: 'public-read',
     });
 
     const uploadUrl = await getSignedUrl(client, command, { expiresIn });
@@ -192,6 +195,7 @@ export async function uploadToS3(
         Key: key,
         Body: body,
         ContentType: contentType,
+        ACL: 'public-read',
       },
       queueSize: 8,
       partSize: 50 * 1024 * 1024,
@@ -229,6 +233,7 @@ export async function uploadToDO(
         Key: key,
         Body: body,
         ContentType: contentType,
+        ACL: 'public-read',
       },
       queueSize: 8,
       partSize: 50 * 1024 * 1024,

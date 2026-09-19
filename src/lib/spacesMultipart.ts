@@ -12,6 +12,7 @@ import {
   ListMultipartUploadsCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  PutObjectAclCommand,
   PutBucketCorsCommand,
   GetBucketCorsCommand,
 } from '@aws-sdk/client-s3';
@@ -73,6 +74,7 @@ export async function createMultipartUpload(key: string, contentType: string) {
     Bucket: settings.bucket,
     Key: key,
     ContentType: contentType || 'application/octet-stream',
+    ACL: 'public-read',
   }));
 
   if (!result.UploadId) {
@@ -141,6 +143,17 @@ export async function completeMultipartUpload(
       })),
     },
   }));
+
+  // Ensure object has public-read ACL on DigitalOcean/S3
+  try {
+    await client.send(new PutObjectAclCommand({
+      Bucket: settings.bucket,
+      Key: key,
+      ACL: 'public-read',
+    }));
+  } catch (aclErr: any) {
+    logger.warn({ error: aclErr?.message, key }, 'Could not set public-read ACL on completed multipart upload');
+  }
 }
 
 export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {

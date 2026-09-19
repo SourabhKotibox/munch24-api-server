@@ -106,7 +106,7 @@ export const createLanguage = async (request: FastifyRequest, reply: FastifyRepl
         if (part.fieldname === 'image') imagePath = part.value as string;
       } else if (part.type === 'file') {
         const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'LANGUAGE');
-        imagePath = uploadedFile.filePath;
+        imagePath = uploadedFile.url || uploadedFile.filePath;
       }
     }
 
@@ -164,7 +164,7 @@ export const updateLanguage = async (request: FastifyRequest, reply: FastifyRepl
         if (part.fieldname === 'image') updateData.image = part.value;
       } else if (part.type === 'file') {
         const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'LANGUAGE');
-        updateData.image = uploadedFile.filePath;
+        updateData.image = uploadedFile.url || uploadedFile.filePath;
         
         // Delete old image if it exists
         if (oldImage) {

@@ -16,7 +16,7 @@ const readDirectorMultipart = async (request: FastifyRequest) => {
       if (part.fieldname === 'image') data.image = part.value;
     } else if (part.type === 'file' && part.fieldname === 'imageFile') {
       const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'DIRECTOR');
-      data.image = uploadedFile.filePath;
+      data.image = uploadedFile.url || uploadedFile.filePath;
     }
   }
 

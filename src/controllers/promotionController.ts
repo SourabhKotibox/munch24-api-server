@@ -199,10 +199,10 @@ export const createPromotion = async (request: FastifyRequest, reply: FastifyRep
       } else if (part.type === 'file') {
         if (part.fieldname === 'thumbnailFile') {
           const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'PROMOTION');
-          data.thumbnailUrl = uploadedFile.filePath;
+          data.thumbnailUrl = uploadedFile.url || uploadedFile.filePath;
         } else if (part.fieldname === 'videoFile') {
           const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'VIDEO');
-          data.videoUrl = uploadedFile.filePath;
+          data.videoUrl = uploadedFile.url || uploadedFile.filePath;
         }
       }
     }
@@ -275,11 +275,11 @@ export const updatePromotion = async (request: FastifyRequest, reply: FastifyRep
         if (part.fieldname === 'thumbnailFile') {
           const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'PROMOTION');
           uploadHandler.deleteUploadedFile(existingPromotion.thumbnailUrl);
-          data.thumbnailUrl = uploadedFile.filePath;
+          data.thumbnailUrl = uploadedFile.url || uploadedFile.filePath;
         } else if (part.fieldname === 'videoFile') {
           const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'VIDEO');
           uploadHandler.deleteUploadedFile(existingPromotion.videoUrl);
-          data.videoUrl = uploadedFile.filePath;
+          data.videoUrl = uploadedFile.url || uploadedFile.filePath;
         }
       }
     }

@@ -128,7 +128,7 @@ export const uploadSettingsLogos = async (request: FastifyRequest, reply: Fastif
     for await (const part of parts) {
       if (part.type === 'file' && LOGO_FIELD_MAP[part.fieldname]) {
         const uploadedFile = await uploadHandler.saveFileFromPart(part, request, 'IMAGE');
-        updates[LOGO_FIELD_MAP[part.fieldname]] = uploadedFile.filePath;
+        updates[LOGO_FIELD_MAP[part.fieldname]] = uploadedFile.url || uploadedFile.filePath;
       }
     }
 

@@ -166,7 +166,7 @@ const savePartDirectToCloud = async (
     const fileInfo: UploadedFileInfo = {
       originalName: part.filename,
       fileName,
-      filePath: cloudKey,
+      filePath: cloudUrl,
       url: cloudUrl,
       fileSize,
       mimeType,
@@ -179,7 +179,7 @@ const savePartDirectToCloud = async (
       const mediaFile = await MediaFileModel.create({
         name: part.filename,
         url: cloudUrl,
-        filePath: cloudKey,
+        filePath: cloudUrl,
         fileSize,
         fileType: mimeType,
         folder: resolvedFolderId ? new Types.ObjectId(resolvedFolderId) : undefined,
@@ -356,7 +356,7 @@ export const saveFileFromPart = async (
               
               await MediaFileModel.findByIdAndUpdate(mediaFile._id, {
                 url: cloudUrl,
-                filePath: cloudKey,
+                filePath: cloudUrl,
                 storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
                 s3Key: cloudKey,
                 uploadStatus: isVideoFile(part.filename, part.mimetype || '') ? 'uploaded' : 'ready',
@@ -374,7 +374,7 @@ export const saveFileFromPart = async (
               fileInfo = {
                 ...localFileInfo,
                 url: cloudUrl,
-                filePath: cloudKey,
+                filePath: cloudUrl,
                 storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
                 s3Key: cloudKey
               };

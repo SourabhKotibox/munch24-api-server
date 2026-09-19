@@ -172,15 +172,15 @@ export const createCategory = async (request: FastifyRequest, reply: FastifyRepl
 
     if (data.thumbnailFile) {
       const uploadedFile = await uploadHandler.saveFileFromPart(data.thumbnailFile, request, 'CATEGORY_THUMBNAIL');
-      thumbnail = uploadedFile.filePath;
+      thumbnail = uploadedFile.url || uploadedFile.filePath;
     }
     if (data.bannerFile) {
       const uploadedFile = await uploadHandler.saveFileFromPart(data.bannerFile, request, 'CATEGORY_BANNER');
-      bannerImage = uploadedFile.filePath;
+      bannerImage = uploadedFile.url || uploadedFile.filePath;
     }
     if (data.iconFile) {
       const uploadedFile = await uploadHandler.saveFileFromPart(data.iconFile, request, 'CATEGORY_ICON');
-      icon = uploadedFile.filePath;
+      icon = uploadedFile.url || uploadedFile.filePath;
     }
 
     const category = await CategoryModel.create({
@@ -242,21 +242,21 @@ export const updateCategory = async (request: FastifyRequest, reply: FastifyRepl
         uploadHandler.deleteUploadedFile(existingCategory.thumbnail);
       }
       const uploadedFile = await uploadHandler.saveFileFromPart(data.thumbnailFile, request, 'CATEGORY_THUMBNAIL');
-      thumbnail = uploadedFile.filePath;
+      thumbnail = uploadedFile.url || uploadedFile.filePath;
     }
     if (data.bannerFile) {
       if (existingCategory.bannerImage) {
         uploadHandler.deleteUploadedFile(existingCategory.bannerImage);
       }
       const uploadedFile = await uploadHandler.saveFileFromPart(data.bannerFile, request, 'CATEGORY_BANNER');
-      bannerImage = uploadedFile.filePath;
+      bannerImage = uploadedFile.url || uploadedFile.filePath;
     }
     if (data.iconFile) {
       if (existingCategory.icon) {
         uploadHandler.deleteUploadedFile(existingCategory.icon);
       }
       const uploadedFile = await uploadHandler.saveFileFromPart(data.iconFile, request, 'CATEGORY_ICON');
-      icon = uploadedFile.filePath;
+      icon = uploadedFile.url || uploadedFile.filePath;
     }
 
     const updateData: any = {};

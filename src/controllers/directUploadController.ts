@@ -397,7 +397,7 @@ export const completeDirectUpload = async (request: FastifyRequest, reply: Fasti
       session.mediaFileId,
       {
         url: publicUrl,
-        filePath: session.key,
+        filePath: publicUrl,
         s3Key: session.key,
         fileSize: head.contentLength || session.fileSize,
         fileType: head.contentType || session.mimeType,

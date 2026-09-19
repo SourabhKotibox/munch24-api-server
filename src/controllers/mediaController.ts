@@ -207,6 +207,9 @@ export const getFilesByFolder = async (request: FastifyRequest, reply: FastifyRe
         const host = request.headers.host;
         fileUrl = `${protocol}://${host}${normalizedPath}`;
         filePath = normalizedPath;
+      } else if (file.url && file.url.startsWith('http')) {
+        fileUrl = file.url;
+        filePath = file.url;
       }
       
       return {
@@ -287,6 +290,9 @@ export const getAllMediaFiles = async (request: FastifyRequest, reply: FastifyRe
         const host = request.headers.host;
         fileUrl = `${protocol}://${host}${normalizedPath}`;
         filePath = normalizedPath;
+      } else if (file.url && file.url.startsWith('http')) {
+        fileUrl = file.url;
+        filePath = file.url;
       }
       
       return {

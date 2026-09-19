@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from '../lib/logger';
 import uploadHandler from '../lib/uploadHandler';
+import { getActiveStorageSettings, getPublicUrl } from '../lib/s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -196,6 +197,7 @@ export const getFilesByFolder = async (request: FastifyRequest, reply: FastifyRe
       return reply.status(404).send({ success: false, error: 'Folder not found' });
     }
 
+    const storageSettings = await getActiveStorageSettings();
     const files = await MediaFileModel.find({ folder: id }).sort({ createdAt: -1 }).lean();
     const filesWithSize = files.map((file) => {
       let fileUrl = file.url;
@@ -210,6 +212,10 @@ export const getFilesByFolder = async (request: FastifyRequest, reply: FastifyRe
       } else if (file.url && file.url.startsWith('http')) {
         fileUrl = file.url;
         filePath = file.url;
+      } else {
+        const cloudUrl = getPublicUrl(storageSettings, file.s3Key || file.filePath || file.url || '');
+        fileUrl = cloudUrl;
+        filePath = cloudUrl;
       }
       
       return {
@@ -271,6 +277,7 @@ export const getAllMediaFiles = async (request: FastifyRequest, reply: FastifyRe
     if (query.fileType) filter.fileType = new RegExp(query.fileType, 'i');
     if (query.search) filter.name = new RegExp(query.search, 'i');
 
+    const storageSettings = await getActiveStorageSettings();
     const [files, total] = await Promise.all([
       MediaFileModel.find(filter)
         .sort({ createdAt: -1 })
@@ -293,6 +300,10 @@ export const getAllMediaFiles = async (request: FastifyRequest, reply: FastifyRe
       } else if (file.url && file.url.startsWith('http')) {
         fileUrl = file.url;
         filePath = file.url;
+      } else {
+        const cloudUrl = getPublicUrl(storageSettings, file.s3Key || file.filePath || file.url || '');
+        fileUrl = cloudUrl;
+        filePath = cloudUrl;
       }
       
       return {

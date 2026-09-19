@@ -406,7 +406,7 @@ export const saveFileFromPart = async (
           fileInfo = {
             ...localFileInfo,
             url: cloudUrl,
-            filePath: cloudKey,
+            filePath: cloudUrl,
             storageType: settings.storageDriver as 's3' | 'digitalocean' | 'bunny',
             s3Key: cloudKey
           };

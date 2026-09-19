@@ -39,12 +39,12 @@ export const getSettings = async (request: FastifyRequest, reply: FastifyReply) 
         data: settings
       });
     } else {
-      // Filter out sensitive fields for public settings
+      // Filter out sensitive credentials for public settings (keep non-sensitive storage regions, buckets, and CDN URLs)
       const publicSettings = settings.toObject ? settings.toObject() : { ...settings };
       const sensitiveFields = [
         'mailEmail', 'mailDriver', 'mailHost', 'mailPort', 'mailEncryption', 'mailUsername', 'mailPassword', 'mailFrom', 'mailFromName',
-        'awsAccessKeyId', 'awsSecretAccessKey', 'awsRegion', 'awsBucket', 'awsPathStyleEndpoint', 'bunnyStorageZone', 'bunnyAccessKey',
-        'doAccessKey', 'doSecretKey', 'doRegion', 'doBucket', 'doCdnUrl',
+        'awsAccessKeyId', 'awsSecretAccessKey', 'bunnyAccessKey',
+        'doAccessKey', 'doSecretKey',
         'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId',
         'authToken', 'customerId'
       ];

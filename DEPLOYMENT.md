@@ -123,6 +123,21 @@ All API endpoints are prefixed with `/api`!
 |------|-------------|---------|
 | `VITE_API_URL` | Your API base URL | `https://triple-mindes-api.vercel.app` |
 
+### Video Transcoding Host Dependencies (Linux Server)
+```bash
+# Install FFmpeg and yt-dlp on Ubuntu/Debian
+sudo apt-get update && sudo apt-get install -y ffmpeg
+sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp
+```
+
+### Video Processing Optional Environment Variables
+| Name | Description | Example |
+|------|-------------|---------|
+| `FFMPEG_PATH` | Explicit path to FFmpeg binary | `/usr/bin/ffmpeg` |
+| `FFPROBE_PATH` | Explicit path to FFprobe binary | `/usr/bin/ffprobe` |
+| `YT_DLP_PATH` | Explicit path to yt-dlp binary | `/usr/local/bin/yt-dlp` |
+
 ---
 
 ## Troubleshooting

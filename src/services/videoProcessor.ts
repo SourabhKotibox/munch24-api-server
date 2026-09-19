@@ -2,6 +2,8 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { Types } from 'mongoose';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 import { MovieModel } from '../models/Movie';
 import { EpisodeModel } from '../models/Episode';
 import { ContentModel } from '../models/Content';
@@ -9,10 +11,33 @@ import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToCloudStorage, getActiveStorageSettings } from '../lib/s3';
 import { resolveLocalVideoFile, toLocalUploadPath as resolveUploadsPath } from '../lib/sourceVideo';
 
+const getFfmpegPath = (): string => {
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  if (ffmpegInstaller?.path && fs.existsSync(ffmpegInstaller.path)) return ffmpegInstaller.path;
+  return 'ffmpeg';
+};
+
+const getFfprobePath = (): string => {
+  if (process.env.FFPROBE_PATH) return process.env.FFPROBE_PATH;
+  if (ffprobeInstaller?.path && fs.existsSync(ffprobeInstaller.path)) return ffprobeInstaller.path;
+  return 'ffprobe';
+};
+
 const httpProtocolArgs = (input: string) =>
   input.startsWith('http://') || input.startsWith('https://')
     ? ['-protocol_whitelist', 'file,http,https,tcp,tls,crypto']
     : [];
+
+export const checkFfmpegAvailable = async (): Promise<boolean> => {
+  try {
+    const ffmpegPath = getFfmpegPath();
+    await runCommand(ffmpegPath, ['-version']);
+    return true;
+  } catch (err) {
+    logger.error({ err, ffmpegPath: getFfmpegPath() }, 'FFmpeg pre-flight check failed');
+    return false;
+  }
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // All 7 quality renditions with Netflix-grade bitrate settings
@@ -73,7 +98,7 @@ const runCommand = (command: string, args: string[]): Promise<string> => {
 
 const getVideoDurationSeconds = async (filePath: string): Promise<number | undefined> => {
   try {
-    const output = await runCommand('ffprobe', [
+    const output = await runCommand(getFfprobePath(), [
       ...httpProtocolArgs(filePath),
       '-v', 'error',
       '-show_entries', 'format=duration',
@@ -115,7 +140,7 @@ const getFolderSize = (folderPath: string): number => {
  */
 const probeResolution = async (inputPath: string): Promise<{ width: number; height: number } | null> => {
   try {
-    const output = await runCommand('ffprobe', [
+    const output = await runCommand(getFfprobePath(), [
       ...httpProtocolArgs(inputPath),
       '-v', 'error',
       '-select_streams', 'v:0',
@@ -133,6 +158,26 @@ const probeResolution = async (inputPath: string): Promise<{ width: number; heig
     logger.warn({ err }, 'ffprobe resolution detection failed — will use all qualities');
   }
   return null;
+};
+
+/**
+ * Probe whether source video contains at least one audio stream using ffprobe.
+ */
+const probeHasAudio = async (inputPath: string): Promise<boolean> => {
+  try {
+    const output = await runCommand(getFfprobePath(), [
+      ...httpProtocolArgs(inputPath),
+      '-v', 'error',
+      '-select_streams', 'a:0',
+      '-show_entries', 'stream=codec_type',
+      '-of', 'csv=p=0',
+      inputPath,
+    ]);
+    return output.trim().length > 0;
+  } catch (err) {
+    logger.warn({ err }, 'ffprobe audio stream detection failed — falling back to video-only or auto');
+    return false;
+  }
 };
 
 /**
@@ -158,125 +203,134 @@ export const transcodeHlsMultiResolution = async (options: {
 }) => {
   const { id, type, sourceVideoUrl, startSeconds, duration, episodeNumber, contentIdForEpisode } = options;
 
-  // ── Resolve input path (local disk, or download from Spaces/S3) ─────────
-  const resolvedSource = await resolveLocalVideoFile(sourceVideoUrl);
+  // ── Resolve input path (local disk, or download from Spaces/S3, or YouTube) ─────────
+  const resolvedSource = await resolveLocalVideoFile(sourceVideoUrl, getFfmpegPath());
   const ffmpegInput = resolvedSource.localPath;
 
-  // ── Determine local HLS output folder ──────────────────────────────────
-  const uploadsRoot = path.join(process.cwd(), 'uploads');
-  let hlsFolder = '';
-  let localUrlBase = '';
-
-   if (type === 'movie') {
-    hlsFolder    = path.join(uploadsRoot, 'hls', 'movies', id);
-    localUrlBase = `/uploads/hls/movies/${id}`;
-  } else {
-    hlsFolder    = path.join(uploadsRoot, 'hls', contentIdForEpisode!, `episode-${episodeNumber}`);
-    localUrlBase = `/uploads/hls/${contentIdForEpisode}/episode-${episodeNumber}`;
-  }
-
-  const s3Prefix = `hls/${type === 'movie' ? 'movies' : 'episodes'}/${id}`;
-
-  // Clear any existing HLS files to prevent mixing old and new uploads
-  if (fs.existsSync(hlsFolder)) {
-    try {
-      fs.rmSync(hlsFolder, { recursive: true, force: true });
-    } catch (rmErr) {
-      logger.warn({ rmErr, hlsFolder }, 'Failed to clear existing HLS folder');
-    }
-  }
-  ensureDir(hlsFolder);
-
-  // ── Detect source resolution & filter quality ladder ───────────────────
-  const sourceRes = await probeResolution(ffmpegInput);
-  const sourceHeight = sourceRes?.height ?? 2160; // assume max if detection fails
-  const qualities = filterQualitiesByResolution(sourceHeight, HLS_QUALITY_LADDER);
-  logger.info({ id, type, sourceHeight, qualityCount: qualities.length }, 'Starting HLS transcoding');
-
-  // ── Build single-pass FFmpeg args ───────────────────────────────────────
-  const args: string[] = ['-y', ...httpProtocolArgs(ffmpegInput)];
-
-  // Input seek (must come before -i for fast seek)
-  if (startSeconds !== undefined && startSeconds > 0) {
-    args.push('-ss', String(startSeconds));
-  }
-  args.push('-i', ffmpegInput);
-  if (duration !== undefined && duration > 0) {
-    args.push('-t', String(duration));
-  }
-
-  // Build filter_complex: split video and scale each output stream
-  const n = qualities.length;
-  const splitOutputs = qualities.map((_, i) => `[temp${i}]`).join('');
-  const scaleFilters = qualities.map((q, i) => `[temp${i}]scale=${q.width}:${q.height}[v${i}]`).join(';');
-  const filterComplexString = `[0:v]split=${n}${splitOutputs};${scaleFilters}`;
-  args.push('-filter_complex', filterComplexString);
-
-  // Map each video stream, then audio
-  qualities.forEach((q, i) => {
-    args.push(
-      `-map`, `[v${i}]`,
-      `-c:v:${i}`, 'libx264',
-      `-b:v:${i}`, q.bitrate,
-      `-maxrate:v:${i}`, q.maxrate,
-      `-bufsize:v:${i}`, q.bufsize,
-      `-preset:v:${i}`, 'veryfast',
-      `-profile:v:${i}`, 'main',
-      `-map`, '0:a:0',
-      `-c:a:${i}`, 'aac',
-      `-b:a:${i}`, q.audioBitrate,
-      `-ar:a:${i}`, '48000',
-    );
-  });
-
-  // var_stream_map — pairs each video track with audio track
-  const streamMap = qualities.map((_, i) => `v:${i},a:${i},name:${qualities[i].name}`).join(' ');
-  args.push(
-    '-var_stream_map', streamMap,
-    '-master_pl_name', 'master.m3u8',
-    '-f', 'hls',
-    '-hls_time', '6',
-    '-hls_playlist_type', 'vod',
-    '-hls_flags', 'independent_segments',
-    '-hls_segment_filename', path.join(hlsFolder, '%v/segment_%03d.ts'),
-    path.join(hlsFolder, '%v/playlist.m3u8'),
-  );
-
-  // ── Run FFmpeg ──────────────────────────────────────────────────────────
   try {
-    await runCommand('ffmpeg', args);
-  } catch (err: any) {
-    logger.error({ err, id, type }, 'FFmpeg single-pass failed — falling back to sequential');
-    try {
-      const sequential = await transcodeHlsSequential({ id, type, sourceVideoUrl, startSeconds, duration, episodeNumber, contentIdForEpisode, qualities, hlsFolder, s3Prefix, localUrlBase, ffmpegInput });
-      return sequential;
-    } finally {
-      resolvedSource.cleanup();
+    // ── Determine local HLS output folder ──────────────────────────────────
+    const uploadsRoot = path.join(process.cwd(), 'uploads');
+    let hlsFolder = '';
+    let localUrlBase = '';
+
+    if (type === 'movie') {
+      hlsFolder    = path.join(uploadsRoot, 'hls', 'movies', id);
+      localUrlBase = `/uploads/hls/movies/${id}`;
+    } else {
+      hlsFolder    = path.join(uploadsRoot, 'hls', contentIdForEpisode!, `episode-${episodeNumber}`);
+      localUrlBase = `/uploads/hls/${contentIdForEpisode}/episode-${episodeNumber}`;
     }
-  }
 
-  // ── Build master.m3u8 ───────────────────────────────────────────────────
-  // FFmpeg creates it automatically, but we rebuild it to ensure correct paths
-  const masterLines = ['#EXTM3U', '#EXT-X-VERSION:3'];
-  for (const q of qualities) {
-    const bandwidth  = BANDWIDTH_MAP[q.name as QualityName];
-    const resolution = RESOLUTION_MAP[q.name as QualityName];
-    masterLines.push(
-      `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${resolution},NAME="${q.name}"`,
-      `${q.name}/playlist.m3u8`,
+    const s3Prefix = `hls/${type === 'movie' ? 'movies' : 'episodes'}/${id}`;
+
+    // Clear any existing HLS files to prevent mixing old and new uploads
+    if (fs.existsSync(hlsFolder)) {
+      try {
+        fs.rmSync(hlsFolder, { recursive: true, force: true });
+      } catch (rmErr) {
+        logger.warn({ rmErr, hlsFolder }, 'Failed to clear existing HLS folder');
+      }
+    }
+    ensureDir(hlsFolder);
+
+    // ── Detect source resolution, audio presence & filter quality ladder ──
+    const [sourceRes, hasAudio] = await Promise.all([
+      probeResolution(ffmpegInput),
+      probeHasAudio(ffmpegInput),
+    ]);
+    const sourceHeight = sourceRes?.height ?? 2160; // assume max if detection fails
+    const qualities = filterQualitiesByResolution(sourceHeight, HLS_QUALITY_LADDER);
+    logger.info({ id, type, sourceHeight, hasAudio, qualityCount: qualities.length }, 'Starting HLS transcoding');
+
+    // ── Build single-pass FFmpeg args ───────────────────────────────────────
+    const args: string[] = ['-y', ...httpProtocolArgs(ffmpegInput)];
+
+    // Input seek (must come before -i for fast seek)
+    if (startSeconds !== undefined && startSeconds > 0) {
+      args.push('-ss', String(startSeconds));
+    }
+    args.push('-i', ffmpegInput);
+    if (duration !== undefined && duration > 0) {
+      args.push('-t', String(duration));
+    }
+
+    // Build filter_complex: split video and scale each output stream
+    const n = qualities.length;
+    const splitOutputs = qualities.map((_, i) => `[temp${i}]`).join('');
+    const scaleFilters = qualities.map((q, i) => `[temp${i}]scale=${q.width}:${q.height}[v${i}]`).join(';');
+    const filterComplexString = `[0:v]split=${n}${splitOutputs};${scaleFilters}`;
+    args.push('-filter_complex', filterComplexString);
+
+    // Map each video stream, then audio (if present)
+    qualities.forEach((q, i) => {
+      args.push(
+        `-map`, `[v${i}]`,
+        `-c:v:${i}`, 'libx264',
+        `-pix_fmt:v:${i}`, 'yuv420p',
+        `-b:v:${i}`, q.bitrate,
+        `-maxrate:v:${i}`, q.maxrate,
+        `-bufsize:v:${i}`, q.bufsize,
+        `-preset:v:${i}`, 'veryfast',
+        `-profile:v:${i}`, 'main',
+      );
+      if (hasAudio) {
+        args.push(
+          `-map`, '0:a:0',
+          `-c:a:${i}`, 'aac',
+          `-b:a:${i}`, q.audioBitrate,
+          `-ar:a:${i}`, '48000',
+        );
+      }
+    });
+
+    // var_stream_map — pairs each video track with audio track (or video-only)
+    const streamMap = qualities
+      .map((_, i) => (hasAudio ? `v:${i},a:${i},name:${qualities[i].name}` : `v:${i},name:${qualities[i].name}`))
+      .join(' ');
+    args.push(
+      '-var_stream_map', streamMap,
+      '-master_pl_name', 'master.m3u8',
+      '-f', 'hls',
+      '-hls_time', '6',
+      '-hls_playlist_type', 'vod',
+      '-hls_flags', 'independent_segments',
+      '-hls_segment_filename', path.join(hlsFolder, '%v/segment_%03d.ts'),
+      path.join(hlsFolder, '%v/playlist.m3u8'),
     );
-  }
-  fs.writeFileSync(path.join(hlsFolder, 'master.m3u8'), masterLines.join('\n'), 'utf-8');
 
-  // ── Upload to S3 (if configured) or keep local ─────────────────────────
-  const storageActive = await isCloudStorageConfigured();
-  const processedQualities = await finalizeHlsOutput({ qualities, hlsFolder, storageActive, s3Prefix, localUrlBase });
-  resolvedSource.cleanup();
-  return {
-    hlsUrl: processedQualities.masterUrl,
-    videoQualities: processedQualities.renditions,
-    hlsS3Prefix: processedQualities.hlsS3Prefix,
-  };
+    // ── Run FFmpeg ──────────────────────────────────────────────────────────
+    try {
+      await runCommand(getFfmpegPath(), args);
+    } catch (err: any) {
+      logger.error({ err, id, type }, 'FFmpeg single-pass failed — falling back to sequential');
+      const sequential = await transcodeHlsSequential({ id, type, sourceVideoUrl, startSeconds, duration, episodeNumber, contentIdForEpisode, qualities, hlsFolder, s3Prefix, localUrlBase, ffmpegInput, hasAudio });
+      return sequential;
+    }
+
+    // ── Build master.m3u8 ───────────────────────────────────────────────────
+    // FFmpeg creates it automatically, but we rebuild it to ensure correct paths
+    const masterLines = ['#EXTM3U', '#EXT-X-VERSION:3'];
+    for (const q of qualities) {
+      const bandwidth  = BANDWIDTH_MAP[q.name as QualityName];
+      const resolution = RESOLUTION_MAP[q.name as QualityName];
+      masterLines.push(
+        `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${resolution},NAME="${q.name}"`,
+        `${q.name}/playlist.m3u8`,
+      );
+    }
+    fs.writeFileSync(path.join(hlsFolder, 'master.m3u8'), masterLines.join('\n'), 'utf-8');
+
+    // ── Upload to S3 (if configured) or keep local ─────────────────────────
+    const storageActive = await isCloudStorageConfigured();
+    const processedQualities = await finalizeHlsOutput({ qualities, hlsFolder, storageActive, s3Prefix, localUrlBase });
+    return {
+      hlsUrl: processedQualities.masterUrl,
+      videoQualities: processedQualities.renditions,
+      hlsS3Prefix: processedQualities.hlsS3Prefix,
+    };
+  } finally {
+    resolvedSource.cleanup();
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -295,8 +349,9 @@ const transcodeHlsSequential = async (opts: {
   s3Prefix: string;
   localUrlBase: string;
   ffmpegInput: string;
+  hasAudio?: boolean;
 }) => {
-  const { startSeconds, duration, qualities, hlsFolder, s3Prefix, localUrlBase, ffmpegInput } = opts;
+  const { startSeconds, duration, qualities, hlsFolder, s3Prefix, localUrlBase, ffmpegInput, hasAudio = true } = opts;
 
   for (const q of qualities) {
     const qFolder = path.join(hlsFolder, q.name);
@@ -310,14 +365,25 @@ const transcodeHlsSequential = async (opts: {
     args.push(
       '-vf',           `scale=${q.width}:${q.height}`,
       '-c:v',          'libx264',
+      '-pix_fmt',      'yuv420p',
       '-b:v',          q.bitrate,
       '-maxrate',      q.maxrate,
       '-bufsize',      q.bufsize,
       '-profile:v',    'main',
       '-preset',       'veryfast',
-      '-c:a',          'aac',
-      '-b:a',          q.audioBitrate,
-      '-ar',           '48000',
+    );
+
+    if (hasAudio) {
+      args.push(
+        '-c:a',          'aac',
+        '-b:a',          q.audioBitrate,
+        '-ar',           '48000',
+      );
+    } else {
+      args.push('-an');
+    }
+
+    args.push(
       '-f',            'hls',
       '-hls_time',     '6',
       '-hls_playlist_type', 'vod',
@@ -325,7 +391,7 @@ const transcodeHlsSequential = async (opts: {
       path.join(qFolder, 'playlist.m3u8'),
     );
 
-    await runCommand('ffmpeg', args);
+    await runCommand(getFfmpegPath(), args);
     logger.info({ quality: q.name }, 'Sequential quality encoded');
   }
 
@@ -401,8 +467,13 @@ const finalizeHlsOutput = async (opts: {
 // ─────────────────────────────────────────────────────────────────────────────
 export const processMovieHls = async (movieId: Types.ObjectId | string, sourceVideoUrl: string) => {
   try {
+    const ffmpegOk = await checkFfmpegAvailable();
+    if (!ffmpegOk) {
+      throw new Error(`FFmpeg binary is not executable or not found (${getFfmpegPath()}). Check FFMPEG_PATH or install ffmpeg.`);
+    }
+
     logger.info({ event: 'TRANSCODING_STARTED', contentId: String(movieId), mediaType: 'movie', storageKey: sourceVideoUrl }, 'Movie HLS transcoding started');
-    await MovieModel.findByIdAndUpdate(movieId, { processingStatus: 'processing' });
+    await MovieModel.findByIdAndUpdate(movieId, { processingStatus: 'processing', processingError: null });
 
     const result = await transcodeHlsMultiResolution({
       id: movieId.toString(),
@@ -444,8 +515,13 @@ export const processEpisodeHls = async (episodeId: Types.ObjectId | string, sour
     const episode = await EpisodeModel.findById(episodeId).lean();
     if (!episode) return;
 
+    const ffmpegOk = await checkFfmpegAvailable();
+    if (!ffmpegOk) {
+      throw new Error(`FFmpeg binary is not executable or not found (${getFfmpegPath()}). Check FFMPEG_PATH or install ffmpeg.`);
+    }
+
     logger.info({ event: 'TRANSCODING_STARTED', contentId: String(episodeId), mediaType: 'episode', storageKey: sourceVideoUrl }, 'Episode HLS transcoding started');
-    await EpisodeModel.findByIdAndUpdate(episodeId, { processingStatus: 'processing' });
+    await EpisodeModel.findByIdAndUpdate(episodeId, { processingStatus: 'processing', processingError: null });
 
     const result = await transcodeHlsMultiResolution({
       id:                   episodeId.toString(),
@@ -587,7 +663,8 @@ export const autoDetectAndSyncQualities = async (
       const newQualitiesStr = JSON.stringify(videoQualities);
       const hasDiff = currentQualitiesStr !== newQualitiesStr || 
                       doc.processingStatus !== 'ready' ||
-                      doc.hlsUrl !== hlsUrl;
+                      doc.hlsUrl !== hlsUrl ||
+                      Boolean(doc.processingError);
 
       if (hasDiff) {
         logger.info({ id: id.toString(), type, qualityCount: videoQualities.length }, 'Syncing auto-detected HLS qualities to MongoDB');

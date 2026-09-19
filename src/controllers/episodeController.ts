@@ -93,6 +93,11 @@ export const getEpisodeById = async (request: FastifyRequest, reply: FastifyRepl
       return reply.status(404).send({ success: false, error: 'Episode not found' });
     }
 
+    if (episode.processingStatus === 'ready' && episode.processingError) {
+      EpisodeModel.findByIdAndUpdate(id, { $unset: { processingError: 1 }, processingError: null }).exec().catch(() => {});
+      (episode as any).processingError = null;
+    }
+
     return reply.send({
       success: true,
       data: { ...episode, id: episode._id?.toString() },
@@ -117,9 +122,9 @@ export const createEpisode = async (request: FastifyRequest, reply: FastifyReply
 
     const episode = await EpisodeModel.create(body);
 
-    if (isRawVideo && (episode.sourceVideoUrl || episode.hlsUrl)) {
+    if (isRawVideo && rawSource) {
       import('../services/videoProcessor').then(({ processEpisodesInBackground }) => {
-        processEpisodesInBackground([episode._id as Types.ObjectId], episode.sourceVideoUrl || episode.hlsUrl!);
+        processEpisodesInBackground([episode._id as Types.ObjectId], rawSource);
       });
     }
 
@@ -148,8 +153,10 @@ export const updateEpisode = async (request: FastifyRequest, reply: FastifyReply
     const isRawVideo = isRawSourceVideo(nextSource) && nextSource !== prevSource;
     if (isRawVideo) {
       body.processingStatus = 'queued';
+      body.processingError = null;
     } else if (nextSource && !isRawSourceVideo(nextSource)) {
       body.processingStatus = 'ready';
+      body.processingError = null;
     }
 
     const episode = await EpisodeModel.findByIdAndUpdate(
@@ -162,9 +169,9 @@ export const updateEpisode = async (request: FastifyRequest, reply: FastifyReply
       return reply.status(404).send({ success: false, error: 'Episode not found' });
     }
 
-    if (isRawVideo && ((episode as any).sourceVideoUrl || (episode as any).hlsUrl)) {
+    if (isRawVideo && nextSource) {
       import('../services/videoProcessor').then(({ processEpisodesInBackground }) => {
-        processEpisodesInBackground([new Types.ObjectId(id)], (episode as any).sourceVideoUrl || (episode as any).hlsUrl);
+        processEpisodesInBackground([new Types.ObjectId(id)], nextSource);
       });
     }
 
@@ -308,20 +315,30 @@ export const getEpisodeProcessingStatus = async (request: FastifyRequest, reply:
       size: q.size,
     }));
 
+    const isReady = episode.processingStatus === 'ready';
+    const isFailed = episode.processingStatus === 'failed';
+    const playbackReady = isReady && Boolean(episode.hlsUrl);
+
+    if (isReady && episode.processingError) {
+      EpisodeModel.findByIdAndUpdate(id, { $unset: { processingError: 1 }, processingError: null }).exec().catch(() => {});
+    }
+
+    const processingError = isReady ? null : (episode.processingError || null);
+
     return reply.send({
       success: true,
       data: {
         id: episode._id?.toString(),
         title: episode.title,
         processingStatus: episode.processingStatus || 'queued',
-        processingError: episode.processingError || null,
+        processingError,
         hlsUrl: episode.hlsUrl || null,
         sourceVideoUrl: episode.sourceVideoUrl || null,
         availableQualities: qualities,
         qualityCount: qualities.length,
-        isReady: episode.processingStatus === 'ready',
-        isFailed: episode.processingStatus === 'failed',
-        playbackReady: episode.processingStatus === 'ready' && Boolean(episode.hlsUrl),
+        isReady,
+        isFailed,
+        playbackReady,
       },
     });
   } catch (error: any) {

@@ -122,6 +122,11 @@ export const getMovieById = async (request: FastifyRequest, reply: FastifyReply)
       return reply.status(404).send({ success: false, error: 'Movie not found' });
     }
 
+    if (movie.processingStatus === 'ready' && movie.processingError) {
+      MovieModel.findByIdAndUpdate(id, { $unset: { processingError: 1 }, processingError: null }).exec().catch(() => {});
+      (movie as any).processingError = null;
+    }
+
     return reply.send({
       success: true,
       data: {
@@ -140,7 +145,8 @@ export const createMovie = async (request: FastifyRequest, reply: FastifyReply) 
   try {
     const body = request.body as any;
 
-    const isRawVideo = isRawSourceVideo(body.hlsUrl);
+    const rawSource = body.videoUrl || body.sourceVideoUrl || body.hlsUrl;
+    const isRawVideo = isRawSourceVideo(rawSource);
     if (isRawVideo) {
       body.processingStatus = 'queued';
     } else {
@@ -168,9 +174,9 @@ export const createMovie = async (request: FastifyRequest, reply: FastifyReply) 
       logger.error({ notifErr }, 'Error sending new movie notification');
     }
 
-    if (isRawVideo) {
+    if (isRawVideo && rawSource) {
       import('../services/videoProcessor').then(({ processMovieInBackground }) => {
-        processMovieInBackground(movie._id, body.hlsUrl);
+        processMovieInBackground(movie._id, rawSource);
       });
     }
 
@@ -198,11 +204,15 @@ export const updateMovie = async (request: FastifyRequest, reply: FastifyReply) 
       return reply.status(404).send({ success: false, error: 'Movie not found' });
     }
 
-    const isRawVideo = isRawSourceVideo(body.hlsUrl) && body.hlsUrl !== (existingMovie as any).hlsUrl;
+    const nextSource = body.videoUrl || body.sourceVideoUrl || body.hlsUrl;
+    const prevSource = (existingMovie as any).videoUrl || (existingMovie as any).sourceVideoUrl || (existingMovie as any).hlsUrl;
+    const isRawVideo = isRawSourceVideo(nextSource) && nextSource !== prevSource;
     if (isRawVideo) {
       body.processingStatus = 'queued';
-    } else if (body.hlsUrl && !isRawSourceVideo(body.hlsUrl)) {
+      body.processingError = null;
+    } else if (nextSource && !isRawSourceVideo(nextSource)) {
       body.processingStatus = 'ready';
+      body.processingError = null;
     }
 
     const movie = await MovieModel.findByIdAndUpdate(
@@ -219,9 +229,9 @@ export const updateMovie = async (request: FastifyRequest, reply: FastifyReply) 
       await syncSections(id, body.sections);
     }
 
-    if (isRawVideo) {
+    if (isRawVideo && nextSource) {
       import('../services/videoProcessor').then(({ processMovieInBackground }) => {
-        processMovieInBackground(movie._id, body.hlsUrl);
+        processMovieInBackground(movie._id, nextSource);
       });
     }
 
@@ -513,6 +523,15 @@ export const getMovieProcessingStatus = async (request: FastifyRequest, reply: F
       size:    q.size,
     }));
 
+    const isReady = movie.processingStatus === 'ready';
+    const isFailed = movie.processingStatus === 'failed';
+
+    if (isReady && movie.processingError) {
+      MovieModel.findByIdAndUpdate(id, { $unset: { processingError: 1 }, processingError: null }).exec().catch(() => {});
+    }
+
+    const processingError = isReady ? null : (movie.processingError || null);
+
     return reply.send({
       success: true,
       data: {
@@ -520,13 +539,13 @@ export const getMovieProcessingStatus = async (request: FastifyRequest, reply: F
         title:            movie.title,
         status:           movie.status,
         processingStatus: movie.processingStatus || 'queued',
-        processingError:  movie.processingError || null,
+        processingError,
         hlsUrl:           movie.hlsUrl || null,
         hlsS3Prefix:      (movie as any).hlsS3Prefix || null,
         availableQualities: qualities,
         qualityCount:     qualities.length,
-        isReady:          movie.processingStatus === 'ready',
-        isFailed:         movie.processingStatus === 'failed',
+        isReady,
+        isFailed,
       },
     });
   } catch (error: any) {

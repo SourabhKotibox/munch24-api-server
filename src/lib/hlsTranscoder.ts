@@ -19,8 +19,20 @@ if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
 
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-ffmpeg.setFfprobePath(ffprobeInstaller.path);
+const getFfmpegPath = (): string => {
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  if (ffmpegInstaller?.path && fs.existsSync(ffmpegInstaller.path)) return ffmpegInstaller.path;
+  return 'ffmpeg';
+};
+
+const getFfprobePath = (): string => {
+  if (process.env.FFPROBE_PATH) return process.env.FFPROBE_PATH;
+  if (ffprobeInstaller?.path && fs.existsSync(ffprobeInstaller.path)) return ffprobeInstaller.path;
+  return 'ffprobe';
+};
+
+ffmpeg.setFfmpegPath(getFfmpegPath());
+ffmpeg.setFfprobePath(getFfprobePath());
 
 // Define qualities: 144p to 4K (2160p), we'll adapt to max height of input
 const QUALITY_PRESETS = [

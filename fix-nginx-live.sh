@@ -42,7 +42,19 @@ for SITE_CONF in "${SITE_CONFS[@]}"; do
   fi
 done
 
+echo "Verifying server video dependencies (FFmpeg & yt-dlp)..."
+if ! command -v ffmpeg &> /dev/null; then
+  echo "Installing ffmpeg..."
+  sudo apt-get update -y && sudo apt-get install -y ffmpeg
+fi
+
+if ! command -v yt-dlp &> /dev/null; then
+  echo "Installing yt-dlp..."
+  sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+  sudo chmod a+rx /usr/local/bin/yt-dlp
+fi
+
 echo "Testing Nginx..."
 sudo nginx -t
 sudo systemctl reload nginx
-echo "Nginx reload complete. Large proxy uploads should no longer return 413."
+echo "Nginx reload complete. Large proxy uploads and video dependencies verified."

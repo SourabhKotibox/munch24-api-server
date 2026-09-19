@@ -192,7 +192,7 @@ const mapEpisode = (episode: any) => ({
   isFree: episode.isFree,
   isLocked: episode.isLocked,
   processingStatus: episode.processingStatus,
-  processingError: episode.processingError,
+  processingError: episode.processingStatus === 'ready' ? null : episode.processingError,
 });
 
 const populateBannersContent = async (banners: any[]) => {

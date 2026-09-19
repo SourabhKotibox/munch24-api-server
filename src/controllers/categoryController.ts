@@ -497,7 +497,7 @@ export const mapEpisode = (episode: any) => ({
   isLocked: episode.isLocked,
   categories: episode.categories ? episode.categories.map(mapCategory) : [],
   processingStatus: episode.processingStatus,
-  processingError: episode.processingError,
+  processingError: episode.processingStatus === 'ready' ? null : episode.processingError,
 });
 
 

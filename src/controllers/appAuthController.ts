@@ -32,6 +32,9 @@ const setLanguageSchema = z.object({
   language: z.string().trim().min(1, 'Language is required'),
 });
 
+const FIXED_TEST_MOBILE = '9999900000';
+const FIXED_TEST_OTP = '1234';
+
 export const sendOtp = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const body = sendOtpSchema.safeParse(request.body);
@@ -43,6 +46,16 @@ export const sendOtp = async (request: FastifyRequest, reply: FastifyReply) => {
       });
     }
     const { mobileNumber } = body.data;
+
+    // Test account bypass for Play Store review / QA testing
+    if (mobileNumber === FIXED_TEST_MOBILE) {
+      return reply.status(200).send({
+        success: true,
+        verificationId: 'test-verification-id',
+        timeout: 30,
+        message: 'OTP sent successfully.',
+      });
+    }
 
     const result = await messageCentralService.sendOtp(mobileNumber);
     if (!result.success) {
@@ -72,12 +85,22 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
     }
     const { mobileNumber, verificationId, otp, deviceId, deviceName, deviceType } = body.data;
 
-    const verifyResult = await messageCentralService.verifyOtp(verificationId, otp);
-    if (!verifyResult.success) {
-      return reply.status(400).send({ 
-        success: false, 
-        message: verifyResult.message || `Invalid OTP. Use ${STATIC_OTP}` 
-      });
+    // Test account verification bypass
+    if (mobileNumber === FIXED_TEST_MOBILE) {
+      if (otp !== FIXED_TEST_OTP) {
+        return reply.status(400).send({
+          success: false,
+          message: 'Invalid OTP',
+        });
+      }
+    } else {
+      const verifyResult = await messageCentralService.verifyOtp(verificationId, otp);
+      if (!verifyResult.success) {
+        return reply.status(400).send({ 
+          success: false, 
+          message: verifyResult.message || 'Invalid OTP',
+        });
+      }
     }
 
     // ── Find ALL accounts with this phone number ──────────────────────────────

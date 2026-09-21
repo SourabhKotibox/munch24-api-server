@@ -259,6 +259,7 @@ export const getSeasons = async (request: FastifyRequest, reply: FastifyReply) =
         $group: {
           _id: { contentId: '$contentId', season: '$season' },
           episodeCount: { $sum: 1 },
+          seasonPoster: { $first: '$thumbnail' },
         },
       },
       {
@@ -280,7 +281,17 @@ export const getSeasons = async (request: FastifyRequest, reply: FastifyReply) =
           season: '$_id.season',
           episodeCount: 1,
           showName: '$content.title',
-          thumbnail: '$content.thumbnail',
+          thumbnail: {
+            $ifNull: [
+              '$seasonPoster',
+              {
+                $ifNull: [
+                  '$content.posterImage',
+                  '$content.thumbnail',
+                ],
+              },
+            ],
+          },
           status: '$content.status',
         },
       },

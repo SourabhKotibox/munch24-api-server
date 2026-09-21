@@ -32,7 +32,7 @@ const setLanguageSchema = z.object({
   language: z.string().trim().min(1, 'Language is required'),
 });
 
-const FIXED_TEST_MOBILE = '9999900000';
+const FIXED_TEST_MOBILE = '9876543210';
 const FIXED_TEST_OTP = '1234';
 
 export const sendOtp = async (request: FastifyRequest, reply: FastifyReply) => {

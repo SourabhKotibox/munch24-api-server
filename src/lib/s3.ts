@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, PutObjectAclCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import axios from 'axios';
 import fs from 'fs';
@@ -594,6 +594,7 @@ async function uploadHlsFolder(
             Body:         body,
             ContentType:  contentType,
             CacheControl: ext === '.m3u8' ? 'no-cache' : 'max-age=31536000',
+            ACL:          'public-read',
           },
           queueSize: 8,
           partSize: 50 * 1024 * 1024,
@@ -611,3 +612,49 @@ async function uploadHlsFolder(
   logger.info({ prefix, uploadCount }, 'HLS folder uploaded');
   return uploadCount;
 }
+
+/**
+ * Recursively updates ACL to 'public-read' for all objects under a prefix (e.g. 'hls/').
+ * Fixes any existing files that were uploaded with default private permissions.
+ */
+export async function makeFolderPublicInCloudStorage(prefix = 'hls'): Promise<{ updated: number }> {
+  const settings = await getActiveStorageSettings();
+  if (settings.storageDriver !== 'digitalocean' && settings.storageDriver !== 's3') {
+    return { updated: 0 };
+  }
+  const client = await getCloudStorageClient();
+  let continuationToken: string | undefined;
+  let updated = 0;
+
+  do {
+    const list = await client.send(new ListObjectsV2Command({
+      Bucket: settings.bucket,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    }));
+
+    if (list.Contents && list.Contents.length > 0) {
+      await Promise.all(
+        list.Contents.map(async (item) => {
+          if (item.Key) {
+            try {
+              await client.send(new PutObjectAclCommand({
+                Bucket: settings.bucket,
+                Key: item.Key,
+                ACL: 'public-read',
+              }));
+              updated++;
+            } catch (aclErr: any) {
+              logger.warn({ key: item.Key, err: aclErr?.message }, 'Failed to set public-read ACL on object');
+            }
+          }
+        })
+      );
+    }
+    continuationToken = list.NextContinuationToken;
+  } while (continuationToken);
+
+  logger.info({ prefix, updated }, 'Completed setting public-read ACL on cloud storage objects');
+  return { updated };
+}
+

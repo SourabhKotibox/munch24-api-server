@@ -9,7 +9,7 @@ import {
   getMessageGatewaySettings,
   updateMessageGatewaySettings,
 } from '../controllers/settingsController';
-import { applyStorageCors } from '../controllers/directUploadController';
+import { applyStorageCors, makeHlsStoragePublic } from '../controllers/directUploadController';
 
 const settingsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/settings', getSettings);
@@ -20,6 +20,7 @@ const settingsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/settings/email-status', { onRequest: [requirePermission('settings', 'canView')] }, getEmailStatus);
   fastify.post('/settings/test-email', { onRequest: [requirePermission('settings', 'canEdit')] }, testEmail);
   fastify.post('/settings/storage/cors', { onRequest: [requirePermission('settings', 'canEdit')] }, applyStorageCors);
+  fastify.post('/settings/storage/make-public', { onRequest: [requirePermission('settings', 'canEdit')] }, makeHlsStoragePublic);
 };
 
 export default settingsRoutes;

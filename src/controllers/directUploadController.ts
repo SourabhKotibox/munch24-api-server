@@ -581,9 +581,28 @@ export const applyStorageCors = async (request: FastifyRequest, reply: FastifyRe
     const frontend = process.env.FRONTEND_URL;
     const origins = Array.from(new Set(['*', origin, frontend].filter(Boolean) as string[]));
     const result = await ensureBrowserUploadCors(origins);
+
+    // Also update existing HLS files to be publicly readable
+    import('../lib/s3').then(({ makeFolderPublicInCloudStorage }) => {
+      makeFolderPublicInCloudStorage('hls').catch((err) => {
+        logger.warn({ err: err?.message }, 'Background makeFolderPublicInCloudStorage encountered an issue');
+      });
+    });
+
     return reply.send({ success: true, data: result });
   } catch (error: any) {
     logger.error({ event: 'CDN_CHECK_FAILED', error: error?.message }, 'Failed to apply storage CORS');
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const makeHlsStoragePublic = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { makeFolderPublicInCloudStorage } = await import('../lib/s3');
+    const result = await makeFolderPublicInCloudStorage('hls');
+    return reply.send({ success: true, data: result, message: `Updated ${result.updated} HLS objects to public-read.` });
+  } catch (error: any) {
+    logger.error({ event: 'MAKE_HLS_PUBLIC_FAILED', error: error?.message }, 'Failed to make HLS files public');
     return reply.status(500).send({ success: false, error: error.message });
   }
 };

@@ -16,11 +16,17 @@ const __dirname = path.dirname(__filename);
 
 const fastify = Fastify({
   logger: true,
+  disableRequestLogging: true,
   bodyLimit: 20 * 1024 * 1024 * 1024 // 20GB
 });
 
 // Register request context lifecycle hook
 fastify.addHook('onRequest', (request, reply, done) => {
+  // Fast bypass for static uploads/media requests
+  if (request.url && typeof request.url === 'string' && request.url.startsWith('/uploads/')) {
+    return done();
+  }
+
   const token = extractJwtToken(request);
   let user: any = null;
   if (token) {
@@ -46,6 +52,19 @@ fastify.addHook('onRequest', (request, reply, done) => {
   requestContext.run({ user }, () => {
     done();
   });
+});
+
+// Custom response logger: log API requests but SILENCE high-frequency static media downloads
+fastify.addHook('onResponse', (request, reply, done) => {
+  if (request.url && !request.url.startsWith('/uploads/')) {
+    request.log.info({
+      method: request.method,
+      url: request.url,
+      statusCode: reply.statusCode,
+      responseTime: Math.round(reply.elapsedTime),
+    }, 'request completed');
+  }
+  done();
 });
 
 // ── JSON body parser (MUST be registered BEFORE multipart) ───────────────────
@@ -93,10 +112,30 @@ fastify.register(fastifyMultipart as any, {
   }
 });
 
-// Register Static file serving
+// Register Static file serving with byte-range streaming and caching
 fastify.register(fastifyStatic, {
   root: path.join(__dirname, '../uploads'),
-  prefix: '/uploads/'
+  prefix: '/uploads/',
+  maxAge: '7d',
+  immutable: true,
+  acceptRanges: true,
+  cacheControl: true,
+  etag: true,
+  lastModified: true,
+  dotfiles: 'ignore',
+  index: false,
+  list: false,
+  setHeaders: (res, filePath) => {
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Authorization, Content-Type');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
+    if (filePath.endsWith('.m3u8')) {
+      res.setHeader('Cache-Control', 'public, max-age=60');
+    } else if (filePath.endsWith('.ts') || filePath.endsWith('.mp4') || filePath.endsWith('.m4v') || filePath.endsWith('.webm')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    }
+  }
 });
 
 // Register all routes

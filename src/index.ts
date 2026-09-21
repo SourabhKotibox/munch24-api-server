@@ -1,3 +1,6 @@
+// Maximize libuv worker threads to prevent media streaming / file downloading from starving API crypto and DNS operations
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '64';
+
 // Load .env file
 import { config } from 'dotenv';
 import { fileURLToPath } from 'url';

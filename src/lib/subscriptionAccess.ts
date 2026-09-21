@@ -168,13 +168,19 @@ export const filterDownloadQualities = (
 };
 
 export const resolveDownloadUrl = (
-  item: { videoQualities?: any[]; hlsUrl?: string; videoUrl?: string } | null | undefined,
+  item: { videoQualities?: any[]; hlsUrl?: string; videoUrl?: string; sourceVideoUrl?: string } | null | undefined,
   entitlements: ViewerEntitlements,
   mapUrl: (url: string) => string | null
 ): string => {
+  // If a direct source video (e.g. mp4) is available, prefer it for offline single-file downloads
+  const directMp4 = (item as any)?.sourceVideoUrl || item?.videoUrl;
+  if (directMp4 && typeof directMp4 === 'string' && (directMp4.endsWith('.mp4') || directMp4.includes('.mp4?'))) {
+    const mapped = mapUrl(directMp4);
+    if (mapped) return mapped;
+  }
   const allowed = filterDownloadQualities(item?.videoQualities, entitlements, mapUrl);
   if (allowed[0]?.url) return allowed[0].url;
-  return mapUrl(item?.hlsUrl || item?.videoUrl || '') || '';
+  return mapUrl(item?.hlsUrl || item?.videoUrl || (item as any)?.sourceVideoUrl || '') || '';
 };
 
 const toLimitsView = (limit?: any): PlanLimitsView => ({

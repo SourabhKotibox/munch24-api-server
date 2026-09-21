@@ -133,11 +133,27 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
         return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this movie on your plan.' });
       }
 
+      const directSource = (movie as any).sourceVideoUrl || movie.videoUrl;
+      const directDownloadUrl = (directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
+        ? toAbsoluteUrl(request, directSource, s3Active, s3BaseUrl)
+        : null;
+
       title = movie.title;
       thumbnail = toAbsoluteUrl(request, movie.thumbnail || '', s3Active, s3BaseUrl) || '';
       duration = movie.duration || 0;
       qualities = filterDownloadQualities(movie.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
         .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }));
+
+      if (directDownloadUrl && !qualities.some(q => q.url === directDownloadUrl)) {
+        qualities.unshift({
+          quality: 'source',
+          label: 'ORIGINAL (MP4)',
+          size: (movie as any)?.fileSize || 0,
+          sizeFormatted: formatSizeMB((movie as any)?.fileSize || 0),
+          url: directDownloadUrl
+        });
+      }
+
       downloadUrl = resolveDownloadUrl(movie, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl));
       contentModelType = 'Movie';
 
@@ -183,12 +199,28 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
         return reply.status(403).send({ success: false, message: 'Downloading is not allowed for this episode on your plan.' });
       }
 
+      const directSource = (episode as any).sourceVideoUrl || (episode as any).videoUrl;
+      const directDownloadUrl = (directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
+        ? toAbsoluteUrl(request, directSource, s3Active, s3BaseUrl)
+        : null;
+
       title = episode.title;
       parentTitle = drama.title;
       thumbnail = toAbsoluteUrl(request, episode.thumbnail || drama.thumbnail || '', s3Active, s3BaseUrl) || '';
       duration = episode.duration || 0;
       qualities = filterDownloadQualities(episode.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
         .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }));
+
+      if (directDownloadUrl && !qualities.some(q => q.url === directDownloadUrl)) {
+        qualities.unshift({
+          quality: 'source',
+          label: 'ORIGINAL (MP4)',
+          size: (episode as any)?.fileSize || 0,
+          sizeFormatted: formatSizeMB((episode as any)?.fileSize || 0),
+          url: directDownloadUrl
+        });
+      }
+
       downloadUrl = resolveDownloadUrl(episode, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl));
       contentModelType = 'Content';
 
@@ -213,6 +245,7 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
         thumbnail: thumbnail,
         duration: duration,
         downloadUrl: downloadUrl,
+        directDownloadUrl: directDownloadUrl || downloadUrl,
         videoQualities: qualities,
         status: downloadDoc.status || 'pending',
         progress: downloadDoc.progress || 0,
@@ -267,6 +300,8 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
       let qualities: any[] = [];
       let exists = false;
 
+      let directDownloadUrl: string | null = null;
+
       if (dl.contentModelType === 'Movie') {
         const movie = await MovieModel.findById(dl.contentId).lean();
         if (movie && movie.status === 'published') {
@@ -274,10 +309,23 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
           thumbnail = toAbsoluteUrl(request, movie.thumbnail || '', s3Active, s3BaseUrl) || '';
           duration = movie.duration || 0;
           const canGetFile = canDownloadContent(entitlements, movie);
+          const directSource = (movie as any).sourceVideoUrl || movie.videoUrl;
+          directDownloadUrl = (canGetFile && directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
+            ? toAbsoluteUrl(request, directSource, s3Active, s3BaseUrl)
+            : null;
           qualities = canGetFile
             ? filterDownloadQualities(movie.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
                 .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }))
             : [];
+          if (directDownloadUrl && !qualities.some(q => q.url === directDownloadUrl)) {
+            qualities.unshift({
+              quality: 'source',
+              label: 'ORIGINAL (MP4)',
+              size: (movie as any)?.fileSize || 0,
+              sizeFormatted: formatSizeMB((movie as any)?.fileSize || 0),
+              url: directDownloadUrl
+            });
+          }
           downloadUrl = canGetFile
             ? resolveDownloadUrl(movie, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
             : '';
@@ -295,10 +343,23 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
           duration = episode.duration || 0;
           const coinUnlocked = !!(await UnlockedEpisodeModel.findOne({ userId: userObjectId, episodeId: episode._id }).lean());
           const canGetFile = canDownloadContent(entitlements, drama, episode, coinUnlocked);
+          const directSource = (episode as any).sourceVideoUrl || (episode as any).videoUrl;
+          directDownloadUrl = (canGetFile && directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
+            ? toAbsoluteUrl(request, directSource, s3Active, s3BaseUrl)
+            : null;
           qualities = canGetFile
             ? filterDownloadQualities(episode.videoQualities, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
                 .map((q) => ({ ...q, sizeFormatted: formatSizeMB(q.size) }))
             : [];
+          if (directDownloadUrl && !qualities.some(q => q.url === directDownloadUrl)) {
+            qualities.unshift({
+              quality: 'source',
+              label: 'ORIGINAL (MP4)',
+              size: (episode as any)?.fileSize || 0,
+              sizeFormatted: formatSizeMB((episode as any)?.fileSize || 0),
+              url: directDownloadUrl
+            });
+          }
           downloadUrl = canGetFile
             ? resolveDownloadUrl(episode, entitlements, (url) => toAbsoluteUrl(request, url, s3Active, s3BaseUrl))
             : '';
@@ -317,6 +378,7 @@ export const getDownloadList = async (request: FastifyRequest, reply: FastifyRep
           thumbnail: thumbnail,
           duration: duration,
           downloadUrl: downloadUrl,
+          directDownloadUrl: directDownloadUrl || downloadUrl,
           videoQualities: qualities,
           status: (dl as any).status || 'pending',
           progress: (dl as any).progress || 0,

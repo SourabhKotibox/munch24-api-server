@@ -53,21 +53,52 @@ export const getRecommendations = async (preferredLanguage: string) => {
     }
   }
 
-  // Fetch recommended movies (language filtered)
-  const movieFilter: any = { status: 'published' };
-  if (targetLanguageId) movieFilter.languages = targetLanguageId;
-  let recMovies = await MovieModel.find(movieFilter)
-    .sort({ views: -1, createdAt: -1 })
-    .limit(6)
-    .lean();
+  // Fetch recommended movies (prioritize language, allow untagged, fallback to all)
+  let recMovies: any[] = [];
+  if (targetLanguageId) {
+    recMovies = await MovieModel.find({
+      status: 'published',
+      $or: [
+        { languages: targetLanguageId },
+        { languages: { $size: 0 } },
+        { languages: { $exists: false } },
+        { languages: null }
+      ]
+    })
+      .sort({ views: -1, createdAt: -1 })
+      .limit(6)
+      .lean();
+  }
+  if (recMovies.length === 0) {
+    recMovies = await MovieModel.find({ status: 'published' })
+      .sort({ views: -1, createdAt: -1 })
+      .limit(6)
+      .lean();
+  }
 
-  // Fetch recommended dramas/series (language filtered)
-  const dramaFilter: any = { status: 'published', type: 'series' };
-  if (targetLanguageId) dramaFilter.languages = targetLanguageId;
-  let recDramas = await ContentModel.find(dramaFilter)
-    .sort({ views: -1, createdAt: -1 })
-    .limit(6)
-    .lean();
+  // Fetch recommended dramas/series (prioritize language, allow untagged, fallback to all)
+  let recDramas: any[] = [];
+  if (targetLanguageId) {
+    recDramas = await ContentModel.find({
+      status: 'published',
+      type: 'series',
+      $or: [
+        { languages: targetLanguageId },
+        { languages: { $size: 0 } },
+        { languages: { $exists: false } },
+        { languages: null }
+      ]
+    })
+      .sort({ views: -1, createdAt: -1 })
+      .limit(6)
+      .lean();
+  }
+  if (recDramas.length === 0) {
+    recDramas = await ContentModel.find({ status: 'published', type: 'series' })
+      .sort({ views: -1, createdAt: -1 })
+      .limit(6)
+      .lean();
+  }
 
   // Fetch episode counts for dramas
   const dramaIds = recDramas.map(d => d._id);
@@ -198,26 +229,67 @@ export const getSearchPage = async (request: FastifyRequest, reply: FastifyReply
     if (isDramaSearch) contentQueryOptions.push({ contentType: 'drama' });
     if (isSeriesSearch) contentQueryOptions.push({ contentType: 'series' });
 
-    const [matchedMovies, matchedContents] = await Promise.all([
-      // Search movies
-      MovieModel.find({
+    // Search movies
+    let matchedMovies = await MovieModel.find({
+      status: 'published',
+      ...(targetLanguageId ? {
+        $and: [
+          {
+            $or: [
+              { languages: targetLanguageId },
+              { languages: { $size: 0 } },
+              { languages: { $exists: false } },
+              { languages: null }
+            ]
+          },
+          { $or: movieQueryOptions }
+        ]
+      } : { $or: movieQueryOptions })
+    })
+      .limit(20)
+      .lean();
+
+    // Fallback: if language filter yielded no results, search across all published movies
+    if (matchedMovies.length === 0 && targetLanguageId) {
+      matchedMovies = await MovieModel.find({
         status: 'published',
-        ...(targetLanguageId ? { languages: targetLanguageId } : {}),
         $or: movieQueryOptions
       })
         .limit(20)
-        .lean(),
+        .lean();
+    }
 
-      // Search dramas and TV shows
-      ContentModel.find({
+    // Search dramas and TV shows
+    let matchedContents = await ContentModel.find({
+      status: 'published',
+      type: 'series',
+      ...(targetLanguageId ? {
+        $and: [
+          {
+            $or: [
+              { languages: targetLanguageId },
+              { languages: { $size: 0 } },
+              { languages: { $exists: false } },
+              { languages: null }
+            ]
+          },
+          { $or: contentQueryOptions }
+        ]
+      } : { $or: contentQueryOptions })
+    })
+      .limit(20)
+      .lean();
+
+    // Fallback: if language filter yielded no results, search across all published series/dramas
+    if (matchedContents.length === 0 && targetLanguageId) {
+      matchedContents = await ContentModel.find({
         status: 'published',
         type: 'series',
-        ...(targetLanguageId ? { languages: targetLanguageId } : {}),
         $or: contentQueryOptions
       })
         .limit(20)
-        .lean()
-    ]);
+        .lean();
+    }
 
     // Fetch episode counts for matched dramas
     const matchedDramaIds = matchedContents.map(d => d._id);

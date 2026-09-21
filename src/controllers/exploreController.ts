@@ -65,6 +65,8 @@ const mapContentItem = (
   const hasAccess = firstEpisode
     ? canAccessEpisode(access, item.planRequired || item.plan, firstEpisode)
     : canAccessContent(access, item.planRequired || item.plan);
+  const previewVideoUrl = toAbsoluteUrl(request, firstEpisode?.hlsUrl || item.hlsUrl || item.videoUrl);
+
   return {
   id: item._id.toString(),
   title: item.title,
@@ -72,6 +74,7 @@ const mapContentItem = (
   shortDescription: item.shortDescription,
   thumbnail: toAbsoluteUrl(request, item.thumbnail),
   bannerImage: toAbsoluteUrl(request, item.bannerImage),
+  posterImage: toAbsoluteUrl(request, item.posterImage || item.thumbnail),
   type,
   episodeCount,
   genres: (item.genres || []).map((g: any) => g.name || g),
@@ -91,14 +94,14 @@ const mapContentItem = (
   status: item.status,
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
-  // Preview — ONLY episode 1 (short-drama reel style, no full list)
-  videoUrl: hasAccess ? (toAbsoluteUrl(request, firstEpisode?.hlsUrl || item.hlsUrl) || null) : null,
+  // Preview — ONLY episode 1 (short-drama reel style, playable preview reel)
+  videoUrl: previewVideoUrl || null,
   trailerUrl: toAbsoluteUrl(request, firstEpisode?.trailerUrl || item.trailerUrl) || null,
   firstEpisodeId: firstEpisode?._id?.toString() || null,
   firstEpisodeTitle: firstEpisode?.title || null,
   firstEpisodeThumbnail: toAbsoluteUrl(request, firstEpisode?.thumbnail || item.thumbnail) || null,
   firstEpisodeDuration: firstEpisode?.duration || null,
-  firstEpisodeIsFree: firstEpisode?.isFree ?? null,
+  firstEpisodeIsFree: firstEpisode?.isFree ?? true,
   contentPlan: item.planRequired || item.plan || 'free',
   isLocked: !hasAccess,
   };
@@ -194,9 +197,14 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
     let rawContents: any[] = [];
 
     if (contentType === 'movie') {
-      const langFilter = { ...filter };
+      const langFilter: any = { ...filter };
       if (targetLanguageId) {
-        langFilter.languages = targetLanguageId;
+        langFilter.$or = [
+          { languages: targetLanguageId },
+          { languages: { $size: 0 } },
+          { languages: { $exists: false } },
+          { languages: null }
+        ];
       }
       rawContents = await MovieModel.find(langFilter)
         .sort(sortBy)
@@ -206,11 +214,26 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
         .populate('genres', 'name')
         .lean();
 
-
+      // Fallback: if no movies found with language filter, return all published movies
+      if (rawContents.length === 0) {
+        rawContents = await MovieModel.find(filter)
+          .sort(sortBy)
+          .skip(offset)
+          .limit(fetchLimit)
+          .populate('languages', 'name')
+          .populate('genres', 'name')
+          .lean();
+      }
     } else {
-      const langFilter = { ...filter };
+      const langFilter: any = { ...filter };
       if (targetLanguageId) {
-        langFilter.languages = targetLanguageId;
+        langFilter.$or = [
+          ...(langFilter.$or || []),
+          { languages: targetLanguageId },
+          { languages: { $size: 0 } },
+          { languages: { $exists: false } },
+          { languages: null }
+        ];
       }
       rawContents = await ContentModel.find(langFilter)
         .sort(sortBy)
@@ -220,7 +243,16 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
         .populate('genres', 'name')
         .lean();
 
-
+      // Fallback: if no dramas found with flags/languages, fallback to all published dramas
+      if (rawContents.length === 0) {
+        rawContents = await ContentModel.find({ status: 'published', contentType: 'drama' })
+          .sort(sortBy)
+          .skip(offset)
+          .limit(fetchLimit)
+          .populate('languages', 'name')
+          .populate('genres', 'name')
+          .lean();
+      }
     }
 
     logger.info(
@@ -241,7 +273,6 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
             contentId: { $in: rawContentIds },
             season: 1,
             episode: 1,
-            processingStatus: 'ready',
           },
         },
         { $sort: { season: 1, episode: 1 } },
@@ -271,7 +302,7 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
       const firstEpisode = firstEpisodeMap.get(cid);
 
       const thumbnail = content.thumbnail || '';
-      const videoUrl = firstEpisode?.hlsUrl || content.hlsUrl || '';
+      const videoUrl = firstEpisode?.hlsUrl || firstEpisode?.videoUrl || content.hlsUrl || content.videoUrl || '';
 
       // Skip if we have no video to show for dramas
       if (contentType === 'drama' && !videoUrl) continue;

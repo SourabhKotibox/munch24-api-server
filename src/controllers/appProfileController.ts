@@ -17,6 +17,7 @@ import { ReviewModel } from '../models/Review';
 import { SubscriptionModel } from '../models/Subscription';
 import { logger } from '../lib/logger';
 import uploadHandler from '../lib/uploadHandler';
+import { FIXED_TEST_MOBILE } from '../lib/config';
 
 // Optional user lookup helper
 const getOptionalUserToken = (request: FastifyRequest): string | null => {
@@ -66,7 +67,7 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
           try {
             const server = request.server as any;
             const decoded = server.jwt.verify(token) as any;
-            if (decoded.deviceId && decoded.deviceId !== 'unknown') {
+            if (decoded.deviceId && decoded.deviceId !== 'unknown' && user.phone !== FIXED_TEST_MOBILE) {
               const deviceExists = (user as any).devices?.some((d: any) => d.deviceId === decoded.deviceId);
               if (!deviceExists) {
                 return reply.status(401).send({ success: false, message: 'Device was removed, please login again.' });

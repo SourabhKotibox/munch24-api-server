@@ -20,3 +20,7 @@ export const API_URL = (process.env.API_URL || 'http://localhost:3000/api').repl
  */
 export const buildShareUrl = (itemId: string): string =>
   `${API_URL}/share/${itemId}`;
+
+/** Fixed credentials for Google Play Store testing login */
+export const FIXED_TEST_MOBILE = '9876543210';
+export const FIXED_TEST_OTP = '1234';

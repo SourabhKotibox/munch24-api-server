@@ -3,6 +3,7 @@ import { UserModel } from '../models/User';
 import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
 import { PlanLimitModel } from '../models/PlanLimit';
 import { SubscriptionModel } from '../models/Subscription';
+import { FIXED_TEST_MOBILE } from './config';
 
 export type PlanKey = 'free' | 'basic' | 'standard' | 'premium';
 
@@ -75,6 +76,24 @@ const DEFAULT_FREE_LIMITS: PlanLimitsView = {
   q1440p: false,
   q2k: false,
   q4k: false,
+};
+
+const TEST_USER_LIMITS: PlanLimitsView = {
+  videoCast: true,
+  ads: false,
+  deviceLimit: false,
+  deviceLimitCount: 999,
+  downloadStatus: true,
+  supportedDeviceType: false,
+  supportedDevices: [],
+  profileLimit: false,
+  profileLimitCount: 99,
+  q480p: true,
+  q720p: true,
+  q1080p: true,
+  q1440p: true,
+  q2k: true,
+  q4k: true,
 };
 
 export const normalizePlanKey = (value?: string | null, level?: number): PlanKey => {
@@ -234,6 +253,22 @@ export async function resolvePlanLimits(planId?: string | null, planName?: strin
 export async function getUserEntitlements(user: any): Promise<ViewerEntitlements> {
   if (!user) return guestEntitlements();
 
+  // Full authorization bypass for PlayStore testing account
+  if (
+    user.phone === FIXED_TEST_MOBILE ||
+    user.email === `${FIXED_TEST_MOBILE}@temp.local` ||
+    user.email === `${FIXED_TEST_MOBILE}@test.local`
+  ) {
+    return buildEntitlements({
+      userId: user._id?.toString?.() || user.id || null,
+      planKey: 'premium',
+      planName: 'PlayStore Tester VIP',
+      planId: null,
+      active: true,
+      limits: TEST_USER_LIMITS,
+    });
+  }
+
   const active = isSubscriptionCurrentlyActive(user);
   const { plan, limits } = await resolvePlanLimits(
     user.subscriptionPlanId?.toString?.() || user.subscriptionPlanId,
@@ -258,8 +293,20 @@ export async function getViewerEntitlements(request: FastifyRequest): Promise<Vi
     const decoded = (request.server as any).jwt.verify(authHeader.slice(7)) as any;
     if (!decoded?.id) return guestEntitlements();
 
+    // Fast path: if token payload itself has test user phone
+    if (decoded.phone === FIXED_TEST_MOBILE) {
+      return buildEntitlements({
+        userId: decoded.id,
+        planKey: 'premium',
+        planName: 'PlayStore Tester VIP',
+        planId: null,
+        active: true,
+        limits: TEST_USER_LIMITS,
+      });
+    }
+
     const user = await UserModel.findById(decoded.id)
-      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId phone email')
       .lean();
     if (!user) return guestEntitlements();
     return getUserEntitlements(user);
@@ -273,6 +320,7 @@ export const canAccessContent = (
   planRequired?: string | null,
   options?: { isFree?: boolean }
 ): boolean => {
+  if (entitlements.level >= 4) return true; // Full access for level 4 (PlayStore Tester / Premium VIP)
   if (options?.isFree || normalizePlanKey(planRequired) === 'free' || !planRequired) return true;
   if (!entitlements.active) return false;
   return entitlements.level >= getPlanLevel(planRequired);
@@ -284,6 +332,7 @@ export const canAccessEpisode = (
   episode?: { isFree?: boolean; isLocked?: boolean },
   coinUnlocked = false
 ): boolean => {
+  if (entitlements.level >= 4) return true; // Full access for level 4 (PlayStore Tester / Premium VIP)
   if (coinUnlocked) return true;
   if (episode?.isFree) return true;
   return canAccessContent(entitlements, contentPlanRequired, { isFree: false });
@@ -295,6 +344,7 @@ export const canDownloadContent = (
   episode?: { downloadAllowed?: boolean; isFree?: boolean },
   coinUnlocked = false
 ): boolean => {
+  if (entitlements.level >= 4) return true; // Full access for level 4 (PlayStore Tester / Premium VIP)
   if (content && content.downloadAllowed === false) return false;
   if (episode && episode.downloadAllowed === false) return false;
   if (!entitlements.canDownload) return false;

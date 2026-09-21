@@ -32,8 +32,8 @@ const setLanguageSchema = z.object({
   language: z.string().trim().min(1, 'Language is required'),
 });
 
-const FIXED_TEST_MOBILE = '9876543210';
-const FIXED_TEST_OTP = '1234';
+export { FIXED_TEST_MOBILE, FIXED_TEST_OTP } from '../lib/config';
+import { FIXED_TEST_MOBILE, FIXED_TEST_OTP } from '../lib/config';
 
 export const sendOtp = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -111,15 +111,21 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
     let user: any = null;
 
     if (allUsersWithPhone.length === 0) {
-      // Brand new user — create temp account
-      const newProfile = { name: 'User', isKids: false, maturityLevel: 18, language: 'Hindi' };
+      // Brand new user
+      const isTestNumber = mobileNumber === FIXED_TEST_MOBILE;
+      const newProfile = { name: isTestNumber ? 'PlayStore Tester' : 'User', isKids: false, maturityLevel: 18, language: 'Hindi' };
       const newUser = new UserModel({
         phone: mobileNumber,
-        name: 'User',
+        name: isTestNumber ? 'PlayStore Tester' : 'User',
         email: `${mobileNumber}@temp.local`,
         profiles: [newProfile],
         preferredLanguage: 'Hindi',
-        languageSelectionSkipped: false,
+        languageSelectionSkipped: isTestNumber,
+        subscriptionPlan: isTestNumber ? 'premium' : 'free',
+        subscriptionStatus: isTestNumber ? 'active' : 'active',
+        subscriptionExpiry: isTestNumber ? new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000) : undefined,
+        walletBalance: isTestNumber ? 99999 : 0,
+        status: 'active',
       });
       await newUser.save();
       user = newUser;
@@ -150,6 +156,15 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
       return reply.status(404).send({ success: false, message: 'User not found' });
     }
 
+    // Grant full VIP / PlayStore testing authorization on every login
+    if (mobileNumber === FIXED_TEST_MOBILE) {
+      userDoc.subscriptionPlan = 'premium';
+      userDoc.subscriptionStatus = 'active';
+      userDoc.subscriptionExpiry = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+      userDoc.walletBalance = Math.max(userDoc.walletBalance || 0, 99999);
+      userDoc.status = 'active';
+    }
+
     if (userDoc.status === 'banned' || userDoc.status === 'suspended') {
       return reply.status(403).send({
         success: false,
@@ -157,8 +172,8 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
       });
     }
 
-    // ── Manage Device Limits ──────────────────────────────────────────────────
-    if (deviceId) {
+    // ── Manage Device Limits (Bypassed for PlayStore Testing) ─────────────────
+    if (deviceId && mobileNumber !== FIXED_TEST_MOBILE) {
       const entitlements = await getUserEntitlements(userDoc);
       if (!isDeviceTypeAllowed(entitlements, deviceType)) {
         return reply.status(403).send({
@@ -210,6 +225,7 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
     });
 
     // Return full profile so the app can pre-fill name, email, avatar, subscription
+    const isTestNumber = mobileNumber === FIXED_TEST_MOBILE;
     return reply.status(200).send({
       success: true,
       accessToken,
@@ -220,8 +236,8 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
         : null,
       phone: (userDoc as any).phone || null,
       avatar: (userDoc as any).avatar || null,
-      subscriptionPlan: userDoc.subscriptionPlan || 'free',
-      subscriptionStatus: userDoc.subscriptionStatus || 'inactive',
+      subscriptionPlan: isTestNumber ? 'premium' : (userDoc.subscriptionPlan || 'free'),
+      subscriptionStatus: isTestNumber ? 'active' : (userDoc.subscriptionStatus || 'inactive'),
       subscriptionExpiry: (userDoc as any).subscriptionExpiry || null,
       expiresIn: 604800, // 7 days in seconds
     });

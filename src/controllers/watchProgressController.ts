@@ -8,7 +8,7 @@ import { logger } from '../lib/logger';
 
 export const saveWatchProgress = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request as any).user?.id;
+    const userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
     if (!userId) {
       return reply.status(401).send({ success: false, message: 'Unauthorized.' });
     }
@@ -100,7 +100,7 @@ export const saveWatchProgress = async (request: FastifyRequest, reply: FastifyR
 
 export const getWatchProgressItem = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request as any).user?.id;
+    const userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
     if (!userId) {
       return reply.status(401).send({ success: false, message: 'Unauthorized.' });
     }
@@ -136,7 +136,7 @@ export const getWatchProgressItem = async (request: FastifyRequest, reply: Fasti
 
 export const clearWatchProgress = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request as any).user?.id;
+    const userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
     if (!userId) {
       return reply.status(401).send({ success: false, message: 'Unauthorized.' });
     }
@@ -179,7 +179,7 @@ export const clearWatchProgress = async (request: FastifyRequest, reply: Fastify
 
 export const getWatchHistory = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request as any).user?.id;
+    const userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
     if (!userId) {
       return reply.status(401).send({ success: false, message: 'Unauthorized.' });
     }
@@ -293,7 +293,7 @@ export const getWatchHistory = async (request: FastifyRequest, reply: FastifyRep
 
 export const deleteWatchHistoryItem = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request as any).user?.id;
+    const userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
     if (!userId) {
       return reply.status(401).send({ success: false, message: 'Unauthorized.' });
     }
@@ -341,7 +341,7 @@ export const deleteWatchHistoryItem = async (request: FastifyRequest, reply: Fas
 
 export const clearAllWatchHistory = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (request as any).user?.id;
+    const userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
     if (!userId) {
       return reply.status(401).send({ success: false, message: 'Unauthorized.' });
     }

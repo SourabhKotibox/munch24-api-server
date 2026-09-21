@@ -51,38 +51,56 @@ const toAbsoluteUrl = (
 
 export const requestDownload = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userPayload = (request as any).user;
-    if (!userPayload || !userPayload.id) {
+    let userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+    if (!userId) {
+      try {
+        await request.jwtVerify();
+        userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+      } catch {
+        return reply.status(401).send({ success: false, message: 'Unauthorized' });
+      }
+    }
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
-    const userId = userPayload.id;
-    // Cast userId string to ObjectId for all DB queries
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const user = await UserModel.findById(userObjectId)
-      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId phone email')
       .lean();
     if (!user) {
       return reply.status(404).send({ success: false, message: 'User not found' });
     }
 
     const entitlements = await getUserEntitlements(user);
-    if (!entitlements.active) {
+
+    const body = (request.body || {}) as {
+      contentId?: string;
+      episodeId?: string;
+      contentType?: 'movie' | 'drama' | 'series';
+      type?: 'movie' | 'drama' | 'series';
+    };
+    const params = (request.params || {}) as { contentId?: string };
+
+    const contentId = params.contentId || body.contentId;
+    const episodeId = body.episodeId;
+    let contentType = body.contentType || body.type;
+
+    if (!contentId || !mongoose.Types.ObjectId.isValid(contentId)) {
+      return reply.status(400).send({ success: false, message: 'Valid contentId is required' });
+    }
+
+    if (!contentType) {
+      const isMov = await MovieModel.findById(contentId).select('_id').lean();
+      contentType = isMov ? 'movie' : 'drama';
+    }
+
+    if (!entitlements.active && entitlements.level < 4) {
       return reply.status(403).send({ success: false, message: 'Active subscription required to download content.' });
     }
-    if (!entitlements.canDownload) {
+    if (!entitlements.canDownload && entitlements.level < 4) {
       return reply.status(403).send({ success: false, message: 'Your current subscription plan does not allow downloads.' });
     }
-
-    const { contentId, episodeId, contentType } = request.body as {
-      contentId: string;
-      episodeId?: string;
-      contentType: 'movie' | 'drama' | 'series';
-    };
-
-     if (!mongoose.Types.ObjectId.isValid(contentId)) {
-       return reply.status(400).send({ success: false, message: 'Invalid contentId' });
-     }
 
      // Load S3 settings once for dynamic absolute URL resolution
      const s3Active = await isCloudStorageConfigured();
@@ -209,15 +227,22 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
 
 export const getDownloadList = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userPayload = (request as any).user;
-    if (!userPayload || !userPayload.id) {
+    let userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+    if (!userId) {
+      try {
+        await request.jwtVerify();
+        userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+      } catch {
+        return reply.status(401).send({ success: false, message: 'Unauthorized' });
+      }
+    }
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
-    const userId = userPayload.id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const user = await UserModel.findById(userObjectId)
-      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId')
+      .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId phone email')
       .lean();
     const entitlements = await getUserEntitlements(user);
 
@@ -314,14 +339,21 @@ export const getDownloadsList = getDownloadList;
 
 export const deleteDownload = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userPayload = (request as any).user;
-    if (!userPayload || !userPayload.id) {
+    let userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+    if (!userId) {
+      try {
+        await request.jwtVerify();
+        userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+      } catch {
+        return reply.status(401).send({ success: false, message: 'Unauthorized' });
+      }
+    }
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
-    const userId = userPayload.id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const { id } = request.params as { id: string };
+    const { id } = (request.params || {}) as { id: string };
 
     if (id === 'all') {
       await UserDownloadModel.deleteMany({ userId: userObjectId });
@@ -335,10 +367,11 @@ export const deleteDownload = async (request: FastifyRequest, reply: FastifyRepl
       return reply.status(400).send({ success: false, message: 'Invalid download ID' });
     }
 
-    const deleted = await UserDownloadModel.findOneAndDelete({ _id: new mongoose.Types.ObjectId(id), userId: userObjectId });
-    if (!deleted) {
-      return reply.status(404).send({ success: false, message: 'Download record not found' });
-    }
+    const targetObjectId = new mongoose.Types.ObjectId(id);
+    const deleted = await UserDownloadModel.findOneAndDelete({
+      userId: userObjectId,
+      $or: [{ _id: targetObjectId }, { contentId: targetObjectId }]
+    });
 
     return reply.send({
       success: true,
@@ -354,11 +387,18 @@ export const removeDownload = deleteDownload;
 
 export const removeAllDownloads = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userPayload = (request as any).user;
-    if (!userPayload || !userPayload.id) {
+    let userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+    if (!userId) {
+      try {
+        await request.jwtVerify();
+        userId = (request.user as any)?.id || (request.user as any)?._id || (request.user as any)?.userId;
+      } catch {
+        return reply.status(401).send({ success: false, message: 'Unauthorized' });
+      }
+    }
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
-    const userId = userPayload.id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const result = await UserDownloadModel.deleteMany({ userId: userObjectId });
@@ -373,3 +413,4 @@ export const removeAllDownloads = async (request: FastifyRequest, reply: Fastify
     return reply.status(500).send({ success: false, message: 'Failed to delete all downloads.', error: error.message });
   }
 };
+

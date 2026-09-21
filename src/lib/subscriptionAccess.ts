@@ -4,6 +4,7 @@ import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
 import { PlanLimitModel } from '../models/PlanLimit';
 import { SubscriptionModel } from '../models/Subscription';
 import { FIXED_TEST_MOBILE } from './config';
+import { extractJwtToken } from './jwtHelper';
 
 export type PlanKey = 'free' | 'basic' | 'standard' | 'premium';
 
@@ -253,11 +254,26 @@ export async function resolvePlanLimits(planId?: string | null, planName?: strin
 export async function getUserEntitlements(user: any): Promise<ViewerEntitlements> {
   if (!user) return guestEntitlements();
 
+  // If user object was queried without phone/email, look it up
+  let phone = user.phone;
+  let email = user.email;
+  if (!phone && !email && (user._id || user.id)) {
+    try {
+      const u = await UserModel.findById(user._id || user.id).select('phone email').lean();
+      if (u) {
+        phone = u.phone;
+        email = u.email;
+      }
+    } catch {
+      // Ignore lookup errors
+    }
+  }
+
   // Full authorization bypass for PlayStore testing account
   if (
-    user.phone === FIXED_TEST_MOBILE ||
-    user.email === `${FIXED_TEST_MOBILE}@temp.local` ||
-    user.email === `${FIXED_TEST_MOBILE}@test.local`
+    phone === FIXED_TEST_MOBILE ||
+    email === `${FIXED_TEST_MOBILE}@temp.local` ||
+    email === `${FIXED_TEST_MOBILE}@test.local`
   ) {
     return buildEntitlements({
       userId: user._id?.toString?.() || user.id || null,
@@ -288,15 +304,16 @@ export async function getUserEntitlements(user: any): Promise<ViewerEntitlements
 
 export async function getViewerEntitlements(request: FastifyRequest): Promise<ViewerEntitlements> {
   try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return guestEntitlements();
-    const decoded = (request.server as any).jwt.verify(authHeader.slice(7)) as any;
-    if (!decoded?.id) return guestEntitlements();
+    const token = extractJwtToken(request);
+    if (!token) return guestEntitlements();
+    const decoded = (request.server as any).jwt.verify(token) as any;
+    const userId = decoded?.id || decoded?._id || decoded?.userId;
+    if (!userId) return guestEntitlements();
 
     // Fast path: if token payload itself has test user phone
     if (decoded.phone === FIXED_TEST_MOBILE) {
       return buildEntitlements({
-        userId: decoded.id,
+        userId,
         planKey: 'premium',
         planName: 'PlayStore Tester VIP',
         planId: null,
@@ -305,7 +322,7 @@ export async function getViewerEntitlements(request: FastifyRequest): Promise<Vi
       });
     }
 
-    const user = await UserModel.findById(decoded.id)
+    const user = await UserModel.findById(userId)
       .select('subscriptionPlan subscriptionStatus subscriptionExpiry subscriptionPlanId phone email')
       .lean();
     if (!user) return guestEntitlements();

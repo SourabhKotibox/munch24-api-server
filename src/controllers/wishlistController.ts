@@ -6,43 +6,57 @@ import { MovieModel } from '../models/Movie';
 import { UserModel } from '../models/User';
 import { logger } from '../lib/logger';
 
+// Helper to get authenticated user id safely
+const getUserId = async (request: FastifyRequest): Promise<string | null> => {
+  try {
+    if (!request.user) {
+      await request.jwtVerify();
+    }
+    const rawUser = request.user as any;
+    return rawUser?.id || rawUser?._id || rawUser?.userId || null;
+  } catch {
+    return null;
+  }
+};
+
 export const toggleWishlist = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
+    const userId = await getUserId(request);
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return reply.status(401).send({ success: false, message: 'Unauthorized' });
+    }
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
     const params = (request.params || {}) as { contentId?: string };
     const body = (request.body || {}) as { contentId?: string; contentType?: string; type?: string; profileId?: string };
 
     const contentId = body.contentId || params.contentId;
-    const rawType = body.contentType || body.type;
+    if (!contentId || !mongoose.Types.ObjectId.isValid(contentId)) {
+      return reply.status(400).send({ success: false, message: 'Valid contentId is required' });
+    }
+
     const profileId = body.profileId || null;
+    let rawType = body.contentType || body.type;
 
-    if (!contentId) {
-      return reply.status(400).send({ success: false, message: 'contentId is required' });
-    }
-
+    // Auto-detect type if not provided
+    let isMovie = rawType === 'movie';
     if (!rawType) {
-      return reply.status(400).send({ success: false, message: 'type or contentType is required' });
+      const movie = await MovieModel.findById(contentId).select('_id').lean();
+      isMovie = !!movie;
+      rawType = isMovie ? 'movie' : 'drama';
     }
 
-    const isMovie = rawType === 'movie';
     const contentModelType = isMovie ? 'Movie' : 'Content';
 
-    // Fallback or explicit auth extraction
-    const user = (request as any).user;
-    if (!user || !user.id) {
-      return reply.status(401).send({ success: false, message: 'Unauthorized' });
-    }
-    const userId = user.id;
-    // Cast userId string to ObjectId for all DB queries
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-
     // Verify content exists
-    const Model = isMovie ? MovieModel : ContentModel as any;
-    const content = await Model.findById(contentId).select('_id');
+    const Model = isMovie ? MovieModel : (ContentModel as any);
+    const content = await Model.findById(contentId).select('_id title').lean();
     if (!content) {
       return reply.status(404).send({ success: false, message: 'Content not found' });
     }
 
-    const existingWishlist = await UserWishlistModel.findOne({ userId: userObjectId, contentId, profileId });
+    const filter = { userId: userObjectId, contentId: new mongoose.Types.ObjectId(contentId), profileId };
+    const existingWishlist = await UserWishlistModel.findOne(filter);
 
     if (existingWishlist) {
       // Remove from wishlist
@@ -55,27 +69,29 @@ export const toggleWishlist = async (request: FastifyRequest, reply: FastifyRepl
         isWishlisted: false,
         data: {
           id: existingWishlist._id.toString(),
-          type: rawType
-        }
+          contentId,
+          type: rawType,
+        },
       });
     } else {
       // Add to wishlist
       const newWishlist = await UserWishlistModel.create({
         userId: userObjectId,
-        contentId,
+        contentId: new mongoose.Types.ObjectId(contentId),
         contentModelType,
         profileId,
       });
       await UserModel.findByIdAndUpdate(userObjectId, { $inc: { watchlistCount: 1 } });
-      
+
       return reply.send({
         success: true,
         message: 'Added to wishlist',
         isWishlisted: true,
         data: {
           id: newWishlist._id.toString(),
-          type: rawType
-        }
+          contentId,
+          type: rawType,
+        },
       });
     }
   } catch (error: any) {
@@ -84,14 +100,76 @@ export const toggleWishlist = async (request: FastifyRequest, reply: FastifyRepl
   }
 };
 
-export const getWishlist = async (request: FastifyRequest, reply: FastifyReply) => {
+export const removeFromWishlist = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const user = (request as any).user;
-    if (!user || !user.id) {
+    const userId = await getUserId(request);
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return reply.status(401).send({ success: false, message: 'Unauthorized' });
     }
-    const userId = user.id;
-    // Cast userId string to ObjectId for all DB queries
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const params = (request.params || {}) as { contentId?: string };
+    const body = (request.body || {}) as { contentId?: string; profileId?: string };
+
+    const contentId = body.contentId || params.contentId;
+    if (!contentId || !mongoose.Types.ObjectId.isValid(contentId)) {
+      return reply.status(400).send({ success: false, message: 'Valid contentId is required' });
+    }
+
+    const profileId = body.profileId || null;
+    const filter = { userId: userObjectId, contentId: new mongoose.Types.ObjectId(contentId), profileId };
+
+    const deleted = await UserWishlistModel.findOneAndDelete(filter);
+    if (deleted) {
+      await UserModel.findByIdAndUpdate(userObjectId, { $inc: { watchlistCount: -1 } });
+    }
+
+    return reply.send({
+      success: true,
+      message: 'Removed from wishlist',
+      isWishlisted: false,
+      data: { contentId },
+    });
+  } catch (error: any) {
+    return reply.status(500).send({ success: false, message: error.message });
+  }
+};
+
+export const checkWishlistStatus = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const params = (request.params || {}) as { contentId?: string };
+    const contentId = params.contentId;
+    if (!contentId || !mongoose.Types.ObjectId.isValid(contentId)) {
+      return reply.status(400).send({ success: false, message: 'Valid contentId is required' });
+    }
+
+    const userId = await getUserId(request);
+    let isWishlisted = false;
+
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+      const item = await UserWishlistModel.findOne({ userId: userObjectId, contentId: new mongoose.Types.ObjectId(contentId) }).lean();
+      isWishlisted = !!item;
+    }
+
+    return reply.send({
+      success: true,
+      data: {
+        contentId,
+        isWishlisted,
+      },
+    });
+  } catch (error: any) {
+    return reply.status(500).send({ success: false, message: error.message });
+  }
+};
+
+export const getWishlist = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const userId = await getUserId(request);
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return reply.status(401).send({ success: false, message: 'Unauthorized' });
+    }
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const query = request.query as { page?: string; limit?: string; profileId?: string };
@@ -120,7 +198,6 @@ export const getWishlist = async (request: FastifyRequest, reply: FastifyReply) 
       contentIds.length > 0 ? ContentModel.find({ _id: { $in: contentIds } }).select(selectFields).lean() : Promise.resolve([]),
     ]);
 
-    // Combine and map exactly like webHomeController
     const movieMap = new Map(movies.map(m => [m._id.toString(), m]));
     const contentMap = new Map(contents.map(c => [c._id.toString(), c]));
 
@@ -129,8 +206,6 @@ export const getWishlist = async (request: FastifyRequest, reply: FastifyReply) 
       const c: any = isMovie ? movieMap.get(item.contentId.toString()) : contentMap.get(item.contentId.toString());
       if (!c) return null;
 
-      // For Content model: use contentType field ('drama' | 'series' | 'movie')
-      // For Movie model: always 'movie'
       const contentType: string = isMovie ? 'movie' : (c.contentType || c.type || 'series');
       const type = contentType === 'drama' ? 'drama' : (c.type === 'series' || contentType === 'series' ? 'show' : 'movie');
 
@@ -150,7 +225,7 @@ export const getWishlist = async (request: FastifyRequest, reply: FastifyReply) 
         language: c.languages && c.languages.length > 0 ? 'Multi' : 'EN',
         genres: (c.genres || []).map((g: any) => g?.name || g),
         seasons: type === 'show' ? c.seasons || 1 : undefined,
-        addedAt: item.createdAt
+        addedAt: item.createdAt,
       };
     }).filter(Boolean);
 

@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 import router from './routes';
 import { requestContext } from './lib/context';
 
+import { extractJwtToken } from './lib/jwtHelper';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,19 +21,22 @@ const fastify = Fastify({
 
 // Register request context lifecycle hook
 fastify.addHook('onRequest', (request, reply, done) => {
-  const authHeader = request.headers.authorization;
+  const token = extractJwtToken(request);
   let user: any = null;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (token) {
     try {
-      const token = authHeader.substring(7);
       const decoded = (request.server as any).jwt?.decode(token);
       if (decoded) {
         user = {
-          id: decoded.id || decoded._id,
+          id: decoded.id || decoded._id || decoded.userId,
           email: decoded.email,
           role: decoded.role,
-          name: decoded.name
+          name: decoded.name,
+          phone: decoded.phone,
+          deviceId: decoded.deviceId,
         };
+        // Pre-populate request.user for controllers
+        (request as any).user = user;
       }
     } catch (e) {
       // Ignore token decode errors
@@ -74,7 +79,10 @@ fastify.register(fastifyCors, {
 
 // Register JWT plugin
 fastify.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET || 'fallback-secret-for-development-only'
+  secret: process.env.JWT_SECRET || 'fallback-secret-for-development-only',
+  verify: {
+    extractToken: (req) => extractJwtToken(req)
+  }
 });
 
 // Register Multipart for file uploads with optimized config

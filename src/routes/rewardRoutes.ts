@@ -10,14 +10,14 @@ import {
   deleteRewardDefinition,
   getRewardClaims,
 } from '../controllers/rewardController';
-import { authenticate } from '../middlewares/auth';
+import { authenticate, optionalAuthenticate } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/rbac';
 
 export default async function (fastify: FastifyInstance) {
   // ── User-facing (app) routes ─────────────────────────────────────────────
 
   // Get all active reward definitions (with claim status if authenticated)
-  fastify.get('/', { preHandler: [authenticate] }, getPublicRewardDefinitions);
+  fastify.get('/', { preHandler: [optionalAuthenticate] }, getPublicRewardDefinitions);
 
   // Claim a specific reward by its ID
   fastify.post('/claim/:id', { preHandler: [authenticate] }, claimRewardById);

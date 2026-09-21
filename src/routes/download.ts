@@ -1,27 +1,28 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { requestDownload, getDownloadsList, removeDownload, removeAllDownloads } from '../controllers/downloadController';
+import {
+  requestDownload,
+  getDownloadsList,
+  removeDownload,
+  removeAllDownloads,
+} from '../controllers/downloadController';
+import { authenticate } from '../middlewares/auth';
 
 const downloadRoutes: FastifyPluginAsync = async (fastify) => {
-  // Requires authentication
-  fastify.addHook('onRequest', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch (err) {
-      reply.send(err);
-    }
-  });
+  // POST /download or /download/:contentId - Request download authorization
+  fastify.post('/download', { preHandler: [authenticate] }, requestDownload);
+  fastify.post('/download/:contentId', { preHandler: [authenticate] }, requestDownload);
 
-  // POST /api/app/download - Request download authorization
-  fastify.post('/download', requestDownload);
+  // GET /downloads or /download - Get user's active downloads list
+  fastify.get('/downloads', { preHandler: [authenticate] }, getDownloadsList);
+  fastify.get('/download', { preHandler: [authenticate] }, getDownloadsList);
 
-  // GET /api/app/downloads - Get user's active downloads list
-  fastify.get('/downloads', getDownloadsList);
+  // DELETE /downloads or /download - Remove ALL user's downloads at once
+  fastify.delete('/downloads', { preHandler: [authenticate] }, removeAllDownloads);
+  fastify.delete('/download', { preHandler: [authenticate] }, removeAllDownloads);
 
-  // DELETE /api/app/downloads - Remove ALL user's downloads at once
-  fastify.delete('/downloads', removeAllDownloads);
-
-  // DELETE /api/app/downloads/:id - Remove a download log
-  fastify.delete('/downloads/:id', removeDownload);
+  // DELETE /downloads/:id or /download/:id - Remove a download log or content item
+  fastify.delete('/downloads/:id', { preHandler: [authenticate] }, removeDownload);
+  fastify.delete('/download/:id', { preHandler: [authenticate] }, removeDownload);
 };
 
 export default downloadRoutes;

@@ -48,6 +48,7 @@ import { getWebBrowse } from '../controllers/webBrowseController';
 import { getWebDetail } from '../controllers/webDetailController';
 import { getMovieDetail } from '../controllers/appMovieController';
 import { getSeriesDetail } from '../controllers/appSeriesController';
+import { getAppProfile } from '../controllers/appProfileController';
 import adRoutes from './ad';
 import adminNotificationsRoutes from './adminNotifications';
 import reviewRoutes from './review';
@@ -90,8 +91,12 @@ const router: FastifyPluginAsync = async (fastify) => {
   fastify.register(countriesRoutes, { prefix: '/countries' });
   fastify.register(crewsRoutes, { prefix: '/crews' });
 
-  // Like / Unlike route
+  // Like / Unlike / Dislike routes
   fastify.register(likeRoutes);
+  fastify.register(likeRoutes, { prefix: '/app' });
+
+  // Views route
+  fastify.register(viewsRoutes, { prefix: '/app' });
 
   // Watch page route (video player + episodes + lock/unlock)
   fastify.register(watchRoutes);
@@ -99,19 +104,23 @@ const router: FastifyPluginAsync = async (fastify) => {
   // Smart Deep Link Share route
   fastify.register(shareRoutes);
 
-  // Wishlist route
+  // Wishlist routes (support both /api/wishlist and /api/app/wishlist)
+  fastify.register(wishlistRoutes);
   fastify.register(wishlistRoutes, { prefix: '/app' });
 
-  // App Profile / Settings route
+  // App Profile / Settings routes (support both /api/profile and /api/app/profile)
+  fastify.register(appProfileRoutes);
   fastify.register(appProfileRoutes, { prefix: '/app' });
 
-  // Download routes (POST /download, GET /downloads, DELETE /downloads/:id)
+  // Download routes (support both /api/download and /api/app/download)
+  fastify.register(downloadRoutes);
   fastify.register(downloadRoutes, { prefix: '/app' });
 
   // Web download + public subscription plans (downloads enforce plan downloadStatus)
   fastify.register(webDownloadRoutes, { prefix: '/web' });
 
-  // Watch progress routes (POST /watch/progress, DELETE /watch/progress/:contentId)
+  // Watch progress routes (support both /api/watch/progress and /api/app/watch/progress)
+  fastify.register(watchProgressRoutes);
   fastify.register(watchProgressRoutes, { prefix: '/app' });
 
   // Rewards routes
@@ -125,6 +134,10 @@ const router: FastifyPluginAsync = async (fastify) => {
 
   // Mobile series detail page (includes seasons and episodes)
   fastify.get('/app/series/:id', getSeriesDetail);
+
+  // App user profile aliases
+  fastify.get('/me', getAppProfile);
+  fastify.get('/app/me', getAppProfile);
 
   // Home page route for app (layout/sections only — no banners)
   fastify.get('/home', getHomePage);

@@ -13,15 +13,20 @@ const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://aapki-website.com').r
 // How many extra items to fetch per page to survive deduplication filtering
 const FETCH_MULTIPLIER = 4;
 
+import { extractJwtToken } from '../lib/jwtHelper';
+
 // Helper: try to extract userId from JWT (optional auth — no error if missing/invalid)
 const getOptionalUserId = (request: FastifyRequest): string | null => {
   try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-    const token = authHeader.slice(7);
+    const rawUser = (request as any).user;
+    if (rawUser?.id || rawUser?._id || rawUser?.userId) {
+      return (rawUser.id || rawUser._id || rawUser.userId).toString();
+    }
+    const token = extractJwtToken(request);
+    if (!token) return null;
     const server = request.server as any;
     const decoded = server.jwt.verify(token) as any;
-    return decoded?.id || null;
+    return decoded?.id || decoded?._id || decoded?.userId || null;
   } catch {
     return null;
   }

@@ -761,7 +761,14 @@ async function seedSections() {
     { key: 'all-movies', title: 'All Movies', category: 'All Movies', contentType: 'movie', sortBy: { views: -1 }, limit: 50, position: 100, isActive: true, layout: 'vertical' }
   ];
 
-  await SectionModel.insertMany([...dramaSections, ...movieSections]);
+  const seriesSections = [
+    { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', contentType: 'series', sortBy: { views: -1 }, limit: 10, position: 1, isActive: true, layout: 'horizontal' },
+    { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', contentType: 'series', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, position: 2, isActive: true, layout: 'horizontal' },
+    { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', contentType: 'series', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, position: 3, isActive: true, layout: 'grid-2' },
+    { key: 'all-tv-shows', title: 'All TV Shows', category: 'All TV Shows', contentType: 'series', sortBy: { views: -1 }, limit: 50, position: 100, isActive: true, layout: 'vertical' }
+  ];
+
+  await SectionModel.insertMany([...dramaSections, ...movieSections, ...seriesSections]);
   logger.info('Seeded sample sections');
 }
 

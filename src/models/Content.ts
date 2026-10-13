@@ -40,6 +40,8 @@ export interface IContent extends Document {
   trending: boolean;
   isNewContent: boolean;
   isExclusive: boolean;
+  isUpcoming: boolean;
+  reminderCount: number;
   downloadAllowed: boolean;
   cast: Array<{ actor: mongoose.Types.ObjectId; character?: string; role?: string }>;
   crew: Array<{ director: mongoose.Types.ObjectId; role: string }>;
@@ -107,6 +109,8 @@ const ContentSchema = new Schema<IContent>(
     trending: { type: Boolean, default: false },
     isNewContent: { type: Boolean, default: true },
     isExclusive: { type: Boolean, default: false },
+    isUpcoming: { type: Boolean, default: false, index: true },
+    reminderCount: { type: Number, default: 0 },
     downloadAllowed: { type: Boolean, default: true },
     cast: [{ actor: { type: Schema.Types.ObjectId, ref: 'Actor' }, character: String, role: String }],
     crew: [{ director: { type: Schema.Types.ObjectId, ref: 'Director' }, role: String }],

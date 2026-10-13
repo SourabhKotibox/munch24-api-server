@@ -188,10 +188,20 @@ export const editAppSetting = async (request: FastifyRequest, reply: FastifyRepl
 export const getHomeTabs = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const appSetting = await AppSettingModel.findOne({ key: 'home-tabs-config' });
-    const tabs = appSetting?.value || [
-      { id: 'drama', name: 'Short Dramas' },
-      { id: 'movie', name: 'Movies & Series' },
-    ];
+    let tabs: any = appSetting?.value;
+    if (!tabs || !Array.isArray(tabs) || tabs.length === 0) {
+      tabs = [
+        { id: 'drama', name: 'Short Dramas' },
+        { id: 'movie', name: 'Movies' },
+        { id: 'series', name: 'TV Shows' },
+      ];
+    } else {
+      // Ensure TV Shows tab exists
+      const hasTv = tabs.some((t: any) => t.id === 'series' || t.id === 'tv' || t.id === 'tvshows');
+      if (!hasTv) {
+        tabs = [...tabs, { id: 'series', name: 'TV Shows' }];
+      }
+    }
     return reply.send({ success: true, data: tabs });
   } catch (error: any) {
     return reply.status(500).send({ success: false, error: error.message });

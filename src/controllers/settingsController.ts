@@ -46,7 +46,7 @@ export const getSettings = async (request: FastifyRequest, reply: FastifyReply) 
         'awsAccessKeyId', 'awsSecretAccessKey', 'bunnyAccessKey',
         'doAccessKey', 'doSecretKey',
         'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId',
-        'authToken', 'customerId'
+        'authToken', 'customerId', 'phonepeClientSecret'
       ];
       for (const field of sensitiveFields) {
         delete publicSettings[field];

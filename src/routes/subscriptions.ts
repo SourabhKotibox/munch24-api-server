@@ -9,7 +9,9 @@ import {
   deleteSubscription,
   bulkDeleteSubscriptions,
   createRazorpayOrder,
-  verifyRazorpayPayment
+  verifyRazorpayPayment,
+  createPhonepeOrder,
+  verifyPhonepePayment
 } from '../controllers/subscriptionController';
 
 const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
@@ -23,6 +25,10 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   // Razorpay — user-facing (any authenticated user, not just admins)
   fastify.post('/app/subscription/razorpay/order', { preHandler: [authenticate] }, createRazorpayOrder);
   fastify.post('/app/subscription/razorpay/verify', { preHandler: [authenticate] }, verifyRazorpayPayment);
+
+  // PhonePe — user-facing
+  fastify.post('/app/subscription/phonepe/order', { preHandler: [authenticate] }, createPhonepeOrder);
+  fastify.post('/app/subscription/phonepe/verify', { preHandler: [authenticate] }, verifyPhonepePayment);
 };
 
 export default subscriptionRoutes;

@@ -182,8 +182,8 @@ const mapBanner = (
 };
 
 // Helper function: Fallback sections (only if no sections in DB)
-const getFallbackSections = (tab: 'drama' | 'movie') => {
-  const fallbacks = {
+const getFallbackSections = (tab: string) => {
+  const fallbacks: Record<string, any[]> = {
     drama: [
       { key: 'top-10-story-tv', title: 'Top 10 on Story TV', category: 'Top 10', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'just-launched', title: 'Just Launched', category: 'Recently Added', filter: { isNewContent: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'horizontal' },
@@ -191,11 +191,21 @@ const getFallbackSections = (tab: 'drama' | 'movie') => {
       { key: 'featured-dramas', title: 'Featured Dramas', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
     ],
     movie: [
-      { key: 'featured', title: 'Featured', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'horizontal' },
+      { key: 'featured', title: 'Featured Movies', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'top-movies', title: 'Top Movies', category: 'Top Rated', sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
     ],
+    series: [
+      { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
+      { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
+      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+    ],
+    tv: [
+      { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
+      { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
+      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+    ],
   };
-  return fallbacks[tab];
+  return fallbacks[tab] || fallbacks.drama;
 };
 
 // Get home page data — sections/layout only (banners are separate via GET /api/app/banners)
@@ -203,12 +213,16 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
   try {
     const query = request.query as {
       platform?: 'web' | 'mobile' | 'tv';
-      tab?: 'drama' | 'movie';
+      tab?: string;
       limit?: string;
     };
 
     const platform = query.platform || 'mobile';
-    const tab = query.tab || 'drama';
+    const rawTab = (query.tab || 'drama').toLowerCase();
+    const isDrama = rawTab === 'drama';
+    const isTv = rawTab === 'series' || rawTab === 'tv' || rawTab === 'tvshows' || rawTab === 'tvshow';
+    const isMovie = rawTab === 'movie' || rawTab === 'movies';
+    const tab = isDrama ? 'drama' : isTv ? 'series' : 'movie';
     const limit = Math.min(20, Math.max(1, Number(query.limit || 10)));
     
     const { userId, profileId } = getAuthData(request);
@@ -239,8 +253,9 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
     }
 
     // Get sections from database, or fallback to default
+    const matchContentTypes = isTv ? ['series', 'tv', 'mixed'] : [tab, 'mixed'];
     const dbSections = await SectionModel.find({ 
-      contentType: { $in: [tab, 'mixed'] as any[] }, isActive: true })
+      contentType: { $in: matchContentTypes as any[] }, isActive: true })
       .select('key title category contentType sortBy limit position isActive layout showViewAll itemType filter contentSelection manualContentIds')
       .sort({ position: 1 })
       .lean();
@@ -279,7 +294,7 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
         }
       };
 
-      if (tab === 'drama') {
+      if (isDrama) {
         const baseFilter: any = { type: 'series', status: 'published', contentType: 'drama' };
         if (targetLanguageId) {
           baseFilter.languages = targetLanguageId;
@@ -294,53 +309,35 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
             .populate('genres', 'name')
             .lean();
         }
-        } else {
-        const baseMovieFilter: any = { status: 'published' };
+      } else if (isTv) {
         const baseSeriesFilter: any = { type: 'series', status: 'published', contentType: 'series' };
-        
+        if (targetLanguageId) {
+          baseSeriesFilter.languages = targetLanguageId;
+        }
+        const filterSeries = buildFilter(baseSeriesFilter);
+        if (filterSeries) {
+          content = await ContentModel.find(filterSeries)
+            .sort(section.sortBy)
+            .limit(section.limit)
+            .populate('languages', 'name')
+            .populate('genres', 'name')
+            .lean();
+        }
+      } else {
+        const baseMovieFilter: any = { status: 'published' };
         if (targetLanguageId) {
           baseMovieFilter.languages = targetLanguageId;
-          baseSeriesFilter.languages = targetLanguageId;
         }
         
         const filterMovie = buildFilter(baseMovieFilter);
-        const filterSeries = buildFilter(baseSeriesFilter);
-        
-        let movies: any[] = [];
-        let series: any[] = [];
-
         if (filterMovie) {
-          movies = await MovieModel.find(filterMovie)
+          content = await MovieModel.find(filterMovie)
             .sort(section.sortBy)
             .limit(section.limit)
             .populate('languages', 'name')
             .populate('genres', 'name')
             .lean();
         }
-        
-        if (filterSeries) {
-          series = await ContentModel.find(filterSeries)
-            .sort(section.sortBy)
-            .limit(section.limit)
-            .populate('languages', 'name')
-            .populate('genres', 'name')
-            .lean();
-        }
-
-        let combined = [...movies, ...series];
-        const sortKey = Object.keys(section.sortBy || {})[0] || 'createdAt';
-        const sortDir = (section.sortBy as any)[sortKey] === 1 ? 1 : -1;
-        combined.sort((a, b) => {
-          const valA = a[sortKey] || 0;
-          const valB = b[sortKey] || 0;
-          if (valA < valB) return -1 * sortDir;
-          if (valA > valB) return 1 * sortDir;
-          return 0;
-        });
-        
-        content = combined.slice(0, section.limit);
-
-        // Fallback if no matching language content
       }
       
       if (content.length === 0) {
@@ -357,7 +354,7 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
     if (userId) {
       const queryParams: any = {
         userId,
-        contentModelType: tab === 'movie' ? 'Movie' : 'Content',
+        contentModelType: isMovie ? 'Movie' : 'Content',
       };
       if (profileId) {
         queryParams.profileId = profileId;
@@ -395,7 +392,7 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
     let firstEpisodeMap = new Map<string, any>();
     let episodeCountMap = new Map<string, number>();
 
-    if (tab === 'drama' && allContentIds.length > 0) {
+    if ((isDrama || isTv) && allContentIds.length > 0) {
       // Get S1E1 for previews
       const firstEpisodes = await EpisodeModel.aggregate([
         {
@@ -443,10 +440,14 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
         const likeCount = item.likes || 0;
         const isLikedByUser = likedContentIdSet.has(cid);
 
-        if (tab === 'drama') {
+        if (isDrama) {
           const episodeCount = episodeCountMap.get(cid) || 0;
           const firstEpisode = firstEpisodeMap.get(cid);
           return mapContentItem(item, 'drama', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
+        } else if (isTv) {
+          const episodeCount = episodeCountMap.get(cid) || 0;
+          const firstEpisode = firstEpisodeMap.get(cid);
+          return mapContentItem(item, 'series', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
         } else {
           return mapContentItem(item, 'movie', resolveUrl, 0, undefined, likeCount, isLikedByUser, entitlements);
         }
@@ -458,7 +459,7 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
     if (watchProgressList.length > 0) {
       const contentIds = watchProgressList.map(p => p.contentId);
       let items: any[] = [];
-      if (tab === 'movie') {
+      if (isMovie) {
         items = await MovieModel.find({ _id: { $in: contentIds } }).lean();
       } else {
         items = await ContentModel.find({ _id: { $in: contentIds } }).lean();
@@ -476,10 +477,14 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
         const isLikedByUser = likedContentIdSet.has(cid);
 
         let mapped: any;
-        if (tab === 'drama') {
+        if (isDrama) {
           const episodeCount = episodeCountMap.get(cid) || 0;
           const firstEpisode = firstEpisodeMap.get(cid);
           mapped = mapContentItem(item, 'drama', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
+        } else if (isTv) {
+          const episodeCount = episodeCountMap.get(cid) || 0;
+          const firstEpisode = firstEpisodeMap.get(cid);
+          mapped = mapContentItem(item, 'series', resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
         } else {
           mapped = mapContentItem(item, 'movie', resolveUrl, 0, undefined, likeCount, isLikedByUser, entitlements);
         }
@@ -512,21 +517,33 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
       });
     }
 
-    // Get Custom Tab Name
+    // Get Custom Tab Name and Full Tabs List
     const appSetting = await AppSettingModel.findOne({ key: 'home-tabs-config' }).lean();
-    let tabName = tab === 'drama' ? 'Short Dramas' : 'Movies & Series';
-    if (appSetting && appSetting.value && Array.isArray(appSetting.value)) {
-      const tabConfig = appSetting.value.find((t: any) => t.id === tab);
-      if (tabConfig && tabConfig.name) {
-        tabName = tabConfig.name;
+    let defaultTabs = [
+      { id: 'drama', name: 'Short Dramas' },
+      { id: 'movie', name: 'Movies' },
+      { id: 'series', name: 'TV Shows' },
+    ];
+    let tabs = defaultTabs;
+    if (appSetting && appSetting.value && Array.isArray(appSetting.value) && appSetting.value.length > 0) {
+      tabs = appSetting.value;
+      if (!tabs.some((t: any) => t.id === 'series' || t.id === 'tv' || t.id === 'tvshows')) {
+        tabs = [...tabs, { id: 'series', name: 'TV Shows' }];
       }
+    }
+
+    let tabName = isDrama ? 'Short Dramas' : isTv ? 'TV Shows' : 'Movies';
+    const tabConfig = tabs.find((t: any) => t.id === rawTab || t.id === tab || (isTv && (t.id === 'series' || t.id === 'tv')));
+    if (tabConfig && tabConfig.name) {
+      tabName = tabConfig.name;
     }
 
     return reply.send({
       success: true,
       data: {
-        tab,
+        tab: rawTab,
         tabName,
+        tabs,
         sections: mappedSections,
       },
     });
@@ -540,12 +557,15 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
 export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const query = request.query as {
-      tab?: 'drama' | 'movie' | 'both';
+      tab?: string;
       platform?: 'mobile' | 'web' | 'tv';
       limit?: string;
     };
 
-    const tab = query.tab || 'drama';
+    const tab = (query.tab || 'drama').toLowerCase();
+    const isTv = tab === 'series' || tab === 'tv' || tab === 'tvshow' || tab === 'tvshows';
+    const isMovie = tab === 'movie' || tab === 'movies';
+    const isDrama = tab === 'drama';
     const platform = query.platform || 'mobile';
     const limit = Math.min(20, Math.max(1, Number(query.limit || 10)));
     const now = new Date();
@@ -554,10 +574,13 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
 
     // contentType: 'drama' → drama only
     // contentType: 'movie' → movie only
+    // contentType: 'series' / 'tv' → series only
     // contentType: 'both'  → show in all tabs
-    const contentTypeFilter = tab === 'both'
-      ? { contentType: { $in: ['drama', 'movie', 'both'] as const } }
-      : { contentType: { $in: [tab, 'both'] as const } };
+    const contentTypeFilter: any = tab === 'both'
+      ? { contentType: { $in: ['drama', 'movie', 'series', 'tv', 'both'] } }
+      : isTv
+      ? { contentType: { $in: ['series', 'tv', 'both'] } }
+      : { contentType: { $in: [tab, 'both'] } };
 
     const bannersRaw = await BannerModel.find({
       isActive: true,
@@ -575,17 +598,22 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
     let banners = await populateBannersContent(bannersRaw);
 
     // Strict filtering based on the actual populated content
-    if (tab === 'drama') {
+    if (isDrama) {
       banners = banners.filter(b => {
         if (!b.contentId) return true;
         return (b.contentId as any).contentType === 'drama';
       });
-    } else if (tab === 'movie') {
+    } else if (isTv) {
+      banners = banners.filter(b => {
+        if (!b.contentId) return true;
+        return (b.contentId as any).contentType === 'series';
+      });
+    } else if (isMovie) {
       banners = banners.filter(b => {
         if (!b.contentId) return true;
         const contentType = (b.contentId as any).contentType;
         const type = (b.contentId as any).type;
-        return type === 'movie' || contentType === 'series';
+        return type === 'movie' || contentType === 'movie';
       });
     }
 

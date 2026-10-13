@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { 
   getWalletData, getCoinPackages, topUpWallet, unlockEpisode, getUnlockedEpisodes,
   createCoinPackage, updateCoinPackage, deleteCoinPackage,
-  createWalletRazorpayOrder, verifyWalletRazorpayPayment, deleteTransaction, clearTransactions
+  createWalletRazorpayOrder, verifyWalletRazorpayPayment, deleteTransaction, clearTransactions,
+  createWalletPhonepeOrder, verifyWalletPhonepePayment
 } from '../controllers/walletController';
 import { authenticate } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/rbac';
@@ -20,6 +21,10 @@ export default async function (fastify: FastifyInstance) {
   // Razorpay payment routes (user-facing)
   fastify.post('/razorpay/order', { preHandler: [authenticate] }, createWalletRazorpayOrder);
   fastify.post('/razorpay/verify', { preHandler: [authenticate] }, verifyWalletRazorpayPayment);
+
+  // PhonePe payment routes (user-facing)
+  fastify.post('/phonepe/order', { preHandler: [authenticate] }, createWalletPhonepeOrder);
+  fastify.post('/phonepe/verify', { preHandler: [authenticate] }, verifyWalletPhonepePayment);
 
   // Admin routes
   fastify.post('/packages', { preHandler: [authenticate], onRequest: [requirePermission('settings', 'canEdit')] }, createCoinPackage);

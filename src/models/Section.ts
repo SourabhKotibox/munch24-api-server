@@ -4,7 +4,7 @@ export interface ISection extends Document {
   key: string;
   title: string;
   category: string;
-  contentType: 'drama' | 'movie';
+  contentType: 'drama' | 'movie' | 'series' | 'tv' | 'mixed';
   filter?: Record<string, any>;
   sortBy: Record<string, 1 | -1>;
   limit: number;
@@ -27,7 +27,7 @@ const SectionSchema = new Schema<ISection>(
     category: { type: String, required: true },
     contentType: {
       type: String,
-      enum: ['drama', 'movie', 'mixed'],
+      enum: ['drama', 'movie', 'series', 'tv', 'mixed'],
       default: 'drama',
       index: true,
     },

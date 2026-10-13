@@ -38,12 +38,18 @@ const syncManualContent = async (section: any) => {
 export const getSections = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const query = request.query as {
-      contentType?: 'drama' | 'movie';
+      contentType?: string;
       activeOnly?: string;
     };
 
     const filter: any = {};
-    if (query.contentType) filter.contentType = query.contentType;
+    if (query.contentType) {
+      if (query.contentType === 'series' || query.contentType === 'tv') {
+        filter.contentType = { $in: ['series', 'tv'] };
+      } else {
+        filter.contentType = query.contentType;
+      }
+    }
     if (query.activeOnly === 'true') filter.isActive = true;
 
     const sections = await SectionModel.find(filter).sort({ position: 1 });

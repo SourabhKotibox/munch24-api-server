@@ -3,6 +3,7 @@ import { SubscriptionModel } from '../models/Subscription';
 import { SubscriptionPlanModel } from '../models/SubscriptionPlan';
 import { UserModel } from '../models/User';
 import { revertUserSubscription, syncUserSubscription } from '../lib/subscriptionAccess';
+import { StandardCheckoutClient, StandardCheckoutPayRequest, Env } from '@phonepe-pg/pg-sdk-node';
 
 const roundCurrency = (value: number) => Math.round(value * 100) / 100;
 
@@ -459,6 +460,104 @@ export const verifyRazorpayPayment = async (request: FastifyRequest, reply: Fast
     });
   } catch (error: any) {
     console.error('Razorpay Verify Error:', error);
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const createPhonepeOrder = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { planId, userId: bodyUserId } = request.body as { planId: string, userId?: string };
+    const userId = (request.user as any)?.id || bodyUserId;
+    
+    const plan = await SubscriptionPlanModel.findById(planId).lean();
+    if (!plan) return reply.status(404).send({ success: false, error: 'Plan not found' });
+    if (plan.status === false) return reply.status(400).send({ success: false, error: 'Plan unavailable' });
+
+    const settings = await SettingsModel.findOne().lean();
+    if (!settings?.phonepeEnabled || !settings?.phonepeClientId || !settings?.phonepeClientSecret) {
+      return reply.status(400).send({ success: false, error: 'PhonePe is not configured' });
+    }
+
+    const amountInPaise = Math.round((plan.totalPrice || 0) * 100);
+
+    if (amountInPaise === 0) {
+      if (!userId) return reply.status(400).send({ success: false, error: 'User ID is required' });
+      const body = {
+        userId, planId, paymentMethod: 'Free', status: 'active', price: 0, totalAmount: 0,
+        duration: plan.duration, durationValue: plan.durationValue
+      };
+      const payload = await buildSubscriptionPayload(body);
+      const subscription = await SubscriptionModel.create(payload);
+      await syncUserSubscription(String(userId), payload);
+      return reply.send({ success: true, isFree: true, message: 'Free plan activated', subscriptionId: subscription._id });
+    }
+
+    const env = settings.phonepeTestMode ? Env.SANDBOX : Env.PRODUCTION;
+    const client = StandardCheckoutClient.getInstance(
+      settings.phonepeClientId,
+      settings.phonepeClientSecret,
+      settings.phonepeClientVersion || 1,
+      env
+    );
+
+    const merchantOrderId = `sub_${Date.now()}_${userId}`.substring(0, 35);
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/membership?planId=${planId}&provider=phonepe&merchantOrderId=${merchantOrderId}`;
+
+    const payRequest = StandardCheckoutPayRequest.builder()
+      .merchantOrderId(merchantOrderId)
+      .amount(amountInPaise)
+      .redirectUrl(redirectUrl)
+      .message("Subscription")
+      .build();
+
+    const response = await client.pay(payRequest);
+    return reply.send({ success: true, url: response.redirectUrl, merchantOrderId });
+  } catch (error: any) {
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const verifyPhonepePayment = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { merchantOrderId, planId, userId: bodyUserId } = request.body as any;
+    const userId = (request.user as any)?.id || bodyUserId;
+
+    if (!merchantOrderId || !planId || !userId) {
+      return reply.status(400).send({ success: false, error: 'Missing details' });
+    }
+
+    const settings = await SettingsModel.findOne().lean();
+    if (!settings?.phonepeEnabled || !settings?.phonepeClientSecret) {
+      return reply.status(400).send({ success: false, error: 'PhonePe is not configured' });
+    }
+
+    const env = settings.phonepeTestMode ? Env.SANDBOX : Env.PRODUCTION;
+    const client = StandardCheckoutClient.getInstance(
+      settings.phonepeClientId,
+      settings.phonepeClientSecret,
+      settings.phonepeClientVersion || 1,
+      env
+    );
+
+    const statusResponse = await client.getOrderStatus(merchantOrderId);
+    if (statusResponse.state !== 'COMPLETED') {
+      return reply.status(400).send({ success: false, error: 'Payment not completed successfully' });
+    }
+
+    const plan = await SubscriptionPlanModel.findById(planId).lean();
+    if (!plan || plan.status === false) return reply.status(404).send({ success: false, error: 'Plan not available' });
+
+    const body = {
+      userId, planId, paymentMethod: 'PhonePe', status: 'active',
+      price: plan.totalPrice, totalAmount: plan.totalPrice,
+      duration: plan.duration, durationValue: plan.durationValue
+    };
+    const payload = await buildSubscriptionPayload(body);
+    const subscription = await SubscriptionModel.create(payload);
+    await syncUserSubscription(String(userId), payload);
+
+    return reply.send({ success: true, message: 'Subscription activated', subscriptionId: subscription._id });
+  } catch (error: any) {
     return reply.status(500).send({ success: false, error: error.message });
   }
 };

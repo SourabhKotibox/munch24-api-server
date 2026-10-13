@@ -47,6 +47,7 @@ export const getAllContents = async (request: FastifyRequest, reply: FastifyRepl
     if (query.type) filter.type = query.type;
     if (query.featured === 'true') filter.featured = true;
     if (query.trending === 'true') filter.trending = true;
+    if ((query as any).isUpcoming === 'true' || (query as any).upcoming === 'true') filter.isUpcoming = true;
     if (query.search) {
       filter.$or = [
         { title: new RegExp(query.search, 'i') },

@@ -14,6 +14,7 @@ import { logger } from '../lib/logger';
 import mongoose from 'mongoose';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { StandardCheckoutClient, StandardCheckoutPayRequest, Env } from '@phonepe-pg/pg-sdk-node';
 
 export const getWalletData = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -378,5 +379,122 @@ export const deleteCoinPackage = async (request: FastifyRequest, reply: FastifyR
   } catch (error: any) {
     logger.error({ error }, 'Error deleting coin package');
     return reply.status(500).send({ success: false, message: 'Internal server error' });
+  }
+};
+
+// --- PHONEPE USER ROUTES ---
+
+export const createWalletPhonepeOrder = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const user = request.user;
+    if (!user) return reply.status(401).send({ success: false, message: 'Unauthorized' });
+
+    const { packageId } = request.body as { packageId: string };
+    const coinPackage = await CoinPackageModel.findById(packageId);
+    if (!coinPackage || !coinPackage.isActive) {
+      return reply.status(404).send({ success: false, message: 'Coin package not found or inactive' });
+    }
+
+    const settings = await SettingsModel.findOne().lean();
+    if (!settings?.phonepeEnabled || !settings?.phonepeClientId || !settings?.phonepeClientSecret || !settings?.phonepeMerchantId) {
+      return reply.status(400).send({ success: false, error: 'PhonePe is not configured.' });
+    }
+
+    const env = settings.phonepeTestMode ? Env.SANDBOX : Env.PRODUCTION;
+    const client = StandardCheckoutClient.getInstance(
+      settings.phonepeClientId,
+      settings.phonepeClientSecret,
+      settings.phonepeClientVersion || 1,
+      env
+    );
+
+    const amountInPaise = Math.round(coinPackage.price * 100);
+    const merchantOrderId = `wl_${Date.now()}_${user.id}`.substring(0, 35);
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/wallet?packageId=${packageId}&provider=phonepe&merchantOrderId=${merchantOrderId}`;
+
+    const payRequest = StandardCheckoutPayRequest.builder()
+      .merchantOrderId(merchantOrderId)
+      .amount(amountInPaise)
+      .redirectUrl(redirectUrl)
+      .message("Wallet Topup")
+      .build();
+
+    const response = await client.pay(payRequest);
+
+    return reply.send({
+      success: true,
+      url: response.redirectUrl,
+      merchantOrderId,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error creating wallet PhonePe order');
+    return reply.status(500).send({ success: false, error: error.message });
+  }
+};
+
+export const verifyWalletPhonepePayment = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const user = request.user;
+    if (!user) return reply.status(401).send({ success: false, message: 'Unauthorized' });
+
+    const { merchantOrderId, packageId } = request.body as { merchantOrderId: string; packageId: string };
+
+    const settings = await SettingsModel.findOne().lean();
+    if (!settings?.phonepeEnabled || !settings?.phonepeClientId || !settings?.phonepeClientSecret) {
+      return reply.status(400).send({ success: false, error: 'PhonePe is not configured.' });
+    }
+
+    const env = settings.phonepeTestMode ? Env.SANDBOX : Env.PRODUCTION;
+    const client = StandardCheckoutClient.getInstance(
+      settings.phonepeClientId,
+      settings.phonepeClientSecret,
+      settings.phonepeClientVersion || 1,
+      env
+    );
+
+    const statusResponse = await client.getOrderStatus(merchantOrderId);
+    
+    if (statusResponse.state !== 'COMPLETED') {
+      return reply.status(400).send({ success: false, error: 'Payment not completed successfully' });
+    }
+
+    const coinPackage = await CoinPackageModel.findById(packageId);
+    if (!coinPackage || !coinPackage.isActive) {
+      return reply.status(404).send({ success: false, message: 'Coin package not found' });
+    }
+
+    // Prevent duplicate processing
+    const existingTx = await TransactionModel.findOne({ referenceId: merchantOrderId });
+    if (existingTx) {
+      return reply.status(400).send({ success: false, error: 'Payment already processed' });
+    }
+
+    const totalCoinsToAdd = coinPackage.coins + coinPackage.bonusCoins;
+    const dbUser = await getModel((user as any).role).findByIdAndUpdate(
+      user.id,
+      { $inc: { walletBalance: totalCoinsToAdd } },
+      { returnDocument: 'after' }
+    );
+
+    await TransactionModel.create({
+      userId: user.id,
+      type: 'coin_topup',
+      amount: coinPackage.price,
+      coins: totalCoinsToAdd,
+      referenceId: merchantOrderId,
+      status: 'completed',
+    });
+
+    return reply.send({
+      success: true,
+      message: 'Payment verified and coins added successfully',
+      data: {
+        balance: dbUser?.walletBalance,
+        coinsAdded: totalCoinsToAdd,
+      },
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error verifying wallet PhonePe payment');
+    return reply.status(500).send({ success: false, error: error.message });
   }
 };

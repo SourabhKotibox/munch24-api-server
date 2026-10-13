@@ -137,6 +137,12 @@ export interface ISettings extends Document {
   razorpayEnabled: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
+  phonepeEnabled: boolean;
+  phonepeMerchantId: string;
+  phonepeClientId: string;
+  phonepeClientSecret: string;
+  phonepeClientVersion: number;
+  phonepeTestMode: boolean;
   // Message Gateway
   otpEnabled: boolean;
   customerId: string;
@@ -282,6 +288,12 @@ const SettingsSchema = new Schema<ISettings>(
     razorpayEnabled: { type: Boolean, default: false },
     razorpayKeyId: { type: String, default: '' },
     razorpayKeySecret: { type: String, default: '' },
+    phonepeEnabled: { type: Boolean, default: false },
+    phonepeMerchantId: { type: String, default: '' },
+    phonepeClientId: { type: String, default: '' },
+    phonepeClientSecret: { type: String, default: '' },
+    phonepeClientVersion: { type: Number, default: 1 },
+    phonepeTestMode: { type: Boolean, default: true },
     // Message Gateway
     otpEnabled: { type: Boolean, default: false },
     customerId: { type: String, default: '' },

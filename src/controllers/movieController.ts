@@ -43,6 +43,7 @@ export const getAllMovies = async (request: FastifyRequest, reply: FastifyReply)
     if (query.status) filter.status = query.status;
     if (query.featured === 'true') filter.featured = true;
     if (query.trending === 'true') filter.trending = true;
+    if ((query as any).isUpcoming === 'true' || (query as any).upcoming === 'true') filter.isUpcoming = true;
     if (query.year) filter.year = Number(query.year);
     if (query.genre) filter.genres = query.genre;
     if (query.category) filter.categories = query.category;

@@ -38,6 +38,7 @@ import webDownloadRoutes from './webDownload';
 import watchProgressRoutes from './watchProgress';
 import rewardRoutes from './rewardRoutes';
 import appNotificationRoutes from './appNotificationRoutes';
+import upcomingRoutes from './upcoming';
 
 import { getHomePage } from '../controllers/appHomeController';
 import { getAppBanners } from '../controllers/appHomeController';
@@ -128,6 +129,9 @@ const router: FastifyPluginAsync = async (fastify) => {
 
   // App Notifications routes
   fastify.register(appNotificationRoutes, { prefix: '/app/notifications' });
+
+  // Upcoming routes (app feed, remind me, admin management)
+  fastify.register(upcomingRoutes);
 
   // Mobile movie detail page
   fastify.get('/app/movies/:id', getMovieDetail);

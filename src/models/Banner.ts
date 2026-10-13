@@ -6,6 +6,9 @@ export interface IBanner extends Document {
   description?: string;
   imageUrl: string;
   mobileImageUrl?: string;
+  videoUrl?: string;
+  trailerUrl?: string;
+  hlsUrl?: string;
   ctaText: string;
   ctaLink?: string;
   contentId?: Types.ObjectId;
@@ -31,6 +34,9 @@ const BannerSchema = new Schema<IBanner>(
     description: String,
     imageUrl: { type: String, required: true },
     mobileImageUrl: String,
+    videoUrl: String,
+    trailerUrl: String,
+    hlsUrl: String,
     ctaText: { type: String, default: 'Watch Now' },
     ctaLink: String,
     contentId: { type: Schema.Types.ObjectId, ref: 'Content' },

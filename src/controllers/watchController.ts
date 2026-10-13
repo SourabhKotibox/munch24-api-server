@@ -309,15 +309,33 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
         }
       }
 
+      let activeMovie = content;
+      if (!activeMovie.videoQualities || activeMovie.videoQualities.length === 0) {
+        try {
+          const { autoDetectAndSyncQualities } = await import('../services/videoProcessor');
+          const synced = await autoDetectAndSyncQualities(content._id, 'movie');
+          if (synced) activeMovie = synced;
+        } catch (syncErr) {
+          logger.warn({ syncErr, contentId: content._id }, 'Failed to auto-detect and sync qualities for movie in getWatchData');
+        }
+      }
+
       currentEpisode = {
-        id: content._id.toString(),
-        title: content.title,
-        duration: content.duration || null,
+        id: activeMovie._id.toString(),
+        title: activeMovie.title,
+        duration: activeMovie.duration || null,
         isFree: contentPlan === 'free',
         isLocked: !isAccessible,
-        hlsUrl: isAccessible ? toAbsoluteUrl(request, content.hlsUrl, s3Active, s3BaseUrl) : null,
-        trailerUrl: toAbsoluteUrl(request, content.trailerUrl, s3Active, s3BaseUrl),
-        videoSettings: isAccessible ? buildNamedQualities(request, content.hlsUrl, content.videoQualities, s3Active, s3BaseUrl, entitlements) : null,
+        hlsUrl: isAccessible ? toAbsoluteUrl(request, activeMovie.hlsUrl, s3Active, s3BaseUrl) : null,
+        videoUrl: isAccessible ? toAbsoluteUrl(request, activeMovie.hlsUrl, s3Active, s3BaseUrl) : null,
+        trailerUrl: toAbsoluteUrl(request, activeMovie.trailerUrl, s3Active, s3BaseUrl),
+        videoSettings: isAccessible ? buildNamedQualities(request, activeMovie.hlsUrl, activeMovie.videoQualities, s3Active, s3BaseUrl, entitlements) : null,
+        videoQualities: isAccessible ? (activeMovie.videoQualities || []).map((q: any) => ({
+          quality: q.quality,
+          label: QUALITY_LABELS[q.quality] || q.quality,
+          url: isQualityAllowed(q.quality, entitlements.limits) ? toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl) : null,
+          isLocked: !isQualityAllowed(q.quality, entitlements.limits),
+        })) : null,
         watchProgress,
       };
 

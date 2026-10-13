@@ -10,6 +10,7 @@ import { logger } from '../lib/logger';
 import { buildShareUrl } from '../lib/config';
 import { QUALITY_LABELS, QUALITY_PLAN_GATE } from './watchController';
 import { canAccessContent, getViewerEntitlements, guestEntitlements, isQualityAllowed } from '../lib/subscriptionAccess';
+import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
 // Helper to convert relative URLs to absolute URLs
 const toAbsoluteUrl = (
@@ -153,8 +154,19 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
       : null;
 
     // ── 6. Video settings (quality options) ──────────────────────────────────
-    const hlsUrl = movie.hlsUrl || movie.videoUrl || null;
-    const qualities: any[] = movie.videoQualities || [];
+    let activeMovie = movie;
+    if (!activeMovie.videoQualities || activeMovie.videoQualities.length === 0) {
+      try {
+        const { autoDetectAndSyncQualities } = await import('../services/videoProcessor');
+        const synced = await autoDetectAndSyncQualities(movie._id, 'movie');
+        if (synced) activeMovie = synced;
+      } catch (err) {
+        logger.warn({ err, movieId: movie._id }, 'Failed to auto-detect qualities in appMovieController');
+      }
+    }
+
+    const hlsUrl = activeMovie.hlsUrl || activeMovie.videoUrl || null;
+    const qualities: any[] = activeMovie.videoQualities || [];
 
     // Sort qualities in the correct playback order (144p → 4K)
     const QUALITY_ORDER = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
@@ -214,11 +226,25 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
         bannerImage: toAbsoluteUrl(request, movie.bannerImage) || null,
         posterImage: toAbsoluteUrl(request, movie.posterImage) || null,
         trailerUrl: toAbsoluteUrl(request, movie.trailerUrl) || null,
+        hasTrailer: Boolean(movie.trailerUrl),
+        trailerType: isYouTubeUrl(movie.trailerUrl) ? 'youtube' : (movie.trailerUrl?.includes('.m3u8') ? 'hls' : (movie.trailerUrl ? 'video' : null)),
+        isYouTubeTrailer: isYouTubeUrl(movie.trailerUrl),
+        youTubeVideoId: movie.trailerUrl ? extractYouTubeVideoId(movie.trailerUrl) : null,
+        youTubeEmbedUrl: movie.trailerUrl && isYouTubeUrl(movie.trailerUrl) && extractYouTubeVideoId(movie.trailerUrl)
+          ? `https://www.youtube.com/embed/${extractYouTubeVideoId(movie.trailerUrl)}?autoplay=1&mute=1&playsinline=1`
+          : null,
         type: 'movie',
 
         // Video
         hlsUrl: canWatch ? toAbsoluteUrl(request, hlsUrl) : null,
+        videoUrl: canWatch ? toAbsoluteUrl(request, hlsUrl) : null,
         videoSettings: canWatch ? videoSettings : null,
+        videoQualities: sortedQualities.map((q: any) => ({
+          quality: q.quality,
+          label: QUALITY_LABELS[q.quality] || q.quality,
+          url: (!canWatch || !isQualityAllowed(q.quality, entitlements.limits)) ? null : toAbsoluteUrl(request, q.url),
+          isLocked: !canWatch || !isQualityAllowed(q.quality, entitlements.limits),
+        })),
         canCast: entitlements.canCast,
         canDownload: entitlements.canDownload && movie.downloadAllowed !== false,
         showAds: entitlements.showAds,

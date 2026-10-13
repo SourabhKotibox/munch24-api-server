@@ -7,6 +7,7 @@ import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 import { MovieModel } from '../models/Movie';
 import { EpisodeModel } from '../models/Episode';
 import { ContentModel } from '../models/Content';
+import { MediaFileModel } from '../models/MediaFile';
 import { logger } from '../lib/logger';
 import { isCloudStorageConfigured, getHlsPublicBaseUrl, uploadHlsFolderToCloudStorage, getActiveStorageSettings } from '../lib/s3';
 import { resolveLocalVideoFile, toLocalUploadPath as resolveUploadsPath } from '../lib/sourceVideo';
@@ -597,78 +598,142 @@ export const autoDetectAndSyncQualities = async (
     : await EpisodeModel.findById(id).lean();
   if (!doc) return null;
 
-  const hlsFolder = path.join(process.cwd(), 'uploads/hls', folderName, id.toString());
-  const masterPlaylistPath = path.join(hlsFolder, 'master.m3u8');
+  // 1. If document already has valid videoQualities with items, return it directly
+  if (Array.isArray(doc.videoQualities) && doc.videoQualities.length > 0 && doc.hlsUrl) {
+    return doc;
+  }
 
-  if (fs.existsSync(masterPlaylistPath)) {
-    const validQualities = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
-    const detectedQualities: string[] = [];
+  // 2. Try locating linked MediaFile from Media Library
+  const hlsOrVideoUrl = doc.hlsUrl || doc.videoUrl || '';
+  const idMatch = hlsOrVideoUrl.match(/hls\/([a-f0-9]{24})/i) || hlsOrVideoUrl.match(/([a-f0-9]{24})/i);
+  const matchedMediaId = idMatch ? idMatch[1] : null;
 
-    const dirs = fs.readdirSync(hlsFolder, { withFileTypes: true });
-    for (const dir of dirs) {
-      if (dir.isDirectory() && validQualities.includes(dir.name)) {
-        const qualityPlaylistPath = path.join(hlsFolder, dir.name, 'playlist.m3u8');
-        if (fs.existsSync(qualityPlaylistPath)) {
-          detectedQualities.push(dir.name);
-        }
-      }
+  let mediaFile = null;
+  if (matchedMediaId && Types.ObjectId.isValid(matchedMediaId)) {
+    mediaFile = await MediaFileModel.findById(matchedMediaId).lean();
+  }
+  if (!mediaFile) {
+    mediaFile = await MediaFileModel.findOne({
+      $or: [
+        { sourceId: doc._id },
+        { url: doc.videoUrl },
+        { filePath: doc.videoUrl },
+        { filePath: `/uploads/${(doc.videoUrl || '').replace(/^\/+/, '')}` },
+        { hlsMasterPlaylistUrl: doc.hlsUrl },
+      ],
+      isHls: true,
+      hlsQualities: { $exists: true, $not: { $size: 0 } },
+    }).lean();
+  }
+
+  if (mediaFile && Array.isArray(mediaFile.hlsQualities) && mediaFile.hlsQualities.length > 0) {
+    const videoQualities = mediaFile.hlsQualities.map((q: any) => ({
+      quality: q.quality,
+      url: q.url,
+      size: q.bitrate ? q.bitrate * 1000 : 0,
+    }));
+    const hlsUrl = mediaFile.hlsMasterPlaylistUrl || doc.hlsUrl;
+    const updateData: any = {
+      hlsUrl,
+      videoQualities,
+      processingStatus: 'ready',
+      processingError: null,
+    };
+    if ((doc as any).status === 'draft' || !(doc as any).status) {
+      updateData.status = 'published';
     }
 
-    if (detectedQualities.length > 0) {
-      const storageActive = await isCloudStorageConfigured();
-      let uploadSucceeded = false;
-      const s3Prefix = `hls/${folderName}/${id}`;
+    logger.info({ id: id.toString(), type, qualityCount: videoQualities.length, mediaFileId: mediaFile._id }, 'Synced HLS qualities from MediaFile to content');
+    if (type === 'movie') {
+      return await MovieModel.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' }).lean();
+    } else {
+      return await EpisodeModel.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' }).lean();
+    }
+  }
 
-      if (storageActive) {
-        try {
-          const settings = await getActiveStorageSettings();
-          logger.info({ id: id.toString(), type, s3Prefix, storageDriver: settings.storageDriver }, 'Auto-detect: Uploading HLS folder to configured cloud storage');
-          await uploadHlsFolderToCloudStorage(hlsFolder, s3Prefix);
-          uploadSucceeded = true;
-          logger.info({ id: id.toString(), type }, 'Auto-detect: Cloud upload successful. Cleaning up local files.');
-          try {
-            fs.rmSync(hlsFolder, { recursive: true, force: true });
-          } catch (rmErr) {
-            logger.warn({ rmErr }, 'Failed to clean up local folder after sync upload');
+  // 3. Try scanning disk directories for HLS outputs
+  const possibleFolders = [
+    path.join(process.cwd(), 'uploads/hls', folderName, id.toString()),
+  ];
+  if (matchedMediaId) {
+    possibleFolders.push(path.join(process.cwd(), 'uploads/hls', matchedMediaId));
+  }
+  if (path.join(process.cwd(), 'uploads') !== path.join(__dirname, '../../uploads')) {
+    possibleFolders.push(path.join(__dirname, '../../uploads/hls', folderName, id.toString()));
+    if (matchedMediaId) {
+      possibleFolders.push(path.join(__dirname, '../../uploads/hls', matchedMediaId));
+    }
+  }
+
+  const validQualities = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
+
+  for (const hlsFolder of possibleFolders) {
+    if (!fs.existsSync(hlsFolder)) continue;
+    const masterPlaylistPath = path.join(hlsFolder, 'master.m3u8');
+    const indexPlaylistPath = path.join(hlsFolder, 'index.m3u8');
+    const playlistPath = fs.existsSync(masterPlaylistPath) ? masterPlaylistPath : (fs.existsSync(indexPlaylistPath) ? indexPlaylistPath : null);
+
+    if (playlistPath) {
+      const detectedQualities: string[] = [];
+      const dirs = fs.readdirSync(hlsFolder, { withFileTypes: true });
+      for (const dir of dirs) {
+        if (dir.isDirectory() && validQualities.includes(dir.name)) {
+          const qPath1 = path.join(hlsFolder, dir.name, 'playlist.m3u8');
+          const qPath2 = path.join(hlsFolder, dir.name, 'index.m3u8');
+          if (fs.existsSync(qPath1) || fs.existsSync(qPath2)) {
+            detectedQualities.push(dir.name);
           }
-        } catch (uploadErr) {
-          logger.error({ uploadErr, id: id.toString() }, 'Auto-detect: Failed to upload HLS to cloud storage, falling back to local files.');
         }
       }
 
-      let hlsUrl = '';
-      let videoQualities: any[] = [];
+      if (detectedQualities.length > 0) {
+        const storageActive = await isCloudStorageConfigured();
+        let uploadSucceeded = false;
+        const s3Prefix = `hls/${folderName}/${id}`;
 
-      if (storageActive && uploadSucceeded) {
-        const baseUrl = await getHlsPublicBaseUrl();
-        hlsUrl = `${baseUrl}/${s3Prefix}/master.m3u8`;
-        videoQualities = detectedQualities.map(q => ({
-          quality: q,
-          url: `${baseUrl}/${s3Prefix}/${q}/playlist.m3u8`,
-          size: 0
-        }));
-      } else {
-        const port = process.env.PORT || '3000';
-        const localBaseUrl = `http://localhost:${port}`;
-        hlsUrl = `${localBaseUrl}/uploads/hls/${folderName}/${id}/master.m3u8`;
-        videoQualities = detectedQualities.map(q => ({
-          quality: q,
-          url: `${localBaseUrl}/uploads/hls/${folderName}/${id}/${q}/playlist.m3u8`,
-          size: getFolderSize(path.join(hlsFolder, q))
-        }));
-      }
+        if (storageActive) {
+          try {
+            const settings = await getActiveStorageSettings();
+            logger.info({ id: id.toString(), type, s3Prefix, storageDriver: settings.storageDriver }, 'Auto-detect: Uploading HLS folder to configured cloud storage');
+            await uploadHlsFolderToCloudStorage(hlsFolder, s3Prefix);
+            uploadSucceeded = true;
+            try {
+              fs.rmSync(hlsFolder, { recursive: true, force: true });
+            } catch (rmErr) {
+              logger.warn({ rmErr }, 'Failed to clean up local folder after sync upload');
+            }
+          } catch (uploadErr) {
+            logger.error({ uploadErr, id: id.toString() }, 'Auto-detect: Failed to upload HLS to cloud storage, falling back to local files.');
+          }
+        }
 
-      // Check if we need to update
-      const currentQualitiesStr = JSON.stringify(doc.videoQualities || []);
-      const newQualitiesStr = JSON.stringify(videoQualities);
-      const hasDiff = currentQualitiesStr !== newQualitiesStr || 
-                      doc.processingStatus !== 'ready' ||
-                      doc.hlsUrl !== hlsUrl ||
-                      Boolean(doc.processingError);
+        let hlsUrl = '';
+        let videoQualities: any[] = [];
 
-      if (hasDiff) {
-        logger.info({ id: id.toString(), type, qualityCount: videoQualities.length }, 'Syncing auto-detected HLS qualities to MongoDB');
-        
+        if (storageActive && uploadSucceeded) {
+          const baseUrl = await getHlsPublicBaseUrl();
+          hlsUrl = `${baseUrl}/${s3Prefix}/master.m3u8`;
+          videoQualities = detectedQualities.map(q => ({
+            quality: q,
+            url: `${baseUrl}/${s3Prefix}/${q}/playlist.m3u8`,
+            size: 0
+          }));
+        } else {
+          const port = process.env.PORT || '3000';
+          const localBaseUrl = `http://localhost:${port}`;
+          const relBase = hlsFolder.includes('uploads') ? hlsFolder.substring(hlsFolder.indexOf('uploads')) : `uploads/hls/${folderName}/${id}`;
+          const playlistFilename = path.basename(playlistPath);
+          hlsUrl = `${localBaseUrl}/${relBase.replace(/^\/+/, '')}/${playlistFilename}`;
+          videoQualities = detectedQualities.map(q => {
+            const subFile = fs.existsSync(path.join(hlsFolder, q, 'playlist.m3u8')) ? 'playlist.m3u8' : 'index.m3u8';
+            return {
+              quality: q,
+              url: `${localBaseUrl}/${relBase.replace(/^\/+/, '')}/${q}/${subFile}`,
+              size: getFolderSize(path.join(hlsFolder, q))
+            };
+          });
+        }
+
         const updateData: any = {
           hlsUrl,
           videoQualities,
@@ -680,15 +745,15 @@ export const autoDetectAndSyncQualities = async (
           updateData.status = 'published';
         }
 
-        let updatedDoc;
+        logger.info({ id: id.toString(), type, qualityCount: videoQualities.length }, 'Syncing auto-detected HLS qualities to MongoDB');
         if (type === 'movie') {
-          updatedDoc = await MovieModel.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' }).lean();
+          return await MovieModel.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' }).lean();
         } else {
-          updatedDoc = await EpisodeModel.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' }).lean();
+          return await EpisodeModel.findByIdAndUpdate(id, { $set: updateData }, { returnDocument: 'after' }).lean();
         }
-        return updatedDoc;
       }
     }
   }
+
   return doc;
 };

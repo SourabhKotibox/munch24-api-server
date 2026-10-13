@@ -86,10 +86,19 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
 
     const canWatch = canAccessContent(entitlements, item.planRequired);
 
+    let activeItem = item;
+    if (isMovie && (!activeItem.videoQualities || activeItem.videoQualities.length === 0)) {
+      try {
+        const { autoDetectAndSyncQualities } = await import('../services/videoProcessor');
+        const synced = await autoDetectAndSyncQualities(item._id, 'movie');
+        if (synced) activeItem = synced;
+      } catch {}
+    }
+
     // Video settings
-    const rawHlsUrl = isMovie ? (item.hlsUrl || item.videoUrl) : undefined;
+    const rawHlsUrl = isMovie ? (activeItem.hlsUrl || activeItem.videoUrl) : undefined;
     const hlsUrl = canWatch ? rawHlsUrl : undefined;
-    const qualities: any[] = item.videoQualities || [];
+    const qualities: any[] = activeItem.videoQualities || [];
     const videoSettings = hlsUrl
       ? [
           { key: 'auto', label: 'Auto', description: 'Adjusts quality automatically', url: hlsUrl },
@@ -168,6 +177,12 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       videoUrl: hlsUrl || null,
       hlsUrl: hlsUrl || null,
       videoSettings,
+      videoQualities: qualities.map((q: any) => ({
+        quality: q.quality,
+        label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
+        url: (!canWatch || !isQualityAllowed(String(q.quality), entitlements.limits)) ? null : q.url,
+        isLocked: !canWatch || !isQualityAllowed(String(q.quality), entitlements.limits),
+      })),
       playbackSpeeds,
       canCast: entitlements.canCast,
       canDownload: entitlements.canDownload && item.downloadAllowed !== false,
@@ -203,16 +218,25 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
         unlocked.forEach((u) => unlockedEpisodeIds.add(u.episodeId.toString()));
       }
 
-      episodes = eps.map((e: any) => {
+      episodes = await Promise.all(eps.map(async (e: any) => {
+        let activeEp = e;
+        if (!activeEp.videoQualities || activeEp.videoQualities.length === 0) {
+          try {
+            const { autoDetectAndSyncQualities } = await import('../services/videoProcessor');
+            const synced = await autoDetectAndSyncQualities(e._id, 'episode');
+            if (synced) activeEp = synced;
+          } catch {}
+        }
+
         const hasAccess = canAccessEpisode(
           entitlements,
           item.planRequired,
-          e,
-          unlockedEpisodeIds.has(e._id.toString())
+          activeEp,
+          unlockedEpisodeIds.has(activeEp._id.toString())
         );
-        const epHlsUrl = hasAccess ? (e.hlsUrl || null) : null;
+        const epHlsUrl = hasAccess ? (activeEp.hlsUrl || null) : null;
 
-        const epQualities: any[] = e.videoQualities || [];
+        const epQualities: any[] = activeEp.videoQualities || [];
         const epVideoSettings = epHlsUrl
           ? [
               { key: 'auto', label: 'Auto', description: 'Adjusts quality automatically', url: epHlsUrl },
@@ -231,23 +255,29 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
           : null;
 
         return {
-          id: e._id.toString(),
-          title: e.title,
-          description: e.description,
-          thumbnail: e.thumbnail,
+          id: activeEp._id.toString(),
+          title: activeEp.title,
+          description: activeEp.description,
+          thumbnail: activeEp.thumbnail,
           videoUrl: epHlsUrl,
           hlsUrl: epHlsUrl,
-          duration: e.duration ? `${e.duration}m` : '0m',
-          season: e.season,
-          episode: e.episode,
-          isFree: e.isFree,
+          duration: activeEp.duration ? `${activeEp.duration}m` : '0m',
+          season: activeEp.season,
+          episode: activeEp.episode,
+          isFree: activeEp.isFree,
           isLocked: !hasAccess,
           isLockedForUser: !hasAccess,
-          coinsRequired: e.coinsRequired || 0,
+          coinsRequired: activeEp.coinsRequired || 0,
           videoSettings: epVideoSettings,
-          downloadAllowed: e.downloadAllowed !== false && item.downloadAllowed !== false,
+          videoQualities: epQualities.map((q: any) => ({
+            quality: q.quality,
+            label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
+            url: (!hasAccess || !isQualityAllowed(String(q.quality), entitlements.limits)) ? null : q.url,
+            isLocked: !hasAccess || !isQualityAllowed(String(q.quality), entitlements.limits),
+          })),
+          downloadAllowed: activeEp.downloadAllowed !== false && item.downloadAllowed !== false,
         };
-      });
+      }));
     }
 
     // Fetch related content (same primary genre)

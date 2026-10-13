@@ -6,6 +6,7 @@ import { UserReminderModel } from '../models/UserReminder';
 import { extractJwtToken } from '../lib/jwtHelper';
 import { buildShareUrl } from '../lib/config';
 import { logger } from '../lib/logger';
+import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
 // ── URL Resolver Helper ───────────────────────────────────────────────────────
 const buildUrlResolver = (request: FastifyRequest) =>
@@ -55,7 +56,17 @@ const mapUpcomingItem = (
   isReminded = false
 ) => {
   const trailer = resolveUrl(item.trailerUrl || null);
-  const video = resolveUrl(item.trailerUrl || item.videoUrl || item.hlsUrl || null);
+  const hls = resolveUrl(item.hlsUrl || null);
+  const video = resolveUrl(item.videoUrl || null);
+  const effectiveTrailer = trailer || hls || video || null;
+  const isYt = isYouTubeUrl(effectiveTrailer);
+  const ytId = isYt && effectiveTrailer ? extractYouTubeVideoId(effectiveTrailer) : null;
+  const trailerType = isYt
+    ? 'youtube'
+    : (effectiveTrailer && effectiveTrailer.includes('.m3u8'))
+    ? 'hls'
+    : (effectiveTrailer ? 'video' : null);
+
   const poster = resolveUrl(item.posterImage || item.thumbnail || null);
   const banner = resolveUrl(item.bannerImage || item.posterImage || item.thumbnail || null);
   const thumb = resolveUrl(item.thumbnail || item.posterImage || null);
@@ -74,9 +85,14 @@ const mapUpcomingItem = (
     posterImage: poster,
     bannerImage: banner,
     imageUrl: banner,
-    trailerUrl: trailer,
-    videoUrl: video,
-    hasTrailer: !!item.trailerUrl,
+    trailerUrl: effectiveTrailer,
+    videoUrl: video || hls || effectiveTrailer,
+    hlsUrl: hls,
+    hasTrailer: Boolean(effectiveTrailer),
+    trailerType,
+    isYouTubeTrailer: isYt,
+    youTubeVideoId: ytId,
+    youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
     type: itemType,
     contentType: itemType,
     releaseDate: item.releaseDate || null,
@@ -283,8 +299,9 @@ export const getUpcomingContent = async (request: FastifyRequest, reply: Fastify
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    // Top upcoming banners: featured or soonest upcoming with trailers
-    const banners = allMapped.slice(0, 5);
+    // Top upcoming banners: prioritize items that have trailers or are featured
+    const withTrailers = allMapped.filter((item) => item.hasTrailer);
+    const banners = withTrailers.length >= 3 ? withTrailers.slice(0, 5) : allMapped.slice(0, 5);
 
     // Pagination
     const total = allMapped.length;

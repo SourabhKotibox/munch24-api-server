@@ -5,6 +5,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { MediaFileModel, IHlsQuality } from '../models/MediaFile';
+import { MovieModel } from '../models/Movie';
+import { EpisodeModel } from '../models/Episode';
 import { logger } from './logger';
 import { getHlsPublicBaseUrl, isCloudStorageConfigured, uploadHlsFolderToCloudStorage } from './s3';
 import { resolveLocalVideoFile } from './sourceVideo';
@@ -214,6 +216,57 @@ export const transcodeToHls = async (
     mediaFile.hlsStatus = 'completed';
     mediaFile.uploadStatus = 'ready';
     await mediaFile.save();
+
+    // Sync newly transcoded qualities to any linked Movie or Episode
+    try {
+      const mappedQualities = (mediaFile.hlsQualities || qualities).map((q) => ({
+        quality: q.quality,
+        url: q.url,
+        size: q.bitrate ? q.bitrate * 1000 : 0,
+      }));
+
+      const idStr = mediaFile._id.toString();
+      const matchCriteria: any[] = [
+        ...(mediaFile.sourceId ? [{ _id: mediaFile.sourceId }] : []),
+        ...(mediaFile.url ? [{ videoUrl: mediaFile.url }] : []),
+        ...(mediaFile.filePath ? [
+          { videoUrl: mediaFile.filePath },
+          { videoUrl: `/uploads/${mediaFile.filePath.replace(/^\/+/, '')}` },
+        ] : []),
+        { videoUrl: { $regex: idStr } },
+        { hlsUrl: { $regex: idStr } },
+      ];
+
+      if (matchCriteria.length > 0) {
+        await Promise.all([
+          MovieModel.updateMany(
+            { $or: matchCriteria },
+            {
+              $set: {
+                hlsUrl: masterPlaylistUrl,
+                videoQualities: mappedQualities,
+                processingStatus: 'ready',
+                processingError: null,
+              },
+            }
+          ),
+          EpisodeModel.updateMany(
+            { $or: matchCriteria },
+            {
+              $set: {
+                hlsUrl: masterPlaylistUrl,
+                videoQualities: mappedQualities,
+                processingStatus: 'ready',
+                processingError: null,
+              },
+            }
+          ),
+        ]);
+        logger.info({ mediaFileId: idStr, count: mappedQualities.length }, 'Synced transcoded HLS qualities to matching Movies and Episodes');
+      }
+    } catch (syncError) {
+      logger.warn({ syncError, mediaFileId: mediaFile._id }, 'Failed to sync HLS qualities to movies/episodes');
+    }
 
   } catch (error) {
     logger.error({ error }, 'Error transcoding to HLS');

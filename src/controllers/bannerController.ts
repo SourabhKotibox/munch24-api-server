@@ -11,6 +11,7 @@ import { MovieModel } from '../models/Movie';
 import uploadHandler from '../lib/uploadHandler';
 import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
 import { processEpisodesInBackground } from '../services/videoProcessor';
+import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +35,11 @@ type BannerMultipartData = {
   startDate?: Date;
   endDate?: Date;
   thumbnail?: string;
+  thumbnailFilePath?: string;
   videoUrl?: string;
+  videoFilePath?: string;
+  trailerUrl?: string;
+  hlsUrl?: string;
 };
 
 const parseList = (value: unknown): string[] => {
@@ -173,6 +178,7 @@ const mapContent = (content: any, episodeCount = 0, forceType?: string) => {
     contentType: resolvedType,
     hlsUrl: content.hlsUrl,
     videoUrl: content.videoUrl,
+    trailerUrl: content.trailerUrl || null,
   };
 };
 
@@ -249,6 +255,14 @@ const resequenceBanners = async (movedBannerId?: string, targetPosition?: number
 const mapBanner = (banner: any, episodeCount = 0) => {
   const content = banner.contentId;
   const thumbnail = content?.thumbnail || banner.imageUrl;
+  const rawTrailer = banner.trailerUrl || content?.trailerUrl || null;
+  const rawHls = banner.hlsUrl || content?.hlsUrl || null;
+  const rawVideo = banner.videoUrl || content?.videoUrl || rawHls || null;
+  const effectiveTrailer = rawTrailer || rawHls || rawVideo || null;
+  const isYt = isYouTubeUrl(effectiveTrailer);
+  const ytId = isYt && effectiveTrailer ? extractYouTubeVideoId(effectiveTrailer) : null;
+  const trailerType = isYt ? 'youtube' : (effectiveTrailer && effectiveTrailer.includes('.m3u8') ? 'hls' : (effectiveTrailer ? 'video' : null));
+
   return {
     id: banner._id.toString(),
     title: banner.title,
@@ -264,6 +278,14 @@ const mapBanner = (banner: any, episodeCount = 0) => {
     targetPlatforms: banner.targetPlatforms || [],
     startDate: banner.startDate,
     endDate: banner.endDate,
+    trailerUrl: effectiveTrailer,
+    videoUrl: rawVideo,
+    hlsUrl: rawHls,
+    hasTrailer: Boolean(effectiveTrailer),
+    trailerType,
+    isYouTubeTrailer: isYt,
+    youTubeVideoId: ytId,
+    youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
     content: content ? mapContent(content, episodeCount) : undefined,
   };
 };
@@ -361,6 +383,8 @@ const readBannerMultipart = async (request: FastifyRequest): Promise<BannerMulti
       if (part.fieldname === 'thumbnail') data.thumbnail = part.value as string;
       if (part.fieldname === 'bannerImage') data.thumbnail = part.value as string;
       if (part.fieldname === 'videoUrl') data.videoUrl = part.value as string;
+      if (part.fieldname === 'trailerUrl') data.trailerUrl = part.value as string;
+      if (part.fieldname === 'hlsUrl') data.hlsUrl = part.value as string;
     } else if (part.type === 'file') {
       if (part.fieldname === 'thumbnailFile') {
         const uploadedFile = await uploadHandler.saveFileFromPart(part, request as any, 'BANNER');
@@ -376,6 +400,10 @@ const readBannerMultipart = async (request: FastifyRequest): Promise<BannerMulti
         const uploadedFile = await uploadHandler.saveFileFromPart(part, request as any, 'VIDEO');
         data.videoUrl = uploadedFile.url;
         data.videoFilePath = uploadedFile.filePath;
+      }
+      if (part.fieldname === 'trailerFile') {
+        const uploadedFile = await uploadHandler.saveFileFromPart(part, request as any, 'VIDEO');
+        data.trailerUrl = uploadedFile.url;
       }
     }
   }
@@ -491,6 +519,9 @@ export const createBannerFromContent = async (request: FastifyRequest, reply: Fa
       subtitle: body.subtitle || source.shortDescription || '',
       description: body.description || source.description || '',
       imageUrl: thumbnail,
+      trailerUrl: (body as any).trailerUrl || source.trailerUrl || '',
+      videoUrl: (body as any).videoUrl || source.videoUrl || '',
+      hlsUrl: source.hlsUrl || '',
       ctaText: body.ctaText || 'Watch Now',
       ctaLink: body.ctaLink || '',
       contentId: body.contentId,
@@ -766,6 +797,9 @@ export const updateBanner = async (request: FastifyRequest, reply: FastifyReply)
     if (data.ctaText !== undefined) updateData.ctaText = data.ctaText;
     if (data.ctaLink !== undefined) updateData.ctaLink = data.ctaLink;
     if (data.thumbnail !== undefined) updateData.imageUrl = data.thumbnail;
+    if (data.trailerUrl !== undefined) updateData.trailerUrl = data.trailerUrl;
+    if (data.videoUrl !== undefined) updateData.videoUrl = data.videoUrl;
+    if (data.hlsUrl !== undefined) updateData.hlsUrl = data.hlsUrl;
     if (data.targetPlatforms?.length) updateData.targetPlatforms = data.targetPlatforms;
     if (data.startDate !== undefined) updateData.startDate = data.startDate;
     if (data.endDate !== undefined) updateData.endDate = data.endDate;

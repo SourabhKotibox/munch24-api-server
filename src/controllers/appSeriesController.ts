@@ -7,7 +7,9 @@ import { UserWishlistModel } from '../models/UserWishlist';
 import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
 import { logger } from '../lib/logger';
 import { buildShareUrl } from '../lib/config';
-import { canAccessContent, canAccessEpisode, getViewerEntitlements, guestEntitlements } from '../lib/subscriptionAccess';
+import { canAccessContent, canAccessEpisode, getViewerEntitlements, guestEntitlements, isQualityAllowed } from '../lib/subscriptionAccess';
+import { QUALITY_LABELS, QUALITY_PLAN_GATE } from './watchController';
+import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
 // Helper to convert relative URLs to absolute URLs
 const toAbsoluteUrl = (
@@ -149,6 +151,49 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       const durationStr = ep.duration ? (hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`) : null;
       const hasAccess = canAccessEpisode(entitlements, series.planRequired, ep, unlockedIds.has(ep._id.toString()));
       
+      let activeEp = ep;
+      if (!activeEp.videoQualities || activeEp.videoQualities.length === 0) {
+        try {
+          const { autoDetectAndSyncQualities } = await import('../services/videoProcessor');
+          const synced = await autoDetectAndSyncQualities(ep._id, 'episode');
+          if (synced) activeEp = synced;
+        } catch {}
+      }
+
+      const epHlsUrl = activeEp.hlsUrl || activeEp.videoUrl;
+      const qualities: any[] = activeEp.videoQualities || [];
+      const QUALITY_ORDER = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
+      const sortedQualities = [...qualities].sort(
+        (a, b) => QUALITY_ORDER.indexOf(a.quality) - QUALITY_ORDER.indexOf(b.quality)
+      );
+
+      const epVideoSettings = epHlsUrl
+        ? [
+            {
+              key: 'auto',
+              label: 'Auto',
+              description: 'Adjusts quality automatically based on your connection',
+              url: hasAccess ? toAbsoluteUrl(request, epHlsUrl) : null,
+              requiresPlan: 'free',
+              isLocked: !hasAccess,
+            },
+            ...sortedQualities.map((q: any) => {
+              const sizeMB = q.size ? `${Math.round(q.size / (1024 * 1024))} MB` : null;
+              const label = QUALITY_LABELS[q.quality] || q.quality;
+              const requiredPlan = QUALITY_PLAN_GATE[q.quality] || 'free';
+              const isLocked = !hasAccess || !isQualityAllowed(q.quality, entitlements.limits);
+              return {
+                key: q.quality,
+                label,
+                description: sizeMB ? `${label} (${sizeMB})` : label,
+                url: isLocked ? null : toAbsoluteUrl(request, q.url),
+                requiresPlan: requiredPlan,
+                isLocked,
+              };
+            }),
+          ]
+        : null;
+
       seasonsMap.get(ep.season)!.push({
         id: ep._id.toString(),
         season: ep.season,
@@ -160,7 +205,15 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         durationFormatted: durationStr,
         isFree: ep.isFree,
         isLocked: !hasAccess,
-        videoUrl: hasAccess ? (toAbsoluteUrl(request, ep.hlsUrl) || null) : null,
+        videoUrl: hasAccess ? (toAbsoluteUrl(request, epHlsUrl) || null) : null,
+        hlsUrl: hasAccess ? (toAbsoluteUrl(request, epHlsUrl) || null) : null,
+        videoSettings: hasAccess ? epVideoSettings : null,
+        videoQualities: sortedQualities.map((q: any) => ({
+          quality: q.quality,
+          label: QUALITY_LABELS[q.quality] || q.quality,
+          url: (!hasAccess || !isQualityAllowed(q.quality, entitlements.limits)) ? null : toAbsoluteUrl(request, q.url),
+          isLocked: !hasAccess || !isQualityAllowed(q.quality, entitlements.limits),
+        })),
       });
     }
 
@@ -181,6 +234,13 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         bannerImage: toAbsoluteUrl(request, series.bannerImage) || null,
         posterImage: toAbsoluteUrl(request, series.posterImage) || null,
         trailerUrl: toAbsoluteUrl(request, series.trailerUrl) || null,
+        hasTrailer: Boolean(series.trailerUrl),
+        trailerType: isYouTubeUrl(series.trailerUrl) ? 'youtube' : (series.trailerUrl?.includes('.m3u8') ? 'hls' : (series.trailerUrl ? 'video' : null)),
+        isYouTubeTrailer: isYouTubeUrl(series.trailerUrl),
+        youTubeVideoId: series.trailerUrl ? extractYouTubeVideoId(series.trailerUrl) : null,
+        youTubeEmbedUrl: series.trailerUrl && isYouTubeUrl(series.trailerUrl) && extractYouTubeVideoId(series.trailerUrl)
+          ? `https://www.youtube.com/embed/${extractYouTubeVideoId(series.trailerUrl)}?autoplay=1&mute=1&playsinline=1`
+          : null,
         type: 'series',
         contentType: series.contentType,
         

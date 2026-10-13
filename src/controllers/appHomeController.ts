@@ -21,6 +21,7 @@ import {
   guestEntitlements,
   type ViewerEntitlements,
 } from '../lib/subscriptionAccess';
+import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
 // ── URL Resolver ─────────────────────────────────────────────────────────────
 // Converts any stored path/key to a proper full URL:
@@ -58,6 +59,7 @@ const getAuthData = (request: FastifyRequest): { userId: string | null; profileI
 
 
 // Helper function to map content items — resolveUrl converts all image/video paths to full URLs
+// Helper function to map content items — resolveUrl converts all image/video paths to full URLs
 const mapContentItem = (
   item: any,
   type: string,
@@ -72,43 +74,68 @@ const mapContentItem = (
   const hasAccess = firstEpisode
     ? canAccessEpisode(access, item.planRequired || item.plan, firstEpisode)
     : canAccessContent(access, item.planRequired || item.plan);
+
+  const rawTrailer = firstEpisode?.trailerUrl || item.trailerUrl || null;
+  const rawHls = firstEpisode?.hlsUrl || item.hlsUrl || null;
+  const rawVideo = firstEpisode?.videoUrl || item.videoUrl || rawHls || null;
+
+  const resolvedTrailer = resolveUrl(rawTrailer);
+  const resolvedHls = resolveUrl(rawHls);
+  const resolvedVideo = resolveUrl(rawVideo);
+
+  const effectiveTrailer = resolvedTrailer || resolvedHls || resolvedVideo || null;
+  const isYt = isYouTubeUrl(effectiveTrailer);
+  const ytId = isYt && effectiveTrailer ? extractYouTubeVideoId(effectiveTrailer) : null;
+  const trailerType = isYt
+    ? 'youtube'
+    : (effectiveTrailer && effectiveTrailer.includes('.m3u8'))
+    ? 'hls'
+    : (effectiveTrailer ? 'video' : null);
+
   return {
-  id: item._id.toString(),
-  title: item.title,
-  description: item.description,
-  shortDescription: item.shortDescription,
-  thumbnail: resolveUrl(item.thumbnail),
-  bannerImage: resolveUrl(item.bannerImage),
-  posterImage: resolveUrl(item.posterImage),
-  type,
-  episodeCount,
-  genres: (item.genres || []).map((g: any) => g.name || g),
-  genresText: (item.genres || []).map((g: any) => g.name || g).join(' & '),
-  languages: (item.languages || []).map((l: any) => l.name || l),
-  views: item.views || 0,
-  likeCount,
-  isLikedByUser,
-  shares: item.shares || 0,
-  shareUrl: buildShareUrl(item._id.toString()),
-  featured: item.featured,
-  trending: item.trending,
-  isNewContent: item.isNewContent,
-  rating: item.rating,
-  year: item.year,
-  duration: item.duration,
-  status: item.status,
-  createdAt: item.createdAt,
-  updatedAt: item.updatedAt,
-  // Preview video info — only first episode (short-drama reel style)
-  videoUrl: hasAccess ? resolveUrl(firstEpisode?.hlsUrl || item.hlsUrl || null) : null,
-  trailerUrl: resolveUrl(firstEpisode?.trailerUrl || item.trailerUrl || null),
-  firstEpisodeId: firstEpisode?._id?.toString() || null,
-  firstEpisodeTitle: firstEpisode?.title || null,
-  firstEpisodeThumbnail: resolveUrl(firstEpisode?.thumbnail || item.thumbnail || null),
-  firstEpisodeDuration: firstEpisode?.duration || null,
-  firstEpisodeIsFree: firstEpisode?.isFree ?? null,
-  contentPlan: item.planRequired || item.plan || 'free',
-  isLocked: !hasAccess,
+    id: item._id.toString(),
+    _id: item._id.toString(),
+    title: item.title,
+    description: item.description,
+    shortDescription: item.shortDescription,
+    thumbnail: resolveUrl(item.thumbnail),
+    bannerImage: resolveUrl(item.bannerImage),
+    posterImage: resolveUrl(item.posterImage),
+    type,
+    episodeCount,
+    genres: (item.genres || []).map((g: any) => g.name || g),
+    genresText: (item.genres || []).map((g: any) => g.name || g).join(' & '),
+    languages: (item.languages || []).map((l: any) => l.name || l),
+    views: item.views || 0,
+    likeCount,
+    isLikedByUser,
+    shares: item.shares || 0,
+    shareUrl: buildShareUrl(item._id.toString()),
+    featured: item.featured,
+    trending: item.trending,
+    isNewContent: item.isNewContent,
+    rating: item.rating,
+    year: item.year,
+    duration: item.duration,
+    status: item.status,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    // Preview and trailer playback info
+    videoUrl: hasAccess ? (resolvedHls || resolvedVideo) : null,
+    hlsUrl: hasAccess ? resolvedHls : null,
+    trailerUrl: effectiveTrailer,
+    hasTrailer: Boolean(effectiveTrailer),
+    trailerType,
+    isYouTubeTrailer: isYt,
+    youTubeVideoId: ytId,
+    youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
+    firstEpisodeId: firstEpisode?._id?.toString() || null,
+    firstEpisodeTitle: firstEpisode?.title || null,
+    firstEpisodeThumbnail: resolveUrl(firstEpisode?.thumbnail || item.thumbnail || null),
+    firstEpisodeDuration: firstEpisode?.duration || null,
+    firstEpisodeIsFree: firstEpisode?.isFree ?? null,
+    contentPlan: item.planRequired || item.plan || 'free',
+    isLocked: !hasAccess,
   };
 };
 
@@ -159,8 +186,42 @@ const mapBanner = (
 ) => {
   const content = banner.contentId;
   const thumbnail = resolveUrl(content?.thumbnail || banner.imageUrl);
+
+  // Determine effective trailer and video URLs across banner and linked content
+  const rawTrailer = banner.trailerUrl || firstEpisode?.trailerUrl || content?.trailerUrl || null;
+  const rawHls = banner.hlsUrl || firstEpisode?.hlsUrl || content?.hlsUrl || null;
+  const rawVideo = banner.videoUrl || firstEpisode?.videoUrl || content?.videoUrl || rawHls || null;
+
+  const resolvedTrailer = resolveUrl(rawTrailer);
+  const resolvedHls = resolveUrl(rawHls);
+  const resolvedVideo = resolveUrl(rawVideo);
+
+  // If no dedicated trailer is specified, fallback to video/hls preview
+  const effectiveTrailer = resolvedTrailer || resolvedHls || resolvedVideo || null;
+  const isYt = isYouTubeUrl(effectiveTrailer);
+  const ytId = isYt && effectiveTrailer ? extractYouTubeVideoId(effectiveTrailer) : null;
+  const trailerType = isYt
+    ? 'youtube'
+    : (effectiveTrailer && effectiveTrailer.includes('.m3u8'))
+    ? 'hls'
+    : (effectiveTrailer ? 'video' : null);
+
+  const mappedContent = content
+    ? mapContentItem(
+        content,
+        content.contentType === 'drama' ? 'drama' : (content.type || banner.contentType || 'series'),
+        resolveUrl,
+        episodeCount,
+        firstEpisode,
+        likeCount,
+        isLikedByUser,
+        entitlements
+      )
+    : undefined;
+
   return {
     id: banner._id.toString(),
+    _id: banner._id.toString(),
     title: banner.title,
     subtitle: banner.subtitle,
     description: banner.description,
@@ -170,7 +231,7 @@ const mapBanner = (
     ctaText: banner.ctaText,
     ctaLink: banner.ctaLink,
     contentId: banner.contentId?._id?.toString(),
-    content: content ? mapContentItem(content, content.contentType === 'drama' ? 'drama' : (content.type || banner.contentType || 'series'), resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements) : undefined,
+    content: mappedContent,
     type: banner.type,
     contentType: banner.contentType,
     position: banner.position,
@@ -178,6 +239,16 @@ const mapBanner = (
     targetPlatforms: banner.targetPlatforms || [],
     startDate: banner.startDate,
     endDate: banner.endDate,
+
+    // Banner video player playback attributes
+    trailerUrl: effectiveTrailer,
+    videoUrl: resolvedVideo || resolvedHls || effectiveTrailer,
+    hlsUrl: resolvedHls,
+    hasTrailer: Boolean(effectiveTrailer),
+    trailerType,
+    isYouTubeTrailer: isYt,
+    youTubeVideoId: ytId,
+    youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
   };
 };
 
@@ -630,8 +701,8 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
     if (allContentIds.length > 0) {
       const [firstEpisodes, episodeCounts] = await Promise.all([
         EpisodeModel.aggregate([
-          { $match: { contentId: { $in: allContentIds }, season: 1, episode: 1, processingStatus: 'ready' } },
-          { $sort: { season: 1, episode: 1 } },
+          { $match: { contentId: { $in: allContentIds }, episode: { $in: [0, 1] } } },
+          { $sort: { episode: 1 } },
         ]),
         EpisodeModel.aggregate([
           { $match: { contentId: { $in: allContentIds } } },

@@ -129,6 +129,10 @@ export const getWebHome = async (request: FastifyRequest, reply: FastifyReply) =
               badge: banner.type?.toUpperCase() || 'EXCLUSIVE',
               genres: (content.genres || []).map((g: any) => g?.name || g),
               seasons: type === 'show' && !isDrama ? content.seasons || 1 : undefined,
+              trailerUrl: content.trailerUrl || banner.trailerUrl || content.hlsUrl || null,
+              hasTrailer: Boolean(content.trailerUrl || banner.trailerUrl || content.hlsUrl),
+              videoUrl: content.videoUrl || content.hlsUrl || null,
+              hlsUrl: content.hlsUrl || null,
             };
           } else {
             // Banner without linked content — use banner's own contentType
@@ -151,6 +155,10 @@ export const getWebHome = async (request: FastifyRequest, reply: FastifyReply) =
               seasons: undefined,
               ctaLink: banner.ctaLink,
               ctaText: banner.ctaText,
+              trailerUrl: banner.trailerUrl || null,
+              hasTrailer: Boolean(banner.trailerUrl),
+              videoUrl: banner.videoUrl || banner.hlsUrl || null,
+              hlsUrl: banner.hlsUrl || null,
             };
           }
         });

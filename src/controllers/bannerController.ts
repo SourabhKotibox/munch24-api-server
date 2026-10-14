@@ -823,6 +823,7 @@ export const updateBanner = async (request: FastifyRequest, reply: FastifyReply)
       }
       if (data.genres !== undefined) contentUpdate.genres = data.genres;
       if (data.languages?.length) contentUpdate.languages = data.languages;
+      if (data.trailerUrl !== undefined) contentUpdate.trailerUrl = data.trailerUrl;
 
       if (Object.keys(contentUpdate).length > 0) {
         const isMovie = await MovieModel.exists({ _id: existingBanner.contentId });

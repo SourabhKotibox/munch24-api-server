@@ -120,7 +120,7 @@ const mapContentItem = (
     status: item.status,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
-    // Preview and trailer playback info
+    // Preview and trailer playback info (camelCase & snake_case)
     videoUrl: hasAccess ? (resolvedHls || resolvedVideo) : null,
     hlsUrl: hasAccess ? resolvedHls : null,
     trailerUrl: effectiveTrailer,
@@ -129,6 +129,21 @@ const mapContentItem = (
     isYouTubeTrailer: isYt,
     youTubeVideoId: ytId,
     youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
+
+    // Snake_case aliases for mobile players (Flutter / React Native / Android)
+    video_url: hasAccess ? (resolvedHls || resolvedVideo) : null,
+    hls_url: hasAccess ? resolvedHls : null,
+    trailer_url: effectiveTrailer,
+    stream_url: hasAccess ? (resolvedHls || resolvedVideo) : effectiveTrailer,
+    media_url: effectiveTrailer,
+    preview_url: effectiveTrailer,
+    has_trailer: Boolean(effectiveTrailer),
+    trailer_type: trailerType,
+    is_youtube_trailer: isYt,
+    youtube_url: isYt ? effectiveTrailer : null,
+    youtube_video_id: ytId,
+    youtube_embed_url: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
+
     firstEpisodeId: firstEpisode?._id?.toString() || null,
     firstEpisodeTitle: firstEpisode?.title || null,
     firstEpisodeThumbnail: resolveUrl(firstEpisode?.thumbnail || item.thumbnail || null),
@@ -240,7 +255,7 @@ const mapBanner = (
     startDate: banner.startDate,
     endDate: banner.endDate,
 
-    // Banner video player playback attributes
+    // Banner video player playback attributes (camelCase)
     trailerUrl: effectiveTrailer,
     videoUrl: resolvedVideo || resolvedHls || effectiveTrailer,
     hlsUrl: resolvedHls,
@@ -249,6 +264,20 @@ const mapBanner = (
     isYouTubeTrailer: isYt,
     youTubeVideoId: ytId,
     youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
+
+    // Banner video player playback attributes (snake_case aliases for mobile players)
+    trailer_url: effectiveTrailer,
+    video_url: resolvedVideo || resolvedHls || effectiveTrailer,
+    hls_url: resolvedHls,
+    stream_url: resolvedHls || resolvedVideo || effectiveTrailer,
+    media_url: effectiveTrailer,
+    preview_url: effectiveTrailer,
+    has_trailer: Boolean(effectiveTrailer),
+    trailer_type: trailerType,
+    is_youtube_trailer: isYt,
+    youtube_url: isYt ? effectiveTrailer : null,
+    youtube_video_id: ytId,
+    youtube_embed_url: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
   };
 };
 
@@ -609,12 +638,52 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
       tabName = tabConfig.name;
     }
 
+    // Load tab banners directly so getHomePage returns both banners and layout sections
+    const bannerContentTypeFilter: any = rawTab === 'both'
+      ? { contentType: { $in: ['drama', 'movie', 'series', 'tv', 'both'] } }
+      : isTv
+      ? { contentType: { $in: ['series', 'tv', 'both'] } }
+      : { contentType: { $in: [tab, 'both'] } };
+
+    const homeBannersRaw = await BannerModel.find({
+      isActive: true,
+      targetPlatforms: platform,
+      ...bannerContentTypeFilter,
+      $and: [
+        { $or: [{ startDate: { $exists: false } }, { startDate: { $lte: new Date() } }] },
+        { $or: [{ endDate: { $exists: false } }, { endDate: { $gte: new Date() } }] },
+      ],
+    })
+      .sort({ position: 1, createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    let homeBanners = await populateBannersContent(homeBannersRaw);
+    if (isDrama) {
+      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).contentType === 'drama');
+    } else if (isTv) {
+      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).contentType === 'series');
+    } else if (isMovie) {
+      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).type === 'movie' || (b.contentId as any).contentType === 'movie');
+    }
+
+    const mappedHomeBanners = homeBanners.map(banner => {
+      if (!banner.contentId) return mapBanner(banner, resolveUrl, 0, undefined, 0, false, entitlements);
+      const cid = (banner.contentId as any)._id.toString();
+      const likeCount = likeCountMap.get(cid) || 0;
+      const isLikedByUser = likedContentIdSet.has(cid);
+      const episodeCount = episodeCountMap.get(cid) || 0;
+      const firstEpisode = firstEpisodeMap.get(cid);
+      return mapBanner(banner, resolveUrl, episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
+    });
+
     return reply.send({
       success: true,
       data: {
         tab: rawTab,
         tabName,
         tabs,
+        banners: mappedHomeBanners,
         sections: mappedSections,
       },
     });
@@ -709,7 +778,12 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
           { $group: { _id: '$contentId', count: { $sum: 1 } } },
         ]),
       ]);
-      firstEpisodes.forEach(e => firstEpisodeMap.set(e.contentId.toString(), e));
+      firstEpisodes.forEach(e => {
+        const id = e.contentId.toString();
+        if (!firstEpisodeMap.has(id) || e.episode === 0) {
+          firstEpisodeMap.set(id, e);
+        }
+      });
       episodeCounts.forEach(e => episodeCountMap.set(e._id.toString(), e.count));
     }
 

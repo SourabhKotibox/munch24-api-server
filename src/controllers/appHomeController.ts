@@ -480,38 +480,69 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
 
     const validSections = sectionsWithContent.filter((s): s is NonNullable<typeof s> => s !== null);
 
+    // ── Load Tab Banners ──────────────────────────────────────────────────────
+    const bannerContentTypeFilter: any = rawTab === 'both'
+      ? { contentType: { $in: ['drama', 'movie', 'series', 'tv', 'both'] } }
+      : isTv
+      ? { contentType: { $in: ['series', 'tv', 'both'] } }
+      : { contentType: { $in: [tab, 'both'] } };
+
+    const homeBannersRaw = await BannerModel.find({
+      isActive: true,
+      $or: [
+        { targetPlatforms: platform },
+        { targetPlatforms: { $exists: false } },
+        { targetPlatforms: { $size: 0 } },
+      ],
+      ...bannerContentTypeFilter,
+      $and: [
+        { $or: [{ startDate: { $exists: false } }, { startDate: { $lte: new Date() } }] },
+        { $or: [{ endDate: { $exists: false } }, { endDate: { $gte: new Date() } }] },
+      ],
+    })
+      .sort({ position: 1, createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    let homeBanners = await populateBannersContent(homeBannersRaw);
+    if (isDrama) {
+      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).contentType === 'drama');
+    } else if (isTv) {
+      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).contentType === 'series');
+    } else if (isMovie) {
+      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).type === 'movie' || (b.contentId as any).contentType === 'movie');
+    }
+
     // ── Aggregate Data (Episodes & Likes) ─────────────────────────────────────
     
-    // Collect all content IDs from sections and watch progress
+    // Collect all content IDs from sections, watch progress, and banners
     const allContentIdsSet = new Set<string>();
     validSections.forEach(s => s.content.forEach((c: any) => allContentIdsSet.add(c._id.toString())));
     watchProgressList.forEach(p => { if (p.contentId) allContentIdsSet.add(p.contentId.toString()); });
+    homeBanners.forEach(b => { if (b.contentId && (b.contentId as any)._id) allContentIdsSet.add((b.contentId as any)._id.toString()); });
     
     const allContentIds = Array.from(allContentIdsSet).map(id => new mongoose.Types.ObjectId(id));
 
     let firstEpisodeMap = new Map<string, any>();
     let episodeCountMap = new Map<string, number>();
 
-    if ((isDrama || isTv) && allContentIds.length > 0) {
-      // Get S1E1 for previews
-      const firstEpisodes = await EpisodeModel.aggregate([
-        {
-          $match: {
-            contentId: { $in: allContentIds },
-            season: 1,
-            episode: 1,
-            processingStatus: 'ready',
-          },
-        },
-        { $sort: { season: 1, episode: 1 } },
+    if (allContentIds.length > 0) {
+      const [firstEpisodes, episodeCounts] = await Promise.all([
+        EpisodeModel.aggregate([
+          { $match: { contentId: { $in: allContentIds }, episode: { $in: [0, 1] } } },
+          { $sort: { episode: 1 } },
+        ]),
+        EpisodeModel.aggregate([
+          { $match: { contentId: { $in: allContentIds } } },
+          { $group: { _id: '$contentId', count: { $sum: 1 } } },
+        ]),
       ]);
-      firstEpisodes.forEach(e => firstEpisodeMap.set(e.contentId.toString(), e));
-
-      // Get episode counts
-      const episodeCounts = await EpisodeModel.aggregate([
-        { $match: { contentId: { $in: allContentIds } } },
-        { $group: { _id: '$contentId', count: { $sum: 1 } } },
-      ]);
+      firstEpisodes.forEach(e => {
+        const id = e.contentId.toString();
+        if (!firstEpisodeMap.has(id) || e.episode === 0) {
+          firstEpisodeMap.set(id, e);
+        }
+      });
       episodeCounts.forEach(e => episodeCountMap.set(e._id.toString(), e.count));
     }
 
@@ -638,39 +669,10 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
       tabName = tabConfig.name;
     }
 
-    // Load tab banners directly so getHomePage returns both banners and layout sections
-    const bannerContentTypeFilter: any = rawTab === 'both'
-      ? { contentType: { $in: ['drama', 'movie', 'series', 'tv', 'both'] } }
-      : isTv
-      ? { contentType: { $in: ['series', 'tv', 'both'] } }
-      : { contentType: { $in: [tab, 'both'] } };
-
-    const homeBannersRaw = await BannerModel.find({
-      isActive: true,
-      targetPlatforms: platform,
-      ...bannerContentTypeFilter,
-      $and: [
-        { $or: [{ startDate: { $exists: false } }, { startDate: { $lte: new Date() } }] },
-        { $or: [{ endDate: { $exists: false } }, { endDate: { $gte: new Date() } }] },
-      ],
-    })
-      .sort({ position: 1, createdAt: -1 })
-      .limit(10)
-      .lean();
-
-    let homeBanners = await populateBannersContent(homeBannersRaw);
-    if (isDrama) {
-      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).contentType === 'drama');
-    } else if (isTv) {
-      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).contentType === 'series');
-    } else if (isMovie) {
-      homeBanners = homeBanners.filter(b => !b.contentId || (b.contentId as any).type === 'movie' || (b.contentId as any).contentType === 'movie');
-    }
-
     const mappedHomeBanners = homeBanners.map(banner => {
       if (!banner.contentId) return mapBanner(banner, resolveUrl, 0, undefined, 0, false, entitlements);
       const cid = (banner.contentId as any)._id.toString();
-      const likeCount = likeCountMap.get(cid) || 0;
+      const likeCount = (banner.contentId as any).likes || 0;
       const isLikedByUser = likedContentIdSet.has(cid);
       const episodeCount = episodeCountMap.get(cid) || 0;
       const firstEpisode = firstEpisodeMap.get(cid);
@@ -724,7 +726,11 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
 
     const bannersRaw = await BannerModel.find({
       isActive: true,
-      targetPlatforms: platform,
+      $or: [
+        { targetPlatforms: platform },
+        { targetPlatforms: { $exists: false } },
+        { targetPlatforms: { $size: 0 } },
+      ],
       ...contentTypeFilter,
       $and: [
         { $or: [{ startDate: { $exists: false } }, { startDate: { $lte: now } }] },

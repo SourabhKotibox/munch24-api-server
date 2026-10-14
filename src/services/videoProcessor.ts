@@ -604,7 +604,8 @@ export const autoDetectAndSyncQualities = async (
   }
 
   // 2. Try locating linked MediaFile from Media Library
-  const hlsOrVideoUrl = doc.hlsUrl || doc.videoUrl || '';
+  const docVideoUrl = (doc as any).videoUrl || (doc as any).sourceVideoUrl || '';
+  const hlsOrVideoUrl = doc.hlsUrl || docVideoUrl || '';
   const idMatch = hlsOrVideoUrl.match(/hls\/([a-f0-9]{24})/i) || hlsOrVideoUrl.match(/([a-f0-9]{24})/i);
   const matchedMediaId = idMatch ? idMatch[1] : null;
 
@@ -616,9 +617,9 @@ export const autoDetectAndSyncQualities = async (
     mediaFile = await MediaFileModel.findOne({
       $or: [
         { sourceId: doc._id },
-        { url: doc.videoUrl },
-        { filePath: doc.videoUrl },
-        { filePath: `/uploads/${(doc.videoUrl || '').replace(/^\/+/, '')}` },
+        { url: docVideoUrl },
+        { filePath: docVideoUrl },
+        { filePath: `/uploads/${docVideoUrl.replace(/^\/+/, '')}` },
         { hlsMasterPlaylistUrl: doc.hlsUrl },
       ],
       isHls: true,

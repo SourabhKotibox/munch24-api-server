@@ -603,7 +603,7 @@ export const setAdminUpcoming = async (request: FastifyRequest, reply: FastifyRe
     if (!updated) {
       updated = await ContentModel.findByIdAndUpdate(objectId, { $set: updatePayload }, { new: true }).lean();
       if (updated) {
-        type = updated.contentType === 'series' ? 'series' : 'drama';
+        type = (updated as any).contentType === 'series' ? 'series' : 'drama';
       }
     }
 

@@ -160,7 +160,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         } catch {}
       }
 
-      const epHlsUrl = activeEp.hlsUrl || activeEp.videoUrl;
+      const epHlsUrl = activeEp.hlsUrl || (activeEp as any).videoUrl;
       const qualities: any[] = activeEp.videoQualities || [];
       const QUALITY_ORDER = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
       const sortedQualities = [...qualities].sort(

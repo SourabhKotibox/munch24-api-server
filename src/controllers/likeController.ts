@@ -398,8 +398,8 @@ export const getUserLikes = async (request: FastifyRequest, reply: FastifyReply)
       dramaIds.length ? ContentModel.find({ _id: { $in: dramaIds } }).select('title thumbnail bannerImage year rating duration views type contentType').lean() : [],
     ]);
 
-    const movieMap = new Map(movies.map(m => [m._id.toString(), m]));
-    const dramaMap = new Map(dramas.map(d => [d._id.toString(), d]));
+    const movieMap = new Map<string, any>(movies.map(m => [m._id.toString(), m] as [string, any]));
+    const dramaMap = new Map<string, any>(dramas.map(d => [d._id.toString(), d] as [string, any]));
 
     const data = likes.map(l => {
       const isMovie = l.contentModelType === 'Movie';

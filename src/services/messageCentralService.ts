@@ -7,6 +7,7 @@ interface SendOtpResponse {
   message?: string;
   code?: number;
   rawMessage?: string;
+  timeout?: number;
 }
 
 interface VerifyOtpResponse {

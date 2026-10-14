@@ -111,6 +111,7 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
      }
 
      let downloadUrl = '';
+     let directDownloadUrl: string | null = null;
      let qualities: any[] = [];
      let title = '';
      let parentTitle = '';
@@ -134,7 +135,7 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
       }
 
       const directSource = (movie as any).sourceVideoUrl || movie.videoUrl;
-      const directDownloadUrl = (directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
+      directDownloadUrl = (directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
         ? toAbsoluteUrl(request, directSource, s3Active, s3BaseUrl)
         : null;
 
@@ -200,7 +201,7 @@ export const requestDownload = async (request: FastifyRequest, reply: FastifyRep
       }
 
       const directSource = (episode as any).sourceVideoUrl || (episode as any).videoUrl;
-      const directDownloadUrl = (directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
+      directDownloadUrl = (directSource && typeof directSource === 'string' && (directSource.endsWith('.mp4') || directSource.includes('.mp4?')))
         ? toAbsoluteUrl(request, directSource, s3Active, s3BaseUrl)
         : null;
 

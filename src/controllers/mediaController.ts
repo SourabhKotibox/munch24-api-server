@@ -11,7 +11,7 @@ import { getActiveStorageSettings, getPublicUrl } from '../lib/s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadsRoot = path.join(__dirname, '../../uploads');
+const uploadsRoot = path.resolve(process.cwd(), 'uploads');
 const mediaUploadDir = path.join(uploadsRoot, 'media');
 
 // Utility functions

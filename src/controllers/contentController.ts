@@ -273,9 +273,7 @@ export const appendContentVideo = async (request: FastifyRequest, reply: Fastify
           if (s > 0) seasonNumber = s;
         }
       } else if (part.type === 'file' && part.fieldname === 'videoFile') {
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const uploadsDir = path.join(__dirname, '../../uploads/videos');
+        const uploadsDir = path.resolve(process.cwd(), 'uploads/videos');
         fs.mkdirSync(uploadsDir, { recursive: true });
         const filename = `${Date.now()}_${path.basename(part.filename).replace(/[^a-zA-Z0-9._-]/g, '_')}`;
         const fullPath = path.join(uploadsDir, filename);

@@ -4,6 +4,7 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import fastifyCompress from '@fastify/compress';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import router from './routes';
@@ -17,6 +18,7 @@ const __dirname = path.dirname(__filename);
 const fastify = Fastify({
   logger: true,
   disableRequestLogging: true,
+  trustProxy: true,
   bodyLimit: 20 * 1024 * 1024 * 1024 // 20GB
 });
 
@@ -113,8 +115,25 @@ fastify.register(fastifyMultipart as any, {
 });
 
 // Register Static file serving with byte-range streaming and caching
+const candidateUploadRoots = [
+  path.resolve(process.cwd(), 'uploads'),
+  path.resolve(process.cwd(), '../uploads'),
+  path.join(__dirname, '../uploads'),
+  path.join(__dirname, '../../uploads'),
+].filter((dir, index, self) => {
+  try {
+    return fs.existsSync(dir) && self.indexOf(dir) === index;
+  } catch {
+    return false;
+  }
+});
+
+const uploadRoots = candidateUploadRoots.length > 0 
+  ? candidateUploadRoots 
+  : [path.resolve(process.cwd(), 'uploads')];
+
 fastify.register(fastifyStatic, {
-  root: path.join(__dirname, '../uploads'),
+  root: uploadRoots,
   prefix: '/uploads/',
   maxAge: '7d',
   immutable: true,

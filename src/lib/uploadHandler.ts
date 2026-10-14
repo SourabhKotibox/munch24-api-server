@@ -13,7 +13,7 @@ import { isCloudStorageConfigured, getActiveStorageSettings, uploadToCloudStorag
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const UPLOADS_ROOT = path.join(__dirname, '../../uploads');
+const UPLOADS_ROOT = path.resolve(process.cwd(), 'uploads');
 
 export const UPLOAD_TYPES = {
   IMAGE: {

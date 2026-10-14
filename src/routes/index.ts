@@ -49,7 +49,7 @@ import { getWebBrowse } from '../controllers/webBrowseController';
 import { getWebDetail } from '../controllers/webDetailController';
 import { getMovieDetail } from '../controllers/appMovieController';
 import { getSeriesDetail } from '../controllers/appSeriesController';
-import { getAppProfile } from '../controllers/appProfileController';
+import { getAppProfile, getAppContact, getAppPages, getAppPageBySlug } from '../controllers/appProfileController';
 import adRoutes from './ad';
 import adminNotificationsRoutes from './adminNotifications';
 import reviewRoutes from './review';
@@ -143,8 +143,13 @@ const router: FastifyPluginAsync = async (fastify) => {
   fastify.get('/me', getAppProfile);
   fastify.get('/app/me', getAppProfile);
 
+  // App legal and CMS pages (convenience mobile aliases)
+  fastify.get('/app/pages', getAppPages);
+  fastify.get('/app/pages/:slug', getAppPageBySlug);
+
   // Home page route for app (layout/sections only — no banners)
   fastify.get('/home', getHomePage);
+  fastify.get('/app/home', getHomePage);
 
   // App Banners — separate from home layout
   // ?tab=drama   → drama banners only

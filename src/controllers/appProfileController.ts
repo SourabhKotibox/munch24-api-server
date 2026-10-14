@@ -424,24 +424,143 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
     });
 
     // 4. App Links / Pages — resolve API URLs
-    const pages = await PageModel.find({ status: 'published' }).lean();
+    const pages = await PageModel.find({ status: 'published' }).sort({ order: 1, createdAt: 1 }).lean();
 
     // Fetch platform/contact info from settings
     const dbSettings = await SettingsModel.findOne().lean();
     const platformName = dbSettings?.platformName || 'Triple Minds';
-    const contactEmail = dbSettings?.mailFrom || dbSettings?.mailEmail || 'support@tripleminds.com';
+    const supportPhone = dbSettings?.supportPhone || dbSettings?.contactNo || '';
+    const contactNo = dbSettings?.contactNo || dbSettings?.supportPhone || '';
+    const supportEmail = dbSettings?.supportEmail || dbSettings?.inquiryEmail || dbSettings?.mailFrom || dbSettings?.mailEmail || 'support@tripleminds.com';
+    const inquiryEmail = dbSettings?.inquiryEmail || dbSettings?.supportEmail || dbSettings?.mailFrom || 'support@tripleminds.com';
+    const whatsappNumber = dbSettings?.whatsappNumber || '';
+    const whatsappClean = whatsappNumber.replace(/[^0-9]/g, '');
+    const whatsappUrl = whatsappClean ? `https://wa.me/${whatsappClean}` : '';
+    const address = dbSettings?.address || '';
+    const websiteUrl = dbSettings?.websiteUrl || '';
+    const playStoreUrl = dbSettings?.playStoreUrl || 'https://play.google.com/store/apps/details?id=com.xoto.ott';
+    const appStoreUrl = dbSettings?.appStoreUrl || '';
+    const copyrightText = dbSettings?.copyrightText || `© ${new Date().getFullYear()} ${platformName}. All Rights Reserved.`;
     const shareAppText = `Watch amazing short dramas and movies on ${platformName}!`;
 
+    const contactDetails = {
+      platformName,
+      phone: supportPhone || contactNo,
+      contactNo,
+      supportPhone,
+      email: supportEmail || inquiryEmail,
+      inquiryEmail,
+      supportEmail,
+      whatsappNumber,
+      whatsappUrl,
+      address,
+      websiteUrl,
+      playStoreUrl,
+      appStoreUrl,
+      copyrightText,
+    };
 
-    const privacyPage = pages.find(p => p.slug === 'privacy-policy');
-    const termsPage = pages.find(p => p.slug === 'terms-and-conditions');
+    const socialLinks = [
+      {
+        platform: 'facebook',
+        name: 'Facebook',
+        icon: 'facebook',
+        url: dbSettings?.facebookUrl || '',
+      },
+      {
+        platform: 'instagram',
+        name: 'Instagram',
+        icon: 'instagram',
+        url: dbSettings?.instagramUrl || '',
+      },
+      {
+        platform: 'youtube',
+        name: 'YouTube',
+        icon: 'youtube',
+        url: dbSettings?.youtubeUrl || '',
+      },
+      {
+        platform: 'twitter',
+        name: 'Twitter (X)',
+        icon: 'twitter',
+        url: dbSettings?.twitterUrl || '',
+      },
+      {
+        platform: 'whatsapp',
+        name: 'WhatsApp',
+        icon: 'whatsapp',
+        url: whatsappUrl,
+      },
+      {
+        platform: 'telegram',
+        name: 'Telegram',
+        icon: 'telegram',
+        url: dbSettings?.telegramUrl || '',
+      },
+      {
+        platform: 'linkedin',
+        name: 'LinkedIn',
+        icon: 'linkedin',
+        url: dbSettings?.linkedinUrl || '',
+      },
+    ].filter(s => Boolean(s.url));
+
+    const socialUrls = {
+      facebook: dbSettings?.facebookUrl || '',
+      instagram: dbSettings?.instagramUrl || '',
+      youtube: dbSettings?.youtubeUrl || '',
+      twitter: dbSettings?.twitterUrl || '',
+      whatsapp: whatsappUrl,
+      telegram: dbSettings?.telegramUrl || '',
+      linkedin: dbSettings?.linkedinUrl || '',
+    };
+
+    const publishedPages = pages.map(p => ({
+      id: p._id.toString(),
+      title: p.title,
+      slug: p.slug,
+      url: `${baseUrl}/api/pages/${p.slug}`,
+      webUrl: `${baseUrl}/pages/${p.slug}`,
+      content: p.content || '',
+      order: p.order || 0,
+    }));
+
+    const privacyPage = pages.find(p => p.slug === 'privacy-policy' || p.slug === 'privacy');
+    const termsPage = pages.find(p => p.slug === 'terms-and-conditions' || p.slug === 'terms-of-service' || p.slug === 'terms');
+    const aboutPage = pages.find(p => p.slug === 'about-us' || p.slug === 'about');
+    const refundPage = pages.find(p => p.slug === 'refund-policy' || p.slug === 'cancellation-policy');
+    const contactPage = pages.find(p => p.slug === 'contact-us' || p.slug === 'contact');
+
+    const legalPages = [
+      aboutPage ? { title: aboutPage.title, slug: aboutPage.slug, url: `${baseUrl}/api/pages/${aboutPage.slug}` } : null,
+      privacyPage ? { title: privacyPage.title, slug: privacyPage.slug, url: `${baseUrl}/api/pages/${privacyPage.slug}` } : null,
+      termsPage ? { title: termsPage.title, slug: termsPage.slug, url: `${baseUrl}/api/pages/${termsPage.slug}` } : null,
+      refundPage ? { title: refundPage.title, slug: refundPage.slug, url: `${baseUrl}/api/pages/${refundPage.slug}` } : null,
+      contactPage ? { title: contactPage.title, slug: contactPage.slug, url: `${baseUrl}/api/pages/${contactPage.slug}` } : null,
+    ].filter(Boolean);
 
     const appSettings = {
+      platformName,
       shareAppTitle: 'Share the App',
       shareAppText,
-      shareAppUrl: 'https://play.google.com/store/apps/details?id=com.xoto.ott',
+      shareAppUrl: playStoreUrl,
+      playStoreUrl,
+      appStoreUrl,
+      contactEmail: contactDetails.email,
+      contactPhone: contactDetails.phone,
+      supportEmail: contactDetails.supportEmail,
+      supportPhone: contactDetails.supportPhone,
+      inquiryEmail: contactDetails.inquiryEmail,
+      whatsappNumber: contactDetails.whatsappNumber,
+      whatsappUrl: contactDetails.whatsappUrl,
+      address: contactDetails.address,
+      websiteUrl: contactDetails.websiteUrl,
       privacyPolicy: privacyPage?.content || '',
+      privacyPolicyUrl: privacyPage ? `${baseUrl}/api/pages/${privacyPage.slug}` : '',
       termsOfService: termsPage?.content || '',
+      termsOfServiceUrl: termsPage ? `${baseUrl}/api/pages/${termsPage.slug}` : '',
+      aboutUs: aboutPage?.content || '',
+      aboutUsUrl: aboutPage ? `${baseUrl}/api/pages/${aboutPage.slug}` : '',
       deleteAccountTitle: 'Delete Account',
       deleteAccountDescription: 'Permanently delete your account and all associated data.',
       appVersion: 'V1.2.4',
@@ -458,6 +577,11 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
         subscriptionOffer,
         recommendations,
         appSettings,
+        contactDetails,
+        socialLinks,
+        socialUrls,
+        pages: publishedPages,
+        legalPages,
         downloads: downloadsList,
         wishlist: wishlistList,
         likes: likesList,
@@ -861,5 +985,125 @@ export const deleteProfile = async (request: FastifyRequest, reply: FastifyReply
   } catch (error: any) {
     logger.error({ error }, 'Error deleting profile');
     return reply.status(500).send({ success: false, message: 'Failed to delete profile' });
+  }
+};
+
+// ── GET /api/app/contact ──────────────────────────────────────────────────────
+export const getAppContact = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const baseUrl = `${request.protocol}://${request.headers.host || request.hostname}`;
+    const dbSettings = await SettingsModel.findOne().lean();
+    const platformName = dbSettings?.platformName || 'Triple Minds';
+    const supportPhone = dbSettings?.supportPhone || dbSettings?.contactNo || '';
+    const contactNo = dbSettings?.contactNo || dbSettings?.supportPhone || '';
+    const supportEmail = dbSettings?.supportEmail || dbSettings?.inquiryEmail || dbSettings?.mailFrom || dbSettings?.mailEmail || 'support@tripleminds.com';
+    const inquiryEmail = dbSettings?.inquiryEmail || dbSettings?.supportEmail || dbSettings?.mailFrom || 'support@tripleminds.com';
+    const whatsappNumber = dbSettings?.whatsappNumber || '';
+    const whatsappClean = whatsappNumber.replace(/[^0-9]/g, '');
+    const whatsappUrl = whatsappClean ? `https://wa.me/${whatsappClean}` : '';
+    const address = dbSettings?.address || '';
+    const websiteUrl = dbSettings?.websiteUrl || '';
+    const playStoreUrl = dbSettings?.playStoreUrl || 'https://play.google.com/store/apps/details?id=com.xoto.ott';
+    const appStoreUrl = dbSettings?.appStoreUrl || '';
+    const copyrightText = dbSettings?.copyrightText || `© ${new Date().getFullYear()} ${platformName}. All Rights Reserved.`;
+
+    const contactDetails = {
+      platformName,
+      phone: supportPhone || contactNo,
+      contactNo,
+      supportPhone,
+      email: supportEmail || inquiryEmail,
+      inquiryEmail,
+      supportEmail,
+      whatsappNumber,
+      whatsappUrl,
+      address,
+      websiteUrl,
+      playStoreUrl,
+      appStoreUrl,
+      copyrightText,
+    };
+
+    const socialLinks = [
+      { platform: 'facebook', name: 'Facebook', icon: 'facebook', url: dbSettings?.facebookUrl || '' },
+      { platform: 'instagram', name: 'Instagram', icon: 'instagram', url: dbSettings?.instagramUrl || '' },
+      { platform: 'youtube', name: 'YouTube', icon: 'youtube', url: dbSettings?.youtubeUrl || '' },
+      { platform: 'twitter', name: 'Twitter (X)', icon: 'twitter', url: dbSettings?.twitterUrl || '' },
+      { platform: 'whatsapp', name: 'WhatsApp', icon: 'whatsapp', url: whatsappUrl },
+      { platform: 'telegram', name: 'Telegram', icon: 'telegram', url: dbSettings?.telegramUrl || '' },
+      { platform: 'linkedin', name: 'LinkedIn', icon: 'linkedin', url: dbSettings?.linkedinUrl || '' },
+    ].filter(s => Boolean(s.url));
+
+    const socialUrls = {
+      facebook: dbSettings?.facebookUrl || '',
+      instagram: dbSettings?.instagramUrl || '',
+      youtube: dbSettings?.youtubeUrl || '',
+      twitter: dbSettings?.twitterUrl || '',
+      whatsapp: whatsappUrl,
+      telegram: dbSettings?.telegramUrl || '',
+      linkedin: dbSettings?.linkedinUrl || '',
+    };
+
+    return reply.send({
+      success: true,
+      data: {
+        contactDetails,
+        socialLinks,
+        socialUrls,
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error getting app contact');
+    return reply.status(500).send({ success: false, message: 'Failed to fetch contact details' });
+  }
+};
+
+// ── GET /api/app/pages ────────────────────────────────────────────────────────
+export const getAppPages = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const baseUrl = `${request.protocol}://${request.headers.host || request.hostname}`;
+    const pages = await PageModel.find({ status: 'published' }).sort({ order: 1, createdAt: 1 }).lean();
+    return reply.send({
+      success: true,
+      data: pages.map(p => ({
+        id: p._id.toString(),
+        title: p.title,
+        slug: p.slug,
+        url: `${baseUrl}/api/pages/${p.slug}`,
+        webUrl: `${baseUrl}/pages/${p.slug}`,
+        content: p.content || '',
+        order: p.order || 0,
+      }))
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error getting app pages');
+    return reply.status(500).send({ success: false, message: 'Failed to fetch pages' });
+  }
+};
+
+// ── GET /api/app/pages/:slug ──────────────────────────────────────────────────
+export const getAppPageBySlug = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { slug } = request.params as { slug: string };
+    const page = await PageModel.findOne({ slug, status: 'published' }).lean();
+    if (!page) {
+      return reply.status(404).send({ success: false, message: 'Page not found' });
+    }
+    const baseUrl = `${request.protocol}://${request.headers.host || request.hostname}`;
+    return reply.send({
+      success: true,
+      data: {
+        id: page._id.toString(),
+        title: page.title,
+        slug: page.slug,
+        url: `${baseUrl}/api/pages/${page.slug}`,
+        webUrl: `${baseUrl}/pages/${page.slug}`,
+        content: page.content || '',
+        order: page.order || 0,
+      }
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error getting app page by slug');
+    return reply.status(500).send({ success: false, message: 'Failed to fetch page' });
   }
 };

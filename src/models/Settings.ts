@@ -5,12 +5,21 @@ export interface ISettings extends Document {
   platformName: string;
   contactNo: string;
   inquiryEmail: string;
+  supportPhone: string;
+  supportEmail: string;
+  whatsappNumber: string;
+  address: string;
+  websiteUrl: string;
+  playStoreUrl: string;
+  appStoreUrl: string;
   siteDescription: string;
   copyrightText: string;
   facebookUrl: string;
   twitterUrl: string;
   instagramUrl: string;
   youtubeUrl: string;
+  telegramUrl: string;
+  linkedinUrl: string;
   // Branding
   logoUrl: string;
   darkLogoUrl: string;
@@ -159,12 +168,21 @@ const SettingsSchema = new Schema<ISettings>(
     platformName: { type: String, default: 'Triple Minds' },
     contactNo: { type: String, default: '' },
     inquiryEmail: { type: String, default: '' },
+    supportPhone: { type: String, default: '' },
+    supportEmail: { type: String, default: '' },
+    whatsappNumber: { type: String, default: '' },
+    address: { type: String, default: '' },
+    websiteUrl: { type: String, default: '' },
+    playStoreUrl: { type: String, default: 'https://play.google.com/store/apps/details?id=com.xoto.ott' },
+    appStoreUrl: { type: String, default: '' },
     siteDescription: { type: String, default: '' },
     copyrightText: { type: String, default: '© 2026 Triple Minds. All Rights Reserved.' },
     facebookUrl: { type: String, default: '' },
     twitterUrl: { type: String, default: '' },
     instagramUrl: { type: String, default: '' },
     youtubeUrl: { type: String, default: '' },
+    telegramUrl: { type: String, default: '' },
+    linkedinUrl: { type: String, default: '' },
     // Branding
     logoUrl: { type: String, default: 'https://i.imgur.com/45cG5Kc.png' },
     darkLogoUrl: { type: String, default: 'https://i.imgur.com/45cG5Kc.png' },

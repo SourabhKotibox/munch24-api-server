@@ -5,6 +5,138 @@
   },
   "item": [
     {
+      "name": "GET /api/app/home",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/app/home?tab=drama&platform=mobile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "home"
+          ],
+          "query": [
+            {
+              "key": "tab",
+              "value": "drama"
+            },
+            {
+              "key": "platform",
+              "value": "mobile"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/upcoming/reminders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/app/upcoming/reminders",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "upcoming",
+            "reminders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/app/upcoming/:id/remind",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/app/upcoming/:id/remind",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "upcoming",
+            ":id",
+            "remind"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/app/upcoming",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/app/upcoming?tab=all&page=1&limit=20",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "app",
+            "upcoming"
+          ],
+          "query": [
+            {
+              "key": "tab",
+              "value": "all"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "GET /api/app/movies/:id",
       "request": {
         "method": "GET",

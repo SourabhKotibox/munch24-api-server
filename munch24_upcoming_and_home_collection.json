@@ -1,0 +1,686 @@
+{
+  "info": {
+    "name": "Munch24 - Updated App APIs (Upcoming & Home)",
+    "description": "Postman collection for Upcoming content, Remind Me, Home Banners with trailer playback, and Home layout sections.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_JWT_TOKEN",
+      "type": "string"
+    },
+    {
+      "key": "movie_id",
+      "value": "670c1234abcd5678ef000101",
+      "type": "string"
+    },
+    {
+      "key": "series_id",
+      "value": "670c1234abcd5678ef000102",
+      "type": "string"
+    },
+    {
+      "key": "upcoming_id",
+      "value": "670c1234abcd5678ef000103",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Upcoming Content & Banners",
+      "item": [
+        {
+          "name": "GET /api/app/upcoming (All Upcoming + Banners)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming?tab=all&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "all",
+                  "description": "all | movie | series | drama | remind_me"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Fetches top upcoming banners with playable trailers and paginated upcoming content titles."
+          }
+        },
+        {
+          "name": "GET /api/app/upcoming?tab=movie (Upcoming Movies)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming?tab=movie&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "movie"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/upcoming?tab=series (Upcoming TV Shows)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming?tab=series&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "series"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/upcoming?tab=drama (Upcoming Short Dramas)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming?tab=drama&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "drama"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/upcoming?tab=remind_me (My Reminders Tab)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming?tab=remind_me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "remind_me"
+                }
+              ]
+            },
+            "description": "Returns upcoming titles user has clicked Remind Me on. Requires JWT token."
+          }
+        },
+        {
+          "name": "POST /api/app/upcoming/:id/remind (Toggle Remind Me)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming/{{upcoming_id}}/remind",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming",
+                "{{upcoming_id}}",
+                "remind"
+              ]
+            },
+            "description": "Toggles user reminder on/off. Returns updated isReminded and reminderCount."
+          }
+        },
+        {
+          "name": "GET /api/app/upcoming/reminders (User Reminded List)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/upcoming/reminders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "upcoming",
+                "reminders"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Home Page & Banners",
+      "item": [
+        {
+          "name": "GET /api/app/banners (All Banners with Trailers & Video)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/banners?tab=both&platform=mobile&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "both",
+                  "description": "drama | movie | series | tv | both"
+                },
+                {
+                  "key": "platform",
+                  "value": "mobile",
+                  "description": "mobile | web | tv"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Fetches top banners with complete trailer playback data (trailerUrl, trailerType, youTubeVideoId, youTubeEmbedUrl, hlsUrl, videoUrl)."
+          }
+        },
+        {
+          "name": "GET /api/app/banners?tab=drama (Short Drama Banners)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/app/banners?tab=drama",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "drama"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/banners?tab=movie (Movie Banners)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/app/banners?tab=movie",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "movie"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/banners?tab=series (TV Show Banners)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/app/banners?tab=series",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "series"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/home?tab=drama (Home - Short Dramas Feed)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/home?tab=drama&platform=mobile&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "drama",
+                  "description": "drama | movie | series | tv"
+                },
+                {
+                  "key": "platform",
+                  "value": "mobile"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Returns home sections, layout, category rows, and reel preview metadata."
+          }
+        },
+        {
+          "name": "GET /api/app/home?tab=movie (Home - Movies Feed)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/home?tab=movie&platform=mobile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "movie"
+                },
+                {
+                  "key": "platform",
+                  "value": "mobile"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/app/home?tab=series (Home - TV Shows Feed)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/home?tab=series&platform=mobile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "tab",
+                  "value": "series"
+                },
+                {
+                  "key": "platform",
+                  "value": "mobile"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Content Detail & Stream Qualities",
+      "item": [
+        {
+          "name": "GET /api/app/movies/:id (Movie Detail + Qualities + Trailer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/movies/{{movie_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "movies",
+                "{{movie_id}}"
+              ]
+            },
+            "description": "Fetches complete movie details with videoQualities, videoSettings (Auto, 1080p, 720p, 480p), trailerUrl, and trailerType."
+          }
+        },
+        {
+          "name": "GET /api/app/series/:id (Series Detail + Episodes + Qualities)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/series/{{series_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "series",
+                "{{series_id}}"
+              ]
+            },
+            "description": "Fetches series details, seasons, and episodes. Each episode includes videoQualities and videoSettings."
+          }
+        },
+        {
+          "name": "GET /api/explore (Explore Reels Feed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explore?offset=0&limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "explore"
+              ],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Profile, Contact & Legal Pages",
+      "item": [
+        {
+          "name": "GET /api/app/profile (or /api/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "profile"
+              ]
+            },
+            "description": "Returns user profile, contactDetails (support phone, inquiry/support email, whatsapp, address, store links), socialLinks (with icon, name, platform, url), socialUrls, legalPages (About Us, Privacy Policy, Terms), full published pages, and appSettings."
+          }
+        },
+        {
+          "name": "GET /api/app/contact (or /api/contact)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/app/contact",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "contact"
+              ]
+            },
+            "description": "Returns contactDetails (phone, supportPhone, email, supportEmail, inquiryEmail, whatsappNumber, whatsappUrl, address, websiteUrl), socialLinks array for rendering clickable social media icons, and socialUrls map."
+          }
+        },
+        {
+          "name": "GET /api/app/pages (All Legal & CMS Pages)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/app/pages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "pages"
+              ]
+            },
+            "description": "Lists all published CMS pages (About Us, Privacy Policy, Terms & Conditions, etc.) formatted for mobile app display."
+          }
+        },
+        {
+          "name": "GET /api/app/pages/:slug (Single CMS Page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/app/pages/privacy-policy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app",
+                "pages",
+                "privacy-policy"
+              ]
+            },
+            "description": "Fetches a published CMS page by slug (e.g. privacy-policy, about-us, terms-and-conditions)."
+          }
+        }
+      ]
+    }
+  ]
+}

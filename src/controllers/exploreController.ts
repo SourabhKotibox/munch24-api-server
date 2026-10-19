@@ -41,23 +41,12 @@ import {
   type ViewerEntitlements,
 } from '../lib/subscriptionAccess';
 
-// Helper to convert relative URLs to absolute URLs
-const toAbsoluteUrl = (request: FastifyRequest, url: string | null | undefined): string | null => {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  
-  let relPath = url;
-  if (!relPath.startsWith('/uploads/')) {
-    relPath = relPath.startsWith('uploads/') ? `/${relPath}` : `/uploads/${relPath.startsWith('/') ? relPath.slice(1) : relPath}`;
-  }
-  
-  const baseUrl = `${request.protocol}://${request.hostname}`;
-  return `${baseUrl}${relPath}`;
-};
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver, buildTrailerPlaybackInfo } from '../lib/urlResolver';
 
 // Helper function to map content items for the explore / short-drama reel feed
 const mapContentItem = (
-  request: FastifyRequest,
+  resolveUrl: (url: string | null | undefined) => string | null,
   item: any,
   type: string,
   episodeCount = 0,
@@ -70,45 +59,47 @@ const mapContentItem = (
   const hasAccess = firstEpisode
     ? canAccessEpisode(access, item.planRequired || item.plan, firstEpisode)
     : canAccessContent(access, item.planRequired || item.plan);
-  const previewVideoUrl = toAbsoluteUrl(request, firstEpisode?.hlsUrl || item.hlsUrl || item.videoUrl);
+
+  const rawTrailer = firstEpisode?.trailerUrl || item.trailerUrl || null;
+  const rawHls = firstEpisode?.hlsUrl || item.hlsUrl || null;
+  const rawVideo = firstEpisode?.videoUrl || item.videoUrl || rawHls || null;
+  const playback = buildTrailerPlaybackInfo(rawTrailer, rawHls, rawVideo, resolveUrl, hasAccess);
 
   return {
-  id: item._id.toString(),
-  title: item.title,
-  description: item.description,
-  shortDescription: item.shortDescription,
-  thumbnail: toAbsoluteUrl(request, item.thumbnail),
-  bannerImage: toAbsoluteUrl(request, item.bannerImage),
-  posterImage: toAbsoluteUrl(request, item.posterImage || item.thumbnail),
-  type,
-  episodeCount,
-  genres: (item.genres || []).map((g: any) => g.name || g),
-  genresText: (item.genres || []).map((g: any) => g.name || g).join(' & '),
-  languages: (item.languages || []).map((l: any) => l.name || l),
-  views: item.views || 0,
-  likeCount,
-  isLikedByUser,
-  shares: item.shares || 0,
-  shareUrl: buildShareUrl(item._id.toString()),
-  featured: item.featured,
-  trending: item.trending,
-  isNewContent: item.isNewContent,
-  rating: item.rating,
-  year: item.year,
-  duration: item.duration,
-  status: item.status,
-  createdAt: item.createdAt,
-  updatedAt: item.updatedAt,
-  // Preview — ONLY episode 1 (short-drama reel style, playable preview reel)
-  videoUrl: previewVideoUrl || null,
-  trailerUrl: toAbsoluteUrl(request, firstEpisode?.trailerUrl || item.trailerUrl) || null,
-  firstEpisodeId: firstEpisode?._id?.toString() || null,
-  firstEpisodeTitle: firstEpisode?.title || null,
-  firstEpisodeThumbnail: toAbsoluteUrl(request, firstEpisode?.thumbnail || item.thumbnail) || null,
-  firstEpisodeDuration: firstEpisode?.duration || null,
-  firstEpisodeIsFree: firstEpisode?.isFree ?? true,
-  contentPlan: item.planRequired || item.plan || 'free',
-  isLocked: !hasAccess,
+    id: item._id.toString(),
+    title: item.title,
+    description: item.description,
+    shortDescription: item.shortDescription,
+    thumbnail: resolveUrl(item.thumbnail),
+    bannerImage: resolveUrl(item.bannerImage),
+    posterImage: resolveUrl(item.posterImage || item.thumbnail),
+    ...playback,
+    type,
+    episodeCount,
+    genres: (item.genres || []).map((g: any) => g.name || g),
+    genresText: (item.genres || []).map((g: any) => g.name || g).join(' & '),
+    languages: (item.languages || []).map((l: any) => l.name || l),
+    views: item.views || 0,
+    likeCount,
+    isLikedByUser,
+    shares: item.shares || 0,
+    shareUrl: buildShareUrl(item._id.toString()),
+    featured: item.featured,
+    trending: item.trending,
+    isNewContent: item.isNewContent,
+    rating: item.rating,
+    year: item.year,
+    duration: item.duration,
+    status: item.status,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    firstEpisodeId: firstEpisode?._id?.toString() || null,
+    firstEpisodeTitle: firstEpisode?.title || null,
+    firstEpisodeThumbnail: resolveUrl(firstEpisode?.thumbnail || item.thumbnail) || null,
+    firstEpisodeDuration: firstEpisode?.duration || null,
+    firstEpisodeIsFree: firstEpisode?.isFree ?? true,
+    contentPlan: item.planRequired || item.plan || 'free',
+    isLocked: !hasAccess,
   };
 };
 
@@ -136,7 +127,12 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
 
     // Optional auth — used for isLikedByUser
     const userId = getOptionalUserId(request);
-    const entitlements = await getViewerEntitlements(request);
+    const [storageSettings, isCloudActive, entitlements] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+      getViewerEntitlements(request),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
 
     let sortBy: any = {};
     let filter: any = { status: 'published' };
@@ -349,11 +345,11 @@ export const getExplore = async (request: FastifyRequest, reply: FastifyReply) =
       const isLikedByUser: boolean = likedContentIdSet.has(cid);
 
       if (contentType === 'movie') {
-        return mapContentItem(request, content, 'movie', 0, undefined, likeCount, isLikedByUser, entitlements);
+        return mapContentItem(resolveUrl, content, 'movie', 0, undefined, likeCount, isLikedByUser, entitlements);
       } else {
         const episodeCount = episodeCountMap.get(cid) || 0;
         const firstEpisode = firstEpisodeMap.get(cid);
-        return mapContentItem(request, content, content.type || 'series', episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
+        return mapContentItem(resolveUrl, content, content.type || 'series', episodeCount, firstEpisode, likeCount, isLikedByUser, entitlements);
       }
     });
 

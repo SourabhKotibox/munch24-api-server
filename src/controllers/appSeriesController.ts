@@ -9,28 +9,8 @@ import { logger } from '../lib/logger';
 import { buildShareUrl } from '../lib/config';
 import { canAccessContent, canAccessEpisode, getViewerEntitlements, guestEntitlements, isQualityAllowed } from '../lib/subscriptionAccess';
 import { QUALITY_LABELS, QUALITY_PLAN_GATE } from './watchController';
-import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
-
-// Helper to convert relative URLs to absolute URLs
-const toAbsoluteUrl = (
-  request: FastifyRequest,
-  url: string | null | undefined
-): string | null => {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  
-  let relPath = url;
-  if (relPath.startsWith('hls/')) {
-    relPath = `/uploads/${relPath}`;
-  }
-  if (!relPath.startsWith('/uploads/')) {
-    relPath = relPath.startsWith('uploads/') ? `/${relPath}` : `/uploads/${relPath.startsWith('/') ? relPath.slice(1) : relPath}`;
-  }
-  
-  const host = request.headers.host || request.hostname;
-  const baseUrl = `${request.protocol}://${host}`;
-  return `${baseUrl}${relPath}`;
-};
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver, buildTrailerPlaybackInfo } from '../lib/urlResolver';
 
 const getOptionalUser = async (request: FastifyRequest) => {
   const entitlements = await getViewerEntitlements(request);
@@ -46,7 +26,13 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       return reply.status(400).send({ success: false, message: 'Invalid series ID.' });
     }
 
-    const userInfo = await getOptionalUser(request);
+    const [storageSettings, isCloudActive, userInfo] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+      getOptionalUser(request),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
+
     const userId = userInfo?.userId || null;
     const userPlan = userInfo.userPlan;
     const entitlements = userInfo.entitlements;
@@ -58,9 +44,12 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       .populate('languages', 'name')
       .lean();
 
-    if (!series || series.status !== 'published' || series.type !== 'series') {
+    if (!series || series.status === 'rejected' || series.type !== 'series') {
       return reply.status(404).send({ success: false, message: 'Series not found.' });
     }
+
+    const isDraft = series.status === 'draft';
+    const canWatchSeries = !isDraft && canAccessContent(entitlements, series.planRequired);
 
     let isLikedByUser = false;
     let isWishlisted = false;
@@ -95,8 +84,8 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       related = relatedSeries.map((r: any) => ({
         id: r._id.toString(),
         title: r.title,
-        thumbnail: toAbsoluteUrl(request, r.thumbnail) || null,
-        bannerImage: toAbsoluteUrl(request, r.bannerImage) || null,
+        thumbnail: resolveUrl(r.thumbnail) || null,
+        bannerImage: resolveUrl(r.bannerImage) || null,
         duration: r.duration || null,
         year: r.year || null,
         rating: r.rating || null,
@@ -110,7 +99,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
     const cast = (series.cast || []).map((c: any) => ({
       id: c.actor?._id?.toString() || null,
       name: c.actor?.name || 'Unknown',
-      image: toAbsoluteUrl(request, c.actor?.image) || null,
+      image: resolveUrl(c.actor?.image) || null,
       designation: c.actor?.designation || null,
       role: c.role || 'Actor',
       character: c.character || null,
@@ -119,7 +108,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
     const crew = (series.crew || []).map((c: any) => ({
       id: c.director?._id?.toString() || null,
       name: c.director?.name || 'Unknown',
-      image: toAbsoluteUrl(request, c.director?.image) || null,
+      image: resolveUrl(c.director?.image) || null,
       designation: c.director?.designation || null,
       role: c.role || 'Director',
     }));
@@ -139,7 +128,6 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       unlocked.forEach((row) => unlockedIds.add(row.episodeId.toString()));
     }
 
-    const canWatchSeries = canAccessContent(entitlements, series.planRequired);
     const seasonsMap = new Map<number, any[]>();
     for (const ep of allEpisodes) {
       if (!seasonsMap.has(ep.season)) {
@@ -149,7 +137,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       const hours = ep.duration ? Math.floor(ep.duration / 3600) : 0;
       const minutes = ep.duration ? Math.floor((ep.duration % 3600) / 60) : 0;
       const durationStr = ep.duration ? (hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`) : null;
-      const hasAccess = canAccessEpisode(entitlements, series.planRequired, ep, unlockedIds.has(ep._id.toString()));
+      const hasAccess = !isDraft && canAccessEpisode(entitlements, series.planRequired, ep, unlockedIds.has(ep._id.toString()));
       
       let activeEp = ep;
       if (!activeEp.videoQualities || activeEp.videoQualities.length === 0) {
@@ -173,7 +161,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
               key: 'auto',
               label: 'Auto',
               description: 'Adjusts quality automatically based on your connection',
-              url: hasAccess ? toAbsoluteUrl(request, epHlsUrl) : null,
+              url: hasAccess ? resolveUrl(epHlsUrl) : null,
               requiresPlan: 'free',
               isLocked: !hasAccess,
             },
@@ -186,7 +174,7 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
                 key: q.quality,
                 label,
                 description: sizeMB ? `${label} (${sizeMB})` : label,
-                url: isLocked ? null : toAbsoluteUrl(request, q.url),
+                url: isLocked ? null : resolveUrl(q.url),
                 requiresPlan: requiredPlan,
                 isLocked,
               };
@@ -194,24 +182,48 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
           ]
         : null;
 
+      const epTrailerPlayback = buildTrailerPlaybackInfo(
+        ep.trailerUrl || series.trailerUrl,
+        hasAccess ? epHlsUrl : null,
+        hasAccess ? (activeEp as any).videoUrl : null,
+        resolveUrl,
+        hasAccess
+      );
+
       seasonsMap.get(ep.season)!.push({
         id: ep._id.toString(),
         season: ep.season,
         episode: ep.episode,
         title: ep.title,
         description: ep.description || null,
-        thumbnail: toAbsoluteUrl(request, ep.thumbnail || series.thumbnail) || null,
+        thumbnail: resolveUrl(ep.thumbnail || series.thumbnail) || null,
         duration: ep.duration || null,
         durationFormatted: durationStr,
         isFree: ep.isFree,
         isLocked: !hasAccess,
-        videoUrl: hasAccess ? (toAbsoluteUrl(request, epHlsUrl) || null) : null,
-        hlsUrl: hasAccess ? (toAbsoluteUrl(request, epHlsUrl) || null) : null,
+        videoUrl: hasAccess ? (resolveUrl(epHlsUrl) || null) : null,
+        hlsUrl: hasAccess ? (resolveUrl(epHlsUrl) || null) : null,
+        trailerUrl: epTrailerPlayback.trailerUrl,
+        trailer_url: epTrailerPlayback.trailer_url,
+        stream_url: hasAccess ? (resolveUrl(epHlsUrl) || null) : epTrailerPlayback.stream_url,
+        media_url: hasAccess ? (resolveUrl(epHlsUrl) || null) : epTrailerPlayback.media_url,
+        preview_url: hasAccess ? (resolveUrl(epHlsUrl) || null) : epTrailerPlayback.preview_url,
+        hasTrailer: epTrailerPlayback.hasTrailer,
+        has_trailer: epTrailerPlayback.has_trailer,
+        trailerType: epTrailerPlayback.trailerType,
+        trailer_type: epTrailerPlayback.trailer_type,
+        isYouTubeTrailer: epTrailerPlayback.isYouTubeTrailer,
+        is_youtube_trailer: epTrailerPlayback.is_youtube_trailer,
+        youTubeVideoId: epTrailerPlayback.youTubeVideoId,
+        youtube_video_id: epTrailerPlayback.youtube_video_id,
+        youTubeEmbedUrl: epTrailerPlayback.youTubeEmbedUrl,
+        youtube_embed_url: epTrailerPlayback.youtube_embed_url,
+        youtube_url: epTrailerPlayback.youtube_url,
         videoSettings: hasAccess ? epVideoSettings : null,
         videoQualities: sortedQualities.map((q: any) => ({
           quality: q.quality,
           label: QUALITY_LABELS[q.quality] || q.quality,
-          url: (!hasAccess || !isQualityAllowed(q.quality, entitlements.limits)) ? null : toAbsoluteUrl(request, q.url),
+          url: (!hasAccess || !isQualityAllowed(q.quality, entitlements.limits)) ? null : resolveUrl(q.url),
           isLocked: !hasAccess || !isQualityAllowed(q.quality, entitlements.limits),
         })),
       });
@@ -222,6 +234,14 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       episodes: seasonsMap.get(s),
     }));
 
+    const playback = buildTrailerPlaybackInfo(
+      series.trailerUrl,
+      null,
+      null,
+      resolveUrl,
+      canWatchSeries
+    );
+
     return reply.send({
       success: true,
       data: {
@@ -230,19 +250,15 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         originalTitle: series.originalTitle || null,
         description: series.description || null,
         shortDescription: series.shortDescription || null,
-        thumbnail: toAbsoluteUrl(request, series.thumbnail) || null,
-        bannerImage: toAbsoluteUrl(request, series.bannerImage) || null,
-        posterImage: toAbsoluteUrl(request, series.posterImage) || null,
-        trailerUrl: toAbsoluteUrl(request, series.trailerUrl) || null,
-        hasTrailer: Boolean(series.trailerUrl),
-        trailerType: isYouTubeUrl(series.trailerUrl) ? 'youtube' : (series.trailerUrl?.includes('.m3u8') ? 'hls' : (series.trailerUrl ? 'video' : null)),
-        isYouTubeTrailer: isYouTubeUrl(series.trailerUrl),
-        youTubeVideoId: series.trailerUrl ? extractYouTubeVideoId(series.trailerUrl) : null,
-        youTubeEmbedUrl: series.trailerUrl && isYouTubeUrl(series.trailerUrl) && extractYouTubeVideoId(series.trailerUrl)
-          ? `https://www.youtube.com/embed/${extractYouTubeVideoId(series.trailerUrl)}?autoplay=1&mute=1&playsinline=1`
-          : null,
+        thumbnail: resolveUrl(series.thumbnail) || null,
+        bannerImage: resolveUrl(series.bannerImage) || null,
+        posterImage: resolveUrl(series.posterImage) || null,
+        ...playback,
         type: 'series',
         contentType: series.contentType,
+        isDraft,
+        status: series.status,
+        isUpcoming: Boolean(series.isUpcoming || isDraft),
         
         isLocked: !canWatchSeries,
         canCast: entitlements.canCast,

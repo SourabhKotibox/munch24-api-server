@@ -8,18 +8,8 @@ import { buildShareUrl } from '../lib/config';
 import { logger } from '../lib/logger';
 import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
-// ── URL Resolver Helper ───────────────────────────────────────────────────────
-const buildUrlResolver = (request: FastifyRequest) =>
-  (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    let relPath = url;
-    if (!relPath.startsWith('/uploads/')) {
-      relPath = relPath.startsWith('uploads/') ? `/${relPath}` : `/uploads/${relPath.startsWith('/') ? relPath.slice(1) : relPath}`;
-    }
-    const host = request.headers.host || request.hostname;
-    return `${request.protocol}://${host}${relPath}`;
-  };
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver, buildTrailerPlaybackInfo } from '../lib/urlResolver';
 
 // ── Extract Auth Helper ──────────────────────────────────────────────────────
 const getAuthData = (request: FastifyRequest): { userId: string | null; profileId: string | null } => {
@@ -55,17 +45,7 @@ const mapUpcomingItem = (
   resolveUrl: (url: string | null | undefined) => string | null,
   isReminded = false
 ) => {
-  const trailer = resolveUrl(item.trailerUrl || null);
-  const hls = resolveUrl(item.hlsUrl || null);
-  const video = resolveUrl(item.videoUrl || null);
-  const effectiveTrailer = trailer || hls || video || null;
-  const isYt = isYouTubeUrl(effectiveTrailer);
-  const ytId = isYt && effectiveTrailer ? extractYouTubeVideoId(effectiveTrailer) : null;
-  const trailerType = isYt
-    ? 'youtube'
-    : (effectiveTrailer && effectiveTrailer.includes('.m3u8'))
-    ? 'hls'
-    : (effectiveTrailer ? 'video' : null);
+  const playback = buildTrailerPlaybackInfo(item.trailerUrl, item.hlsUrl, item.videoUrl, resolveUrl, true);
 
   const poster = resolveUrl(item.posterImage || item.thumbnail || null);
   const banner = resolveUrl(item.bannerImage || item.posterImage || item.thumbnail || null);
@@ -85,14 +65,7 @@ const mapUpcomingItem = (
     posterImage: poster,
     bannerImage: banner,
     imageUrl: banner,
-    trailerUrl: effectiveTrailer,
-    videoUrl: video || hls || effectiveTrailer,
-    hlsUrl: hls,
-    hasTrailer: Boolean(effectiveTrailer),
-    trailerType,
-    isYouTubeTrailer: isYt,
-    youTubeVideoId: ytId,
-    youTubeEmbedUrl: ytId ? `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&playsinline=1` : null,
+    ...playback,
     type: itemType,
     contentType: itemType,
     releaseDate: item.releaseDate || null,
@@ -136,7 +109,11 @@ export const getUpcomingContent = async (request: FastifyRequest, reply: Fastify
     const limit = Math.min(100, Math.max(1, Number(query.limit || 20)));
     const search = (query.search || '').trim();
 
-    const resolveUrl = buildUrlResolver(request);
+    const [storageSettings, isCloudActive] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
     const { userId } = getAuthData(request);
 
     // Get user's reminded content IDs
@@ -150,16 +127,23 @@ export const getUpcomingContent = async (request: FastifyRequest, reply: Fastify
 
     const isRemindMeTab = rawTab === 'remind_me' || rawTab === 'reminders' || rawTab === 'remind';
 
-    // Base filter: upcoming content, excluding rejected
+    // Base filter: upcoming content or draft titles with trailers, excluding rejected
     const baseFilter: any = {
-      isUpcoming: true,
-      status: { $ne: 'rejected' }, // includes draft and published!
+      status: { $ne: 'rejected' },
+      $or: [
+        { isUpcoming: true },
+        { status: 'draft', trailerUrl: { $exists: true, $ne: '' } },
+      ],
     };
 
     if (search) {
-      baseFilter.$or = [
-        { title: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') },
+      baseFilter.$and = [
+        {
+          $or: [
+            { title: new RegExp(search, 'i') },
+            { description: new RegExp(search, 'i') },
+          ],
+        },
       ];
     }
 
@@ -436,7 +420,11 @@ export const getUserUpcomingReminders = async (request: FastifyRequest, reply: F
       return reply.status(401).send({ success: false, message: 'Authentication required' });
     }
 
-    const resolveUrl = buildUrlResolver(request);
+    const [storageSettings, isCloudActive] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
     const userReminders = await UserReminderModel.find({
       userId: new mongoose.Types.ObjectId(userId),
     }).sort({ createdAt: -1 }).lean();
@@ -470,7 +458,11 @@ export const getUserUpcomingReminders = async (request: FastifyRequest, reply: F
 // ── ADMIN: GET Upcoming List & Metrics ────────────────────────────────────────
 export const getAdminUpcomingList = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const resolveUrl = buildUrlResolver(request);
+    const [storageSettings, isCloudActive] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
 
     const [movies, contents] = await Promise.all([
       MovieModel.find({ isUpcoming: true })
@@ -525,6 +517,12 @@ export const getAdminUpcomingCandidates = async (request: FastifyRequest, reply:
     const query = request.query as { search?: string; type?: string };
     const searchFilter = query.search ? { title: new RegExp(query.search, 'i') } : {};
 
+    const [storageSettings, isCloudActive] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
+
     const [movies, contents] = await Promise.all([
       MovieModel.find({ isUpcoming: { $ne: true }, ...searchFilter })
         .select('title posterImage thumbnail bannerImage trailerUrl status releaseDate genres createdAt')
@@ -546,8 +544,8 @@ export const getAdminUpcomingCandidates = async (request: FastifyRequest, reply:
         contentType: 'movie',
         status: m.status,
         hasTrailer: !!m.trailerUrl,
-        trailerUrl: m.trailerUrl,
-        posterImage: m.posterImage || m.thumbnail,
+        trailerUrl: resolveUrl(m.trailerUrl),
+        posterImage: resolveUrl(m.posterImage || m.thumbnail),
         releaseDate: m.releaseDate,
         createdAt: m.createdAt,
       })),
@@ -558,8 +556,8 @@ export const getAdminUpcomingCandidates = async (request: FastifyRequest, reply:
         contentType: c.contentType,
         status: c.status,
         hasTrailer: !!c.trailerUrl,
-        trailerUrl: c.trailerUrl,
-        posterImage: c.posterImage || c.thumbnail,
+        trailerUrl: resolveUrl(c.trailerUrl),
+        posterImage: resolveUrl(c.posterImage || c.thumbnail),
         releaseDate: c.releaseDate,
         createdAt: c.createdAt,
       })),

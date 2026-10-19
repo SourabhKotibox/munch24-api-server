@@ -11,7 +11,8 @@ import { UnlockedEpisodeModel } from '../models/UnlockedEpisode';
 import '../models/Actor';
 import '../models/Director';
 import { logger } from '../lib/logger';
-import { isCloudStorageConfigured, getCloudPublicUrl } from '../lib/s3';
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver, buildTrailerPlaybackInfo } from '../lib/urlResolver';
 import {
   canAccessContent,
   canAccessEpisode,
@@ -28,34 +29,6 @@ const getOptionalUser = async (request: FastifyRequest): Promise<{ userId: strin
   const profileId = request.headers['x-profile-id'] as string | undefined;
   if (!entitlements.userId) return null;
   return { userId: entitlements.userId, userPlan: entitlements.planKey, profileId, entitlements };
-};
-
-// Helper to convert relative URLs to absolute URLs
-const toAbsoluteUrl = (
-  request: FastifyRequest,
-  url: string | null | undefined,
-  s3Active: boolean,
-  s3BaseUrl: string
-): string | null => {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  
-  const isLocalHls = url.startsWith('hls/') || url.startsWith('/uploads/hls/') || url.includes('/hls/');
-  if (s3Active && !isLocalHls) {
-    let cleanKey = url;
-    if (cleanKey.startsWith('/')) cleanKey = cleanKey.slice(1);
-    if (cleanKey.startsWith('uploads/')) cleanKey = cleanKey.replace('uploads/', '');
-    if (cleanKey.startsWith('/uploads/')) cleanKey = cleanKey.replace('/uploads/', '');
-    return `${s3BaseUrl}/${cleanKey}`;
-  }
-  
-  let relPath = url;
-  if (!relPath.startsWith('/uploads/')) {
-    relPath = relPath.startsWith('uploads/') ? `/${relPath}` : `/uploads/${relPath.startsWith('/') ? relPath.slice(1) : relPath}`;
-  }
-  
-  const baseUrl = `${request.protocol}://${request.hostname}`;
-  return `${baseUrl}${relPath}`;
 };
 
 
@@ -91,14 +64,12 @@ export const QUALITY_PLAN_GATE: Record<string, string> = {
 const QUALITY_ORDER = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
 
 const buildNamedQualities = (
-  request: FastifyRequest,
+  resolveUrl: (url: string | null | undefined) => string | null,
   hlsUrl: string | null,
   qualities: any[] = [],
-  s3Active: boolean,
-  s3BaseUrl: string,
   entitlements?: ViewerEntitlements
 ) => {
-  const autoUrl = toAbsoluteUrl(request, hlsUrl, s3Active, s3BaseUrl);
+  const autoUrl = resolveUrl(hlsUrl);
 
   const result: Array<{
     key: string;
@@ -125,7 +96,7 @@ const buildNamedQualities = (
 
   for (const q of sortedQualities) {
     if (!q.quality || !q.url) continue;
-    const absoluteUrl = toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl);
+    const absoluteUrl = resolveUrl(q.url);
     if (!absoluteUrl) continue;
     const requiredPlan = QUALITY_PLAN_GATE[q.quality] || 'free';
     const isLocked = entitlements ? !isQualityAllowed(q.quality, entitlements.limits) : false;
@@ -159,7 +130,13 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
       return reply.status(400).send({ success: false, message: 'Invalid contentId.' });
     }
 
-    const userInfo = await getOptionalUser(request);
+    const [storageSettings, isCloudActive, userInfo] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+      getOptionalUser(request),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
+
     const entitlements = userInfo?.entitlements || guestEntitlements();
     const userId = userInfo?.userId || null;
     const userPlan = entitlements.planKey;
@@ -209,14 +186,15 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
         .populate('crew.director', 'name image')
         .lean();
       
-      if (!content || content.status !== 'published') {
+      if (!content || content.status === 'rejected') {
         return reply.status(404).send({ success: false, message: 'Content not found.' });
       }
       isMovieType = true;
-    } else if (content.status !== 'published') {
+    } else if (content.status === 'rejected') {
       return reply.status(404).send({ success: false, message: 'Content not found.' });
     }
 
+    const isDraft = content.status === 'draft';
     const contentPlan = content.planRequired || 'free';
 
     // ── 3. Handle Like / Wishlist / Download Status ───────────────────────
@@ -235,14 +213,6 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
       isDownloaded = !!downloadDoc;
     }
 
-    // Load S3 settings once for dynamic absolute URL resolution
-    const s3Active = await isCloudStorageConfigured();
-    let s3BaseUrl = '';
-    if (s3Active) {
-      const s3Url = await getCloudPublicUrl('');
-      s3BaseUrl = s3Url.endsWith('/') ? s3Url.slice(0, -1) : s3Url;
-    }
-
     // ── 4. Map Cast & Crew ────────────────────────────────────────────────────
     let cast: any[] = [];
     let crew: any[] = [];
@@ -251,37 +221,37 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
       cast = (content.cast || []).map((c: any) => ({
         id: c.actor?._id?.toString() || null,
         name: c.actor?.name || 'Unknown',
-        image: toAbsoluteUrl(request, c.actor?.image, s3Active, s3BaseUrl) || null,
+        image: resolveUrl(c.actor?.image) || null,
         role: c.role || 'Actor',
         character: c.character || null,
       }));
       crew = (content.crew || []).map((c: any) => ({
         id: c.director?._id?.toString() || null,
         name: c.director?.name || 'Unknown',
-        image: toAbsoluteUrl(request, c.director?.image, s3Active, s3BaseUrl) || null,
+        image: resolveUrl(c.director?.image) || null,
         role: c.role || 'Director',
       }));
     } else {
-      cast = (content.cast || []).map((c: any) => ({ name: c.name, image: toAbsoluteUrl(request, c.photo, s3Active, s3BaseUrl) || null, role: c.role || 'Actor', character: c.character || null }));
+      cast = (content.cast || []).map((c: any) => ({ name: c.name, image: resolveUrl(c.photo) || null, role: c.role || 'Actor', character: c.character || null }));
       crew = (content.crew || []).map((c: any) => ({ name: c.name, image: null, role: c.role || 'Crew' }));
     }
 
     // ── 5. Fetch Related Content ──────────────────────────────────────────────
-    // Simple related logic: Same genre, excluding current item, limit 5
     let relatedContents: any[] = [];
     if (content.genres && content.genres.length > 0) {
+      const genreIds = (content.genres as any[]).map((g: any) => g._id || g);
       const relatedFilter: any = {
         _id: { $ne: content._id },
         status: 'published',
-        genres: { $in: content.genres }
+        genres: { $in: genreIds }
       };
       
       if (isMovieType) {
         const related = await MovieModel.find(relatedFilter).select('title thumbnail duration type').limit(5).lean();
-        relatedContents = related.map(r => ({ id: r._id.toString(), title: r.title, thumbnail: toAbsoluteUrl(request, r.thumbnail, s3Active, s3BaseUrl), duration: r.duration, type: 'movie' }));
+        relatedContents = related.map(r => ({ id: r._id.toString(), title: r.title, thumbnail: resolveUrl(r.thumbnail), duration: r.duration, type: 'movie' }));
       } else {
         const related = await ContentModel.find(relatedFilter).select('title thumbnail type contentType').limit(5).lean();
-        relatedContents = related.map(r => ({ id: r._id.toString(), title: r.title, thumbnail: toAbsoluteUrl(request, r.thumbnail, s3Active, s3BaseUrl), type: r.contentType || 'series' }));
+        relatedContents = related.map(r => ({ id: r._id.toString(), title: r.title, thumbnail: resolveUrl(r.thumbnail), type: r.contentType || 'series' }));
       }
     }
 
@@ -294,7 +264,7 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
 
     // ── 7. Logic for Movies ───────────────────────────────────────────────────
     if (isMovieType) {
-      const isAccessible = canAccessContent(entitlements, contentPlan);
+      const isAccessible = !isDraft && canAccessContent(entitlements, contentPlan);
       
       let watchProgress = null;
       if (userObjectId) {
@@ -320,20 +290,28 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
         }
       }
 
+      const moviePlayback = buildTrailerPlaybackInfo(
+        activeMovie.trailerUrl,
+        isAccessible ? activeMovie.hlsUrl : null,
+        isAccessible ? activeMovie.videoUrl : null,
+        resolveUrl,
+        isAccessible
+      );
+
       currentEpisode = {
         id: activeMovie._id.toString(),
         title: activeMovie.title,
         duration: activeMovie.duration || null,
         isFree: contentPlan === 'free',
         isLocked: !isAccessible,
-        hlsUrl: isAccessible ? toAbsoluteUrl(request, activeMovie.hlsUrl, s3Active, s3BaseUrl) : null,
-        videoUrl: isAccessible ? toAbsoluteUrl(request, activeMovie.hlsUrl, s3Active, s3BaseUrl) : null,
-        trailerUrl: toAbsoluteUrl(request, activeMovie.trailerUrl, s3Active, s3BaseUrl),
-        videoSettings: isAccessible ? buildNamedQualities(request, activeMovie.hlsUrl, activeMovie.videoQualities, s3Active, s3BaseUrl, entitlements) : null,
+        hlsUrl: isAccessible ? resolveUrl(activeMovie.hlsUrl) : null,
+        videoUrl: isAccessible ? resolveUrl(activeMovie.hlsUrl || activeMovie.videoUrl) : null,
+        ...moviePlayback,
+        videoSettings: isAccessible ? buildNamedQualities(resolveUrl, activeMovie.hlsUrl, activeMovie.videoQualities, entitlements) : null,
         videoQualities: isAccessible ? (activeMovie.videoQualities || []).map((q: any) => ({
           quality: q.quality,
           label: QUALITY_LABELS[q.quality] || q.quality,
-          url: isQualityAllowed(q.quality, entitlements.limits) ? toAbsoluteUrl(request, q.url, s3Active, s3BaseUrl) : null,
+          url: isQualityAllowed(q.quality, entitlements.limits) ? resolveUrl(q.url) : null,
           isLocked: !isQualityAllowed(q.quality, entitlements.limits),
         })) : null,
         watchProgress,
@@ -342,7 +320,7 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
       const hours = content.duration ? Math.floor(content.duration / 3600) : 0;
       const minutes = content.duration ? Math.floor((content.duration % 3600) / 60) : 0;
       const durationStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-      const genresText = (content.genres || []).map((g: any) => g.name || g).join(', ');
+      const genresText = (content.genres || []).map((g: any) => g?.name || g).join(', ');
       episodeMeta = `HD • ${genresText} • ${durationStr}`;
       
       totalSeasons = 0;
@@ -382,15 +360,23 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
 
       totalEpisodes = allEpisodes.length;
       totalSeasons = seasonMap.size;
-      const genresText = (content.genres || []).map((g: any) => g.name || g).join(', ');
+      const genresText = (content.genres || []).map((g: any) => g?.name || g).join(', ');
       episodeMeta = `${requestedEpisode} of ${totalEpisodes} Episodes • Season ${requestedSeason} • ${genresText}`;
 
       const mapEpisode = (ep: any) => {
-        const accessible = canAccessEpisode(
+        const accessible = !isDraft && canAccessEpisode(
           entitlements,
           contentPlan,
           ep,
           unlockedEpisodeIdSet.has(ep._id.toString())
+        );
+
+        const epTrailerPlayback = buildTrailerPlaybackInfo(
+          ep.trailerUrl || content.trailerUrl,
+          accessible ? ep.hlsUrl : null,
+          accessible ? ep.videoUrl : null,
+          resolveUrl,
+          accessible
         );
 
         return {
@@ -403,8 +389,9 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
           isLocked: !accessible,
           isLockedForUser: !accessible,
           coinsRequired: ep.coinsRequired || 0,
-          hlsUrl: accessible ? toAbsoluteUrl(request, ep.hlsUrl, s3Active, s3BaseUrl) : null,
-          trailerUrl: toAbsoluteUrl(request, ep.trailerUrl, s3Active, s3BaseUrl),
+          hlsUrl: accessible ? resolveUrl(ep.hlsUrl) : null,
+          videoUrl: accessible ? resolveUrl(ep.hlsUrl || ep.videoUrl) : null,
+          ...epTrailerPlayback,
           likeCount: ep.likes || 0,
           isLikedByUser: likedEpisodeIdSet.has(ep._id.toString()),
         };
@@ -432,11 +419,9 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
         currentEpisode = mapEpisode(currentEpisodeRaw);
         if (!currentEpisode.isLocked) {
           currentEpisode.videoSettings = buildNamedQualities(
-            request,
+            resolveUrl,
             currentEpisodeRaw.hlsUrl,
             currentEpisodeRaw.videoQualities || [],
-            s3Active,
-            s3BaseUrl,
             entitlements
           );
         } else {
@@ -464,6 +449,14 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
       }
     }
 
+    const contentPlayback = buildTrailerPlaybackInfo(
+      content.trailerUrl,
+      null,
+      null,
+      resolveUrl,
+      !isDraft && (isMovieType ? canAccessContent(entitlements, contentPlan) : false)
+    );
+
     // ── 9. Final Output ───────────────────────────────────────────────────────
     return reply.send({
       success: true,
@@ -473,11 +466,15 @@ export const getWatchData = async (request: FastifyRequest, reply: FastifyReply)
           title: content.title,
           description: content.description || null,
           shortDescription: content.shortDescription || null,
-          thumbnail: toAbsoluteUrl(request, content.thumbnail, s3Active, s3BaseUrl) || null,
-          bannerImage: toAbsoluteUrl(request, content.bannerImage, s3Active, s3BaseUrl) || null,
-          genres: content.genres || [],
-          genresText: (content.genres || []).join(' & '),
-          languages: content.languages || [],
+          thumbnail: resolveUrl(content.thumbnail) || null,
+          bannerImage: resolveUrl(content.bannerImage) || null,
+          ...contentPlayback,
+          isDraft,
+          status: content.status,
+          isUpcoming: Boolean(content.isUpcoming || isDraft),
+          genres: (content.genres || []).map((g: any) => g?.name || g),
+          genresText: (content.genres || []).map((g: any) => g?.name || g).join(' & '),
+          languages: (content.languages || []).map((l: any) => l?.name || l),
           type: isMovieType ? 'movie' : (content.contentType || 'drama'),
           
           totalSeasons,

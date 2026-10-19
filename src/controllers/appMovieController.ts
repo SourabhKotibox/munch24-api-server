@@ -10,28 +10,8 @@ import { logger } from '../lib/logger';
 import { buildShareUrl } from '../lib/config';
 import { QUALITY_LABELS, QUALITY_PLAN_GATE } from './watchController';
 import { canAccessContent, getViewerEntitlements, guestEntitlements, isQualityAllowed } from '../lib/subscriptionAccess';
-import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
-
-// Helper to convert relative URLs to absolute URLs
-const toAbsoluteUrl = (
-  request: FastifyRequest,
-  url: string | null | undefined
-): string | null => {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  
-  let relPath = url;
-  if (relPath.startsWith('hls/')) {
-    relPath = `/uploads/${relPath}`;
-  }
-  if (!relPath.startsWith('/uploads/')) {
-    relPath = relPath.startsWith('uploads/') ? `/${relPath}` : `/uploads/${relPath.startsWith('/') ? relPath.slice(1) : relPath}`;
-  }
-  
-  const host = request.headers.host || request.hostname;
-  const baseUrl = `${request.protocol}://${host}`;
-  return `${baseUrl}${relPath}`;
-};
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver, buildTrailerPlaybackInfo } from '../lib/urlResolver';
 
 const getOptionalUser = async (request: FastifyRequest) => {
   const entitlements = await getViewerEntitlements(request);
@@ -50,7 +30,13 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
       return reply.status(400).send({ success: false, message: 'Invalid movie ID.' });
     }
 
-    const userInfo = await getOptionalUser(request);
+    const [storageSettings, isCloudActive, userInfo] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+      getOptionalUser(request),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
+
     const userId = userInfo?.userId || null;
     const userPlan = userInfo.userPlan;
     const entitlements = userInfo.entitlements;
@@ -63,11 +49,12 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
       .populate('languages', 'name')
       .lean();
 
-    if (!movie || movie.status !== 'published') {
+    if (!movie || movie.status === 'rejected') {
       return reply.status(404).send({ success: false, message: 'Movie not found.' });
     }
 
-    const canWatch = canAccessContent(entitlements, movie.planRequired);
+    const isDraft = movie.status === 'draft';
+    const canWatch = !isDraft && canAccessContent(entitlements, movie.planRequired);
 
     // ── 2. User-specific flags (like + wishlist + watch progress + download) ───
     let isLikedByUser = false;
@@ -118,8 +105,8 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
       related = relatedMovies.map((r: any) => ({
         id: r._id.toString(),
         title: r.title,
-        thumbnail: toAbsoluteUrl(request, r.thumbnail) || null,
-        bannerImage: toAbsoluteUrl(request, r.bannerImage) || null,
+        thumbnail: resolveUrl(r.thumbnail) || null,
+        bannerImage: resolveUrl(r.bannerImage) || null,
         duration: r.duration || null,
         year: r.year || null,
         rating: r.rating || null,
@@ -132,7 +119,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
     const cast = (movie.cast || []).map((c: any) => ({
       id: c.actor?._id?.toString() || null,
       name: c.actor?.name || 'Unknown',
-      image: toAbsoluteUrl(request, c.actor?.image) || null,
+      image: resolveUrl(c.actor?.image) || null,
       designation: c.actor?.designation || null,
       role: c.role || 'Actor',
       character: c.character || null,
@@ -141,7 +128,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
     const crew = (movie.crew || []).map((c: any) => ({
       id: c.director?._id?.toString() || null,
       name: c.director?.name || 'Unknown',
-      image: toAbsoluteUrl(request, c.director?.image) || null,
+      image: resolveUrl(c.director?.image) || null,
       designation: c.director?.designation || null,
       role: c.role || 'Director',
     }));
@@ -180,7 +167,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
             key: 'auto',
             label: 'Auto',
             description: 'Adjusts quality automatically based on your connection',
-            url: toAbsoluteUrl(request, hlsUrl),
+            url: resolveUrl(hlsUrl),
             requiresPlan: 'free',
             isLocked: false,
           },
@@ -202,7 +189,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
               key: q.quality,
               label,
               description: sizeMB ? `${description} (${sizeMB})` : description,
-              url: isLocked ? null : toAbsoluteUrl(request, q.url),
+              url: isLocked ? null : resolveUrl(q.url),
               requiresPlan: requiredPlan,
               isLocked,
             };
@@ -213,6 +200,7 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
     // ── 7. Build response ─────────────────────────────────────────────────────
     const genreNames = (movie.genres as any[]).map((g: any) => g?.name || g);
     const languageNames = (movie.languages as any[]).map((l: any) => l?.name || l);
+    const playback = buildTrailerPlaybackInfo(movie.trailerUrl, hlsUrl, activeMovie.videoUrl, resolveUrl, canWatch);
 
     return reply.send({
       success: true,
@@ -222,27 +210,21 @@ export const getMovieDetail = async (request: FastifyRequest, reply: FastifyRepl
         originalTitle: movie.originalTitle || null,
         description: movie.description || null,
         shortDescription: movie.shortDescription || null,
-        thumbnail: toAbsoluteUrl(request, movie.thumbnail) || null,
-        bannerImage: toAbsoluteUrl(request, movie.bannerImage) || null,
-        posterImage: toAbsoluteUrl(request, movie.posterImage) || null,
-        trailerUrl: toAbsoluteUrl(request, movie.trailerUrl) || null,
-        hasTrailer: Boolean(movie.trailerUrl),
-        trailerType: isYouTubeUrl(movie.trailerUrl) ? 'youtube' : (movie.trailerUrl?.includes('.m3u8') ? 'hls' : (movie.trailerUrl ? 'video' : null)),
-        isYouTubeTrailer: isYouTubeUrl(movie.trailerUrl),
-        youTubeVideoId: movie.trailerUrl ? extractYouTubeVideoId(movie.trailerUrl) : null,
-        youTubeEmbedUrl: movie.trailerUrl && isYouTubeUrl(movie.trailerUrl) && extractYouTubeVideoId(movie.trailerUrl)
-          ? `https://www.youtube.com/embed/${extractYouTubeVideoId(movie.trailerUrl)}?autoplay=1&mute=1&playsinline=1`
-          : null,
+        thumbnail: resolveUrl(movie.thumbnail) || null,
+        bannerImage: resolveUrl(movie.bannerImage) || null,
+        posterImage: resolveUrl(movie.posterImage) || null,
+        ...playback,
         type: 'movie',
+        isDraft,
+        status: movie.status,
+        isUpcoming: Boolean(movie.isUpcoming || isDraft),
 
-        // Video
-        hlsUrl: canWatch ? toAbsoluteUrl(request, hlsUrl) : null,
-        videoUrl: canWatch ? toAbsoluteUrl(request, hlsUrl) : null,
+        // Video Settings & Qualities
         videoSettings: canWatch ? videoSettings : null,
         videoQualities: sortedQualities.map((q: any) => ({
           quality: q.quality,
           label: QUALITY_LABELS[q.quality] || q.quality,
-          url: (!canWatch || !isQualityAllowed(q.quality, entitlements.limits)) ? null : toAbsoluteUrl(request, q.url),
+          url: (!canWatch || !isQualityAllowed(q.quality, entitlements.limits)) ? null : resolveUrl(q.url),
           isLocked: !canWatch || !isQualityAllowed(q.quality, entitlements.limits),
         })),
         canCast: entitlements.canCast,

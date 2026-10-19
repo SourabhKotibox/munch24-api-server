@@ -13,6 +13,8 @@ import {
   getViewerEntitlements,
   isQualityAllowed,
 } from '../lib/subscriptionAccess';
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver, buildTrailerPlaybackInfo } from '../lib/urlResolver';
 
 export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -61,9 +63,15 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       }
     }
 
-    if (!item) {
+    if (!item || item.status === 'rejected') {
       return reply.status(404).send({ success: false, message: 'Content not found' });
     }
+
+    const [storageSettings, isCloudActive] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+    ]);
+    const resolveUrl = buildMediaUrlResolver(request, storageSettings, isCloudActive);
 
     // Format duration
     const hours = item.duration ? Math.floor(item.duration / 3600) : 0;
@@ -84,7 +92,8 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       if (dbUser) entitlements = await getUserEntitlements(dbUser);
     }
 
-    const canWatch = canAccessContent(entitlements, item.planRequired);
+    const isDraft = item.status === 'draft';
+    const canWatch = !isDraft && canAccessContent(entitlements, item.planRequired);
 
     let activeItem = item;
     if (isMovie && (!activeItem.videoQualities || activeItem.videoQualities.length === 0)) {
@@ -97,7 +106,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
 
     // Video settings
     const rawHlsUrl = isMovie ? (activeItem.hlsUrl || activeItem.videoUrl) : undefined;
-    const hlsUrl = canWatch ? rawHlsUrl : undefined;
+    const hlsUrl = canWatch ? resolveUrl(rawHlsUrl) : undefined;
     const qualities: any[] = activeItem.videoQualities || [];
     const videoSettings = hlsUrl
       ? [
@@ -109,7 +118,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
               key: q.quality,
               label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
               description: `${q.quality.toUpperCase()} quality option (${sizeMB})`,
-              url: locked ? null : q.url,
+              url: locked ? null : resolveUrl(q.url),
               isLocked: locked,
             };
           })
@@ -128,7 +137,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
     const cast = (item.cast || []).map((c: any) => ({
       id: c.actor?._id?.toString() || null,
       name: c.actor?.name || 'Unknown',
-      image: c.actor?.image || c.actor?.avatar || null,
+      image: resolveUrl(c.actor?.image || c.actor?.avatar) || null,
       designation: c.actor?.designation || null,
       role: c.role || 'Actor',
       character: c.character || null,
@@ -137,7 +146,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
     const crew = (item.crew || []).map((c: any) => ({
       id: c.director?._id?.toString() || null,
       name: c.director?.name || 'Unknown',
-      image: c.director?.image || null,
+      image: resolveUrl(c.director?.image) || null,
       designation: c.director?.designation || null,
       role: c.role || 'Director',
     }));
@@ -145,10 +154,18 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
     const crewMembers = (item.crewMembers || []).map((c: any) => ({
       id: c.crewMember?._id?.toString() || null,
       name: c.crewMember?.name || 'Unknown',
-      image: c.crewMember?.image || null,
+      image: resolveUrl(c.crewMember?.image) || null,
       designation: c.crewMember?.designation || null,
       role: c.role || 'Crew',
     }));
+
+    const playback = buildTrailerPlaybackInfo(
+      item.trailerUrl,
+      hlsUrl,
+      activeItem.videoUrl,
+      resolveUrl,
+      canWatch
+    );
 
     // Map the basic content item
     const type = isMovie ? 'movie' : 'show';
@@ -156,11 +173,18 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       id: item._id.toString(),
       title: item.title,
       originalTitle: item.originalTitle || null,
-      poster: item.posterImage || item.thumbnail || '',
-      backdrop: item.bannerImage || item.thumbnail || '',
+      poster: resolveUrl(item.posterImage || item.thumbnail) || '',
+      backdrop: resolveUrl(item.bannerImage || item.thumbnail) || '',
+      thumbnail: resolveUrl(item.thumbnail) || null,
+      bannerImage: resolveUrl(item.bannerImage) || null,
+      posterImage: resolveUrl(item.posterImage) || null,
+      ...playback,
       type,
       contentType: isMovie ? 'movie' : (item.contentType || 'series'),
       playerType: isMovie || item.contentType === 'series' ? 'standard' : 'shorts',
+      isDraft,
+      status: item.status,
+      isUpcoming: Boolean(item.isUpcoming || isDraft),
       year: item.year?.toString() || new Date(item.createdAt).getFullYear().toString(),
       duration: item.duration ? `${item.duration}m` : '120m',
       durationFormatted,
@@ -173,14 +197,11 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       genres: genreNames,
       genresText: genreNames.join(' & '),
       seasons: type === 'show' ? item.seasons || 1 : undefined,
-      trailerUrl: item.trailerUrl,
-      videoUrl: hlsUrl || null,
-      hlsUrl: hlsUrl || null,
       videoSettings,
       videoQualities: qualities.map((q: any) => ({
         quality: q.quality,
         label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
-        url: (!canWatch || !isQualityAllowed(String(q.quality), entitlements.limits)) ? null : q.url,
+        url: (!canWatch || !isQualityAllowed(String(q.quality), entitlements.limits)) ? null : resolveUrl(q.url),
         isLocked: !canWatch || !isQualityAllowed(String(q.quality), entitlements.limits),
       })),
       playbackSpeeds,
@@ -209,7 +230,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
     if (!isMovie) {
       const eps = await EpisodeModel.find({ contentId: item._id })
         .sort({ season: 1, episode: 1 })
-        .select('title description thumbnail hlsUrl sourceVideoUrl duration season episode isFree isLocked coinsRequired videoQualities downloadAllowed')
+        .select('title description thumbnail hlsUrl sourceVideoUrl duration season episode isFree isLocked coinsRequired videoQualities downloadAllowed trailerUrl')
         .lean();
 
       const unlockedEpisodeIds = new Set<string>();
@@ -228,18 +249,19 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
           } catch {}
         }
 
-        const hasAccess = canAccessEpisode(
+        const hasAccess = !isDraft && canAccessEpisode(
           entitlements,
           item.planRequired,
           activeEp,
           unlockedEpisodeIds.has(activeEp._id.toString())
         );
         const epHlsUrl = hasAccess ? (activeEp.hlsUrl || null) : null;
+        const resolvedEpHls = epHlsUrl ? resolveUrl(epHlsUrl) : null;
 
         const epQualities: any[] = activeEp.videoQualities || [];
-        const epVideoSettings = epHlsUrl
+        const epVideoSettings = resolvedEpHls
           ? [
-              { key: 'auto', label: 'Auto', description: 'Adjusts quality automatically', url: epHlsUrl },
+              { key: 'auto', label: 'Auto', description: 'Adjusts quality automatically', url: resolvedEpHls },
               ...epQualities.map((q: any) => {
                 const sizeMB = q.size ? `${Math.round(q.size / (1024 * 1024))} MB` : 'N/A';
                 const locked = !isQualityAllowed(String(q.quality), entitlements.limits);
@@ -247,20 +269,29 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
                   key: q.quality,
                   label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
                   description: `${q.quality.toUpperCase()} quality option (${sizeMB})`,
-                  url: locked ? null : q.url,
+                  url: locked ? null : resolveUrl(q.url),
                   isLocked: locked,
                 };
               })
             ]
           : null;
 
+        const epPlayback = buildTrailerPlaybackInfo(
+          activeEp.trailerUrl || item.trailerUrl,
+          hasAccess ? activeEp.hlsUrl : null,
+          hasAccess ? activeEp.sourceVideoUrl : null,
+          resolveUrl,
+          hasAccess
+        );
+
         return {
           id: activeEp._id.toString(),
           title: activeEp.title,
           description: activeEp.description,
-          thumbnail: activeEp.thumbnail,
-          videoUrl: epHlsUrl,
-          hlsUrl: epHlsUrl,
+          thumbnail: resolveUrl(activeEp.thumbnail) || null,
+          videoUrl: resolvedEpHls,
+          hlsUrl: resolvedEpHls,
+          ...epPlayback,
           duration: activeEp.duration ? `${activeEp.duration}m` : '0m',
           season: activeEp.season,
           episode: activeEp.episode,
@@ -272,7 +303,7 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
           videoQualities: epQualities.map((q: any) => ({
             quality: q.quality,
             label: q.quality === '4k' ? '4K' : q.quality.toUpperCase(),
-            url: (!hasAccess || !isQualityAllowed(String(q.quality), entitlements.limits)) ? null : q.url,
+            url: (!hasAccess || !isQualityAllowed(String(q.quality), entitlements.limits)) ? null : resolveUrl(q.url),
             isLocked: !hasAccess || !isQualityAllowed(String(q.quality), entitlements.limits),
           })),
           downloadAllowed: activeEp.downloadAllowed !== false && item.downloadAllowed !== false,
@@ -294,7 +325,8 @@ export const getWebDetail = async (request: FastifyRequest, reply: FastifyReply)
       related = relatedRaw.map((r: any) => ({
         id: r._id.toString(),
         title: r.title,
-        poster: r.posterImage || r.thumbnail || '',
+        poster: resolveUrl(r.posterImage || r.thumbnail) || '',
+        thumbnail: resolveUrl(r.thumbnail) || null,
         type,
         year: r.year?.toString() || new Date(r.createdAt).getFullYear().toString(),
         duration: r.duration ? `${r.duration}m` : '120m',

@@ -21,32 +21,12 @@ import {
   guestEntitlements,
   type ViewerEntitlements,
 } from '../lib/subscriptionAccess';
-import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
+import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
+import { buildMediaUrlResolver } from '../lib/urlResolver';
 
 // ── URL Resolver ─────────────────────────────────────────────────────────────
-// Converts any stored path/key to a proper full URL:
-// - Already full URL (https://...) → returned as-is
-// - Local relative path → full server URL
-const buildUrlResolver = (request: FastifyRequest) =>
-  (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      if (url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
-        return url.replace('http://', 'https://');
-      }
-      return url;
-    }
-    let relPath = url;
-    if (relPath.startsWith('hls/')) {
-      relPath = `/uploads/${relPath}`;
-    }
-    if (!relPath.startsWith('/uploads/')) {
-      relPath = relPath.startsWith('uploads/') ? `/${relPath}` : `/uploads/${relPath.startsWith('/') ? relPath.slice(1) : relPath}`;
-    }
-    const proto = (request.headers['x-forwarded-proto'] as string) || request.protocol || 'https';
-    const host = (request.headers['x-forwarded-host'] as string) || request.headers.host || request.hostname;
-    return `${proto}://${host}${relPath}`;
-  };
+const buildUrlResolver = (request: FastifyRequest, storageSettings?: any, isCloudActive?: boolean) =>
+  buildMediaUrlResolver(request, storageSettings || null, Boolean(isCloudActive));
 
 // Helper: try to extract userId from JWT (optional auth — no error if missing/invalid)
 const getAuthData = (request: FastifyRequest): { userId: string | null; profileId: string | null; userPlan: string } => {
@@ -101,7 +81,9 @@ const mapContentItem = (
     ? 'hls'
     : (effectiveTrailer ? 'video' : null);
 
-  const playableStream = resolvedHls || (!isYt ? effectiveTrailer : null) || (hasAccess ? resolvedVideo : null);
+  const playableStream = (!isYt && resolvedTrailer)
+    ? resolvedTrailer
+    : (resolvedHls || (!isYt ? effectiveTrailer : null) || (hasAccess ? resolvedVideo : null) || null);
 
   return {
     id: item._id.toString(),
@@ -232,7 +214,9 @@ const mapBanner = (
     ? 'hls'
     : (effectiveTrailer ? 'video' : null);
 
-  const playableStream = resolvedHls || (!isYt ? effectiveTrailer : null) || resolvedVideo || null;
+  const playableStream = (!isYt && resolvedTrailer)
+    ? resolvedTrailer
+    : (resolvedHls || (!isYt ? effectiveTrailer : null) || resolvedVideo || null);
 
   const mappedContent = content
     ? mapContentItem(
@@ -349,9 +333,13 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
     const limit = Math.min(20, Math.max(1, Number(query.limit || 10)));
     
     const { userId, profileId } = getAuthData(request);
-    const entitlements = await getViewerEntitlements(request);
+    const [storageSettings, isCloudActive, entitlements] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+      getViewerEntitlements(request),
+    ]);
 
-    const resolveUrl = buildUrlResolver(request);
+    const resolveUrl = buildUrlResolver(request, storageSettings, isCloudActive);
 
     // Get user's preferred language (defaulting to Hindi if skipped/not set)
     let preferredLanguage = 'Hindi';
@@ -774,7 +762,11 @@ export const getAppBanners = async (request: FastifyRequest, reply: FastifyReply
     const limit = Math.min(20, Math.max(1, Number(query.limit || 10)));
     const now = new Date();
 
-    const resolveUrl = buildUrlResolver(request);
+    const [storageSettings, isCloudActive] = await Promise.all([
+      getActiveStorageSettings(),
+      isCloudStorageConfigured(),
+    ]);
+    const resolveUrl = buildUrlResolver(request, storageSettings, isCloudActive);
 
     // contentType: 'drama' → drama only
     // contentType: 'movie' → movie only

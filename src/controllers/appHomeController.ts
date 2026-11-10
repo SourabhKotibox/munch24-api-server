@@ -23,6 +23,7 @@ import {
 } from '../lib/subscriptionAccess';
 import { isCloudStorageConfigured, getActiveStorageSettings } from '../lib/s3';
 import { buildMediaUrlResolver } from '../lib/urlResolver';
+import { isYouTubeUrl, extractYouTubeVideoId } from '../lib/youtubeExtractor';
 
 // ── URL Resolver ─────────────────────────────────────────────────────────────
 const buildUrlResolver = (request: FastifyRequest, storageSettings?: any, isCloudActive?: boolean) =>

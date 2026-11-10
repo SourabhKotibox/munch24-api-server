@@ -24,6 +24,10 @@ const appProfileRoutes: FastifyPluginAsync = async (fastify) => {
   // Contact details & social links: /api/app/contact & /api/contact
   fastify.get('/contact', getAppContact);
 
+  // App Pages: /api/app/pages & /api/app/pages/:slug
+  fastify.get('/pages', getAppPages);
+  fastify.get('/pages/:slug', getAppPageBySlug);
+
   // PATCH /api/app/profile — update name / email / avatar URL
   fastify.patch('/profile', updateAppProfile);
 

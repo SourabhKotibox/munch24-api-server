@@ -122,7 +122,7 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
         preferredLanguage: 'Hindi',
         languageSelectionSkipped: isTestNumber,
         subscriptionPlan: isTestNumber ? 'premium' : 'free',
-        subscriptionStatus: isTestNumber ? 'active' : 'active',
+        subscriptionStatus: isTestNumber ? 'active' : 'inactive',
         subscriptionExpiry: isTestNumber ? new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000) : undefined,
         walletBalance: isTestNumber ? 99999 : 0,
         status: 'active',
@@ -237,7 +237,9 @@ export const verifyOtp = async (request: FastifyRequest, reply: FastifyReply) =>
       phone: (userDoc as any).phone || null,
       avatar: (userDoc as any).avatar || null,
       subscriptionPlan: isTestNumber ? 'premium' : (userDoc.subscriptionPlan || 'free'),
-      subscriptionStatus: isTestNumber ? 'active' : (userDoc.subscriptionStatus || 'inactive'),
+      subscriptionStatus: isTestNumber
+        ? 'active'
+        : (userDoc.subscriptionPlan && userDoc.subscriptionPlan !== 'free' && userDoc.subscriptionStatus === 'active' ? 'active' : 'inactive'),
       subscriptionExpiry: (userDoc as any).subscriptionExpiry || null,
       expiresIn: 604800, // 7 days in seconds
     });

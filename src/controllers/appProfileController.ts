@@ -128,8 +128,8 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
           email: (user.email && !user.email.endsWith('@temp.local')) ? user.email : null,
           avatar: (user as any).avatar || null,
           subscription: entitlements.paid,
-          subscriptionStatus: entitlements.active ? 'active' : 'inactive',
-          subscriptionPlan: entitlements.planKey,
+          subscriptionStatus: entitlements.paid ? 'active' : 'inactive',
+          subscriptionPlan: entitlements.paid ? entitlements.planKey : 'free',
           profileLimitCount: entitlements.profileLimit ?? 0,
           downloadAllowed: entitlements.canDownload,
           canDownload: entitlements.canDownload,
@@ -515,6 +515,19 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
       linkedin: dbSettings?.linkedinUrl || '',
     };
 
+    const defaultAboutUs = dbSettings?.siteDescription || 
+      `Welcome to ${platformName}. We are dedicated to bringing you top-tier web series, blockbuster movies, exclusive short dramas, and engaging entertainment across all your devices. Enjoy high-definition video streaming, customizable viewing experiences, and curated stories created with passion.`;
+
+    const defaultPrivacyPolicy = 
+      `${platformName} Privacy Policy\n\nYour privacy is paramount to us. This Privacy Policy details how we collect, protect, and use your personal information when using our app, website, and streaming services. We implement industry-standard security measures and encryption to safeguard your data. For any questions regarding your data privacy, contact our support team at ${contactDetails.supportEmail || 'support@tripleminds.com'}.`;
+
+    const defaultTerms = 
+      `${platformName} Terms of Service\n\nBy accessing or using ${platformName}, you agree to adhere to these terms and conditions. The service and all content provided, including movies, series, logos, and trademarks, are protected by intellectual property rights. Users agree not to reproduce, duplicate, or exploit any portion of the service without explicit permission.`;
+
+    const privacyPolicyContent = privacyPage?.content || defaultPrivacyPolicy;
+    const termsOfServiceContent = termsPage?.content || defaultTerms;
+    const aboutUsContent = aboutPage?.content || defaultAboutUs;
+
     const publishedPages = pages.map(p => ({
       id: p._id.toString(),
       title: p.title,
@@ -525,16 +538,45 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
       order: p.order || 0,
     }));
 
-    const privacyPage = pages.find(p => p.slug === 'privacy-policy' || p.slug === 'privacy');
-    const termsPage = pages.find(p => p.slug === 'terms-and-conditions' || p.slug === 'terms-of-service' || p.slug === 'terms');
-    const aboutPage = pages.find(p => p.slug === 'about-us' || p.slug === 'about');
-    const refundPage = pages.find(p => p.slug === 'refund-policy' || p.slug === 'cancellation-policy');
-    const contactPage = pages.find(p => p.slug === 'contact-us' || p.slug === 'contact');
+    // Ensure core pages exist in publishedPages if missing
+    if (!publishedPages.some(p => p.slug === 'about-us' || p.slug === 'about')) {
+      publishedPages.unshift({
+        id: 'default-about',
+        title: 'About Us',
+        slug: 'about-us',
+        url: `${baseUrl}/api/pages/about-us`,
+        webUrl: `${baseUrl}/pages/about-us`,
+        content: aboutUsContent,
+        order: 1,
+      });
+    }
+    if (!publishedPages.some(p => p.slug === 'privacy-policy' || p.slug === 'privacy')) {
+      publishedPages.push({
+        id: 'default-privacy',
+        title: 'Privacy Policy',
+        slug: 'privacy-policy',
+        url: `${baseUrl}/api/pages/privacy-policy`,
+        webUrl: `${baseUrl}/pages/privacy-policy`,
+        content: privacyPolicyContent,
+        order: 2,
+      });
+    }
+    if (!publishedPages.some(p => p.slug === 'terms-and-conditions' || p.slug === 'terms-of-service' || p.slug === 'terms')) {
+      publishedPages.push({
+        id: 'default-terms',
+        title: 'Terms & Conditions',
+        slug: 'terms-and-conditions',
+        url: `${baseUrl}/api/pages/terms-and-conditions`,
+        webUrl: `${baseUrl}/pages/terms-and-conditions`,
+        content: termsOfServiceContent,
+        order: 3,
+      });
+    }
 
     const legalPages = [
-      aboutPage ? { title: aboutPage.title, slug: aboutPage.slug, url: `${baseUrl}/api/pages/${aboutPage.slug}` } : null,
-      privacyPage ? { title: privacyPage.title, slug: privacyPage.slug, url: `${baseUrl}/api/pages/${privacyPage.slug}` } : null,
-      termsPage ? { title: termsPage.title, slug: termsPage.slug, url: `${baseUrl}/api/pages/${termsPage.slug}` } : null,
+      { title: 'About Us', slug: 'about-us', url: `${baseUrl}/api/pages/about-us` },
+      { title: 'Privacy Policy', slug: 'privacy-policy', url: `${baseUrl}/api/pages/privacy-policy` },
+      { title: 'Terms & Conditions', slug: 'terms-and-conditions', url: `${baseUrl}/api/pages/terms-and-conditions` },
       refundPage ? { title: refundPage.title, slug: refundPage.slug, url: `${baseUrl}/api/pages/${refundPage.slug}` } : null,
       contactPage ? { title: contactPage.title, slug: contactPage.slug, url: `${baseUrl}/api/pages/${contactPage.slug}` } : null,
     ].filter(Boolean);
@@ -555,12 +597,12 @@ export const getAppProfile = async (request: FastifyRequest, reply: FastifyReply
       whatsappUrl: contactDetails.whatsappUrl,
       address: contactDetails.address,
       websiteUrl: contactDetails.websiteUrl,
-      privacyPolicy: privacyPage?.content || '',
-      privacyPolicyUrl: privacyPage ? `${baseUrl}/api/pages/${privacyPage.slug}` : '',
-      termsOfService: termsPage?.content || '',
-      termsOfServiceUrl: termsPage ? `${baseUrl}/api/pages/${termsPage.slug}` : '',
-      aboutUs: aboutPage?.content || '',
-      aboutUsUrl: aboutPage ? `${baseUrl}/api/pages/${aboutPage.slug}` : '',
+      privacyPolicy: privacyPolicyContent,
+      privacyPolicyUrl: `${baseUrl}/api/pages/privacy-policy`,
+      termsOfService: termsOfServiceContent,
+      termsOfServiceUrl: `${baseUrl}/api/pages/terms-and-conditions`,
+      aboutUs: aboutUsContent,
+      aboutUsUrl: `${baseUrl}/api/pages/about-us`,
       deleteAccountTitle: 'Delete Account',
       deleteAccountDescription: 'Permanently delete your account and all associated data.',
       appVersion: 'V1.2.4',
@@ -1062,18 +1104,59 @@ export const getAppContact = async (request: FastifyRequest, reply: FastifyReply
 export const getAppPages = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const baseUrl = `${request.protocol}://${request.headers.host || request.hostname}`;
+    const dbSettings = await SettingsModel.findOne().lean();
+    const platformName = dbSettings?.platformName || 'Triple Minds';
+
     const pages = await PageModel.find({ status: 'published' }).sort({ order: 1, createdAt: 1 }).lean();
+    const result = pages.map(p => ({
+      id: p._id.toString(),
+      title: p.title,
+      slug: p.slug,
+      url: `${baseUrl}/api/pages/${p.slug}`,
+      webUrl: `${baseUrl}/pages/${p.slug}`,
+      content: p.content || '',
+      order: p.order || 0,
+    }));
+
+    if (!result.some(p => p.slug === 'about-us' || p.slug === 'about')) {
+      result.unshift({
+        id: 'default-about',
+        title: 'About Us',
+        slug: 'about-us',
+        url: `${baseUrl}/api/pages/about-us`,
+        webUrl: `${baseUrl}/pages/about-us`,
+        content: dbSettings?.siteDescription || `Welcome to ${platformName}. We provide premier digital entertainment, original web series, blockbuster movies, and engaging stories.`,
+        order: 1,
+      });
+    }
+
+    if (!result.some(p => p.slug === 'privacy-policy' || p.slug === 'privacy')) {
+      result.push({
+        id: 'default-privacy',
+        title: 'Privacy Policy',
+        slug: 'privacy-policy',
+        url: `${baseUrl}/api/pages/privacy-policy`,
+        webUrl: `${baseUrl}/pages/privacy-policy`,
+        content: `${platformName} Privacy Policy\n\nYour privacy is important to us. We implement advanced security protocols to protect your personal information while streaming.`,
+        order: 2,
+      });
+    }
+
+    if (!result.some(p => p.slug === 'terms-and-conditions' || p.slug === 'terms-of-service' || p.slug === 'terms')) {
+      result.push({
+        id: 'default-terms',
+        title: 'Terms & Conditions',
+        slug: 'terms-and-conditions',
+        url: `${baseUrl}/api/pages/terms-and-conditions`,
+        webUrl: `${baseUrl}/pages/terms-and-conditions`,
+        content: `${platformName} Terms & Conditions\n\nBy accessing and using this service, you agree to comply with our user guidelines, copyright restrictions, and terms of service.`,
+        order: 3,
+      });
+    }
+
     return reply.send({
       success: true,
-      data: pages.map(p => ({
-        id: p._id.toString(),
-        title: p.title,
-        slug: p.slug,
-        url: `${baseUrl}/api/pages/${p.slug}`,
-        webUrl: `${baseUrl}/pages/${p.slug}`,
-        content: p.content || '',
-        order: p.order || 0,
-      }))
+      data: result,
     });
   } catch (error: any) {
     logger.error({ error }, 'Error getting app pages');
@@ -1086,22 +1169,106 @@ export const getAppPageBySlug = async (request: FastifyRequest, reply: FastifyRe
   try {
     const { slug } = request.params as { slug: string };
     const page = await PageModel.findOne({ slug, status: 'published' }).lean();
-    if (!page) {
-      return reply.status(404).send({ success: false, message: 'Page not found' });
-    }
     const baseUrl = `${request.protocol}://${request.headers.host || request.hostname}`;
-    return reply.send({
-      success: true,
-      data: {
-        id: page._id.toString(),
-        title: page.title,
-        slug: page.slug,
-        url: `${baseUrl}/api/pages/${page.slug}`,
-        webUrl: `${baseUrl}/pages/${page.slug}`,
-        content: page.content || '',
-        order: page.order || 0,
-      }
-    });
+
+    if (page) {
+      return reply.send({
+        success: true,
+        data: {
+          id: page._id.toString(),
+          title: page.title,
+          slug: page.slug,
+          url: `${baseUrl}/api/pages/${page.slug}`,
+          webUrl: `${baseUrl}/pages/${page.slug}`,
+          content: page.content || '',
+          order: page.order || 0,
+        }
+      });
+    }
+
+    // Synthesize fallback for core pages if not explicitly created in DB
+    const dbSettings = await SettingsModel.findOne().lean();
+    const platformName = dbSettings?.platformName || 'Triple Minds';
+    const email = dbSettings?.supportEmail || dbSettings?.inquiryEmail || 'support@tripleminds.com';
+    const phone = dbSettings?.supportPhone || dbSettings?.contactNo || '';
+    const address = dbSettings?.address || '';
+
+    if (slug === 'about-us' || slug === 'about') {
+      return reply.send({
+        success: true,
+        data: {
+          id: 'default-about',
+          title: 'About Us',
+          slug: 'about-us',
+          url: `${baseUrl}/api/pages/about-us`,
+          webUrl: `${baseUrl}/pages/about-us`,
+          content: dbSettings?.siteDescription || `Welcome to ${platformName}. We are dedicated to providing top-tier digital entertainment, blockbuster movies, original web series, and exclusive content.`,
+          order: 1,
+        }
+      });
+    }
+
+    if (slug === 'contact-us' || slug === 'contact') {
+      return reply.send({
+        success: true,
+        data: {
+          id: 'default-contact',
+          title: 'Contact Us',
+          slug: 'contact-us',
+          url: `${baseUrl}/api/pages/contact-us`,
+          webUrl: `${baseUrl}/pages/contact-us`,
+          content: `Get in touch with ${platformName} Support Team:\n\nEmail: ${email}\nPhone: ${phone || 'Available in app'}\nAddress: ${address || 'Online Support 24/7'}`,
+          order: 2,
+        }
+      });
+    }
+
+    if (slug === 'privacy-policy' || slug === 'privacy') {
+      return reply.send({
+        success: true,
+        data: {
+          id: 'default-privacy',
+          title: 'Privacy Policy',
+          slug: 'privacy-policy',
+          url: `${baseUrl}/api/pages/privacy-policy`,
+          webUrl: `${baseUrl}/pages/privacy-policy`,
+          content: `${platformName} Privacy Policy\n\nYour privacy is paramount to us. We collect necessary information to provide personalized streaming, secure account authentication, and seamless user experiences. For questions, contact ${email}.`,
+          order: 3,
+        }
+      });
+    }
+
+    if (slug === 'terms-and-conditions' || slug === 'terms-of-service' || slug === 'terms') {
+      return reply.send({
+        success: true,
+        data: {
+          id: 'default-terms',
+          title: 'Terms & Conditions',
+          slug: 'terms-and-conditions',
+          url: `${baseUrl}/api/pages/terms-and-conditions`,
+          webUrl: `${baseUrl}/pages/terms-and-conditions`,
+          content: `${platformName} Terms of Service\n\nAll content, trademarks, streaming materials, and graphics are the intellectual property of ${platformName}. Access to content requires valid account credentials and applicable subscription plans.`,
+          order: 4,
+        }
+      });
+    }
+
+    if (slug === 'refund-policy' || slug === 'cancellation-policy') {
+      return reply.send({
+        success: true,
+        data: {
+          id: 'default-refund',
+          title: 'Refund & Cancellation Policy',
+          slug: 'refund-policy',
+          url: `${baseUrl}/api/pages/refund-policy`,
+          webUrl: `${baseUrl}/pages/refund-policy`,
+          content: `${platformName} Refund & Cancellation Policy\n\nSubscriptions can be managed directly in the app. For billing inquiries or refund requests, please email ${email}.`,
+          order: 5,
+        }
+      });
+    }
+
+    return reply.status(404).send({ success: false, message: 'Page not found' });
   } catch (error: any) {
     logger.error({ error }, 'Error getting app page by slug');
     return reply.status(500).send({ success: false, message: 'Failed to fetch page' });

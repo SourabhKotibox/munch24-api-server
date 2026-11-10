@@ -118,10 +118,12 @@ export const getPlanLevel = (value?: string | null, level?: number): number => {
 };
 
 export const isSubscriptionCurrentlyActive = (user: {
+  subscriptionPlan?: string;
   subscriptionStatus?: string;
   subscriptionExpiry?: Date | string | null;
 }): boolean => {
   if (user.subscriptionStatus !== 'active') return false;
+  if (!user.subscriptionPlan || normalizePlanKey(user.subscriptionPlan) === 'free') return false;
   if (!user.subscriptionExpiry) return true;
   return new Date(user.subscriptionExpiry) > new Date();
 };

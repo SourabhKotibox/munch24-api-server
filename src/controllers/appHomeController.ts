@@ -117,6 +117,9 @@ const mapContentItem = (
     videoUrl: hasAccess ? (resolvedHls || resolvedVideo) : null,
     hlsUrl: hasAccess ? resolvedHls : null,
     trailerUrl: effectiveTrailer,
+    streamUrl: playableStream,
+    mediaUrl: playableStream || effectiveTrailer,
+    previewUrl: playableStream || effectiveTrailer,
     hasTrailer: Boolean(effectiveTrailer),
     trailerType,
     isYouTubeTrailer: isYt,
@@ -143,6 +146,10 @@ const mapContentItem = (
     firstEpisodeDuration: firstEpisode?.duration || null,
     firstEpisodeIsFree: firstEpisode?.isFree ?? null,
     contentPlan: item.planRequired || item.plan || 'free',
+    planRequired: item.planRequired || item.plan || 'free',
+    plan: item.planRequired || item.plan || 'free',
+    isPremium: (item.planRequired || item.plan || 'free') !== 'free',
+    isPaid: (item.planRequired || item.plan || 'free') !== 'free',
     isLocked: !hasAccess,
   };
 };
@@ -244,6 +251,11 @@ const mapBanner = (
     ctaLink: banner.ctaLink,
     contentId: banner.contentId?._id?.toString(),
     content: mappedContent,
+    contentPlan: content?.planRequired || content?.plan || banner.planRequired || 'free',
+    planRequired: content?.planRequired || content?.plan || banner.planRequired || 'free',
+    plan: content?.planRequired || content?.plan || banner.planRequired || 'free',
+    isPremium: (content?.planRequired || content?.plan || banner.planRequired || 'free') !== 'free',
+    isPaid: (content?.planRequired || content?.plan || banner.planRequired || 'free') !== 'free',
     type: banner.type,
     contentType: banner.contentType,
     position: banner.position,
@@ -254,8 +266,11 @@ const mapBanner = (
 
     // Banner video player playback attributes (camelCase)
     trailerUrl: effectiveTrailer,
-    videoUrl: resolvedVideo || resolvedHls || effectiveTrailer,
+    videoUrl: resolvedVideo || resolvedHls || (!isYt ? effectiveTrailer : null) || '',
     hlsUrl: resolvedHls,
+    streamUrl: playableStream,
+    mediaUrl: playableStream || effectiveTrailer,
+    previewUrl: playableStream || effectiveTrailer,
     hasTrailer: Boolean(effectiveTrailer),
     trailerType,
     isYouTubeTrailer: isYt,
@@ -264,7 +279,7 @@ const mapBanner = (
 
     // Banner video player playback attributes (snake_case aliases for mobile players)
     trailer_url: effectiveTrailer,
-    video_url: resolvedVideo || resolvedHls || effectiveTrailer,
+    video_url: resolvedVideo || resolvedHls || (!isYt ? effectiveTrailer : null) || '',
     hls_url: resolvedHls,
     stream_url: playableStream,
     media_url: playableStream || effectiveTrailer,

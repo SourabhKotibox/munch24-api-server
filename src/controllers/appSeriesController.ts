@@ -234,10 +234,11 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
       episodes: seasonsMap.get(s),
     }));
 
+    const firstEp = episodes[0];
     const playback = buildTrailerPlaybackInfo(
-      series.trailerUrl,
-      null,
-      null,
+      series.trailerUrl || (firstEp as any)?.trailerUrl,
+      (firstEp as any)?.hlsUrl || (firstEp as any)?.sourceVideoUrl || null,
+      (firstEp as any)?.videoUrl || null,
       resolveUrl,
       canWatchSeries
     );
@@ -274,6 +275,8 @@ export const getSeriesDetail = async (request: FastifyRequest, reply: FastifyRep
         imdbRating: series.imdbRating || null,
         planRequired: series.planRequired || 'free',
         contentPlan: series.planRequired || 'free',
+        plan: series.planRequired || 'free',
+        isPremium: (series.planRequired || 'free') !== 'free',
         episodeCount: allEpisodes.length,
         isExclusive: series.isExclusive || false,
         featured: series.featured || false,

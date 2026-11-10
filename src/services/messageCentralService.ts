@@ -131,6 +131,8 @@ export class MessageCentralService {
       let cleanMsg = rawMsg;
       if (rawCode === 506 || rawMsg.toUpperCase().includes('REQUEST_ALREADY_EXISTS')) {
         cleanMsg = 'Please wait a few seconds before requesting another OTP.';
+      } else if (rawCode === 508 || rawMsg.toLowerCase().includes('insufficient credits')) {
+        cleanMsg = 'SMS service credits are exhausted on MessageCentral. Please recharge your SMS gateway account or use test login 9876543210 (OTP: 1234).';
       }
 
       return {

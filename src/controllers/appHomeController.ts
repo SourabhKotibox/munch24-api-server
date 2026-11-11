@@ -707,9 +707,9 @@ export const getHomePage = async (request: FastifyRequest, reply: FastifyReply) 
         key: 'continue-watching',
         title: 'Continue Watching',
         category: 'Continue Watching',
-        layout: 'horizontal',
+        layout: 'continue-watching',
         showViewAll: false,
-        itemType: 'poster',
+        itemType: 'landscape',
         shows: continueWatchingShows,
       });
     }

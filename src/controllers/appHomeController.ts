@@ -301,7 +301,7 @@ const getFallbackSections = (tab: string) => {
       { key: 'top-10-story-tv', title: 'Top 10 on Story TV', category: 'Top 10', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'just-launched', title: 'Just Launched', category: 'Recently Added', filter: { isNewContent: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'trending-dramas', title: 'Trending Dramas', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
-      { key: 'featured-dramas', title: 'Featured Dramas', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+      { key: 'featured-dramas', title: 'Featured Dramas', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-3' },
     ],
     movie: [
       { key: 'featured', title: 'Featured Movies', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'horizontal' },
@@ -310,22 +310,22 @@ const getFallbackSections = (tab: string) => {
     series: [
       { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
-      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-3' },
     ],
     tv: [
       { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
-      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-3' },
     ],
     shows: [
       { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
-      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-3' },
     ],
     show: [
       { key: 'popular-tv-shows', title: 'Popular TV Shows', category: 'Popular', sortBy: { views: -1 }, limit: 10, layout: 'horizontal' },
       { key: 'trending-tv-shows', title: 'Trending TV Shows', category: 'Trending', filter: { trending: true }, sortBy: { views: -1 }, limit: 10, layout: 'vertical' },
-      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-2' },
+      { key: 'featured-tv-shows', title: 'Featured TV Shows', category: 'Featured', filter: { featured: true }, sortBy: { createdAt: -1 }, limit: 10, layout: 'grid-3' },
     ],
   };
   return fallbacks[tab] || fallbacks.series || fallbacks.drama;

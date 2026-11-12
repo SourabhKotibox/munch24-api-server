@@ -221,7 +221,7 @@ const SettingsSchema = new Schema<ISettings>(
     bunnyAccessKey: { type: String, default: '' },
     bunnyCdnUrl: { type: String, default: '' },
     // Customization
-    primaryColor: { type: String, default: '#e50914' },
+    primaryColor: { type: String, default: '#DB0203' },
     colorTheme: { type: String, default: 'blue-green' },
     navbarStyle: { type: String, enum: ['glass', 'sticky', 'transparent', 'default'], default: 'default' },
     navbarHide: { type: Boolean, default: false },

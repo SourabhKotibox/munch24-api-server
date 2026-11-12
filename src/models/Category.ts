@@ -26,7 +26,7 @@ const CategorySchema = new Schema<ICategory>(
     thumbnail: String,
     bannerImage: String,
     icon: String,
-    color: { type: String, default: '#e50914' },
+    color: { type: String, default: '#DB0203' },
     contentCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },

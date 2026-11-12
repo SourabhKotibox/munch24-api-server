@@ -91,7 +91,7 @@ const ensureDefaultBannerImage = () => {
       `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
   <rect width="1280" height="720" fill="#0b1217"/>
   <rect x="64" y="64" width="1152" height="592" rx="28" fill="#141d23" stroke="#2a343c" stroke-width="4"/>
-  <circle cx="640" cy="360" r="92" fill="#e50914"/>
+  <circle cx="640" cy="360" r="92" fill="#DB0203"/>
   <path d="M615 312v96l84-48z" fill="#fff"/>
   <text x="640" y="515" text-anchor="middle" fill="#d7dde2" font-family="Arial, sans-serif" font-size="42" font-weight="700">Video Upload</text>
 </svg>`
